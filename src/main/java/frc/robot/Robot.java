@@ -28,22 +28,22 @@ public class Robot extends LoggedRobot {
    * initialization code.
    */
   public Robot() {
-    // Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);
-    // Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
-    // Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
-    // Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
-    // Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
-    // switch (BuildConstants.DIRTY) {
-    //   case 0:
-    //     Logger.recordMetadata("GitDirty", "All changes committed");
-    //     break;
-    //   case 1:
-    //     Logger.recordMetadata("GitDirty", "Uncomitted changes");
-    //     break;
-    //   default:
-    //     Logger.recordMetadata("GitDirty", "Unknown");
-    //     break;
-    // }
+    Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);
+    Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
+    Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
+    Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
+    Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
+    switch (BuildConstants.DIRTY) {
+      case 0:
+        Logger.recordMetadata("GitDirty", "All changes committed");
+        break;
+      case 1:
+        Logger.recordMetadata("GitDirty", "Uncomitted changes");
+        break;
+      default:
+        Logger.recordMetadata("GitDirty", "Unknown");
+        break;
+    }
 
     switch (Constants.currentMode) {
       case real:
