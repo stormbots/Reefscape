@@ -23,7 +23,7 @@ import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 public class Swerve extends SubsystemBase {
 
   
-  double maximumSpeed = 3.5;
+  double maximumSpeed = 5.4;
 
   SwerveDrive swerveDrive;
 
