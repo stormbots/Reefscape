@@ -118,8 +118,7 @@ public class Swerve extends SubsystemBase {
     );
   }
 
-  public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX)
-  {
+  public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
     return run(() -> {
       // Make the robot move
       swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
@@ -129,6 +128,29 @@ public class Swerve extends SubsystemBase {
                         false);
     });
   }
+
+  //Robot Relative version
+  /**
+   * 
+   * @param translationX
+   * @param translationY 
+   * @param angularRotationX Robot angular rate, in radians per second. CCW positive. Unaffected by field/robot relativity.
+   * @return
+   */
+  public Command driveCommandRobotRelative(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
+    return run(() -> {
+      // Make the robot move
+      swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                          translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                        angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
+                        false,
+                        false);
+    });
+  }
+
+
+
+
 
   public Rotation2d getHeading(){
     return swerveDrive.getGyro().getRotation3d().toRotation2d();
@@ -143,13 +165,15 @@ public class Swerve extends SubsystemBase {
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 
-  public ChassisSpeeds getChassisSpeeds()
-  {
+  public ChassisSpeeds getChassisSpeeds(){
     return swerveDrive.getRobotVelocity();
   }
 
-  public void setChassisSpeeds(ChassisSpeeds chassisSpeeds)
-  {
+  public void setChassisSpeeds(ChassisSpeeds chassisSpeeds){
     swerveDrive.setChassisSpeeds(chassisSpeeds);
+  }
+
+  public void zeroGyro(){
+    swerveDrive.zeroGyro();
   }
 }

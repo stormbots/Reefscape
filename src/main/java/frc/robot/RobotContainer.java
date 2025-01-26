@@ -4,6 +4,7 @@
 
 package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
@@ -51,8 +52,13 @@ public class RobotContainer {
     driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
 
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(()->-driverController.getLeftY(), ()->-driverController.getLeftX(), ()->-driverController.getRightX())
+      swerveSubsystem.driveCommand(()->-driverController.getLeftY()/4.0, ()->-driverController.getLeftX()/4.0, ()->-driverController.getRightX()/4.0)
     );
+    driverController.x().whileTrue(
+      swerveSubsystem.driveCommandRobotRelative(()->0.1, ()->0.0, ()->0.0)
+    );
+    driverController.start().onTrue(swerveSubsystem.resetGyro());
+   
   }
 
   /**
