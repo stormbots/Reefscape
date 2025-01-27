@@ -8,8 +8,17 @@ import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
 public interface ElevatorIO {
+
   @AutoLog
-  public static class ElevatorIOInputs {}
+  public static class ElevatorIOInputs {
+    public double heightMeters = 0.0;
+    public double velocityMPS = 0.0;
+    public double appliedVoltage = 0.0;
+  }
 
   public default void updateInputs(ElevatorIOInputs inputs) {}
+
+  public default void setVoltage(double volts) {}
+
+  public default void stop() {}
 }

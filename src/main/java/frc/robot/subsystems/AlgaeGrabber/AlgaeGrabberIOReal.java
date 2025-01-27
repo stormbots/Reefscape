@@ -5,7 +5,7 @@
 package frc.robot.subsystems.AlgaeGrabber;
 
 /** Add your docs here. */
-public class AglaeGrabberIOReal implements AlgaeGrabberIO {
+public class AlgaeGrabberIOReal implements AlgaeGrabberIO {
 
-  public AglaeGrabberIOReal() {}
+  public AlgaeGrabberIOReal() {}
 }

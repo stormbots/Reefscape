@@ -4,14 +4,29 @@
 
 package frc.robot.subsystems.Elevator;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
 
 public class Elevator extends SubsystemBase {
+  private final String name;
+  private final ElevatorIO io;
+
+  private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   /** Creates a new Elevator. */
-  public Elevator() {}
+  public Elevator(String name, ElevatorIO io) {
+    this.name = name;
+    this.io = io;
+  }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    io.updateInputs(inputs);
+    Logger.processInputs(name, inputs);
+  }
+
+  public Command runElevator(double volts) {
+    return startEnd(() -> io.setVoltage(volts), () -> io.stop());
   }
 }

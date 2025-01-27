@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
 public interface AlgaeGrabberIO {
+
   @AutoLog
   public static class AlgaeGrabberIOInputs {
     double armAngle = 0.0;
