@@ -6,6 +6,7 @@ package frc.robot.subsystems.Elevator;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 
@@ -17,12 +18,20 @@ public class ElevatorIOSim implements ElevatorIO {
 
   private static final DCMotor modelMotor = DCMotor.getNeoVortex(2);
   private static final double reduction = 3.0; // Fix please
-  private static final double drumRadius = 0.3;
+  private static final double drumRadius = 0.0223012;
 
   public ElevatorIOSim() {
     sim =
         new ElevatorSim(
-            modelMotor, reduction, 7, drumRadius, 0.5, 2.5, true, 0.5, new double[] {1.0, 1.0});
+            modelMotor,
+            reduction,
+            3.11845,
+            drumRadius,
+            Units.inchesToMeters(47),
+            Units.inchesToMeters(120),
+            true,
+            Units.inchesToMeters(47),
+            new double[] {0.0, 0.0});
   }
 
   @Override
@@ -34,8 +43,8 @@ public class ElevatorIOSim implements ElevatorIO {
     sim.update(0.02);
 
     inputs.appliedVoltage = appliedVoltage;
-    inputs.heightMeters = sim.getPositionMeters() / drumRadius;
-    inputs.velocityMPS = sim.getVelocityMetersPerSecond() / drumRadius;
+    inputs.heightMeters = sim.getPositionMeters();
+    inputs.velocityMPS = sim.getVelocityMetersPerSecond();
   }
 
   @Override

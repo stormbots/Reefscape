@@ -12,11 +12,15 @@ public class Elevator extends SubsystemBase {
   private final String name;
   private final ElevatorIO io;
 
+  private final ElevatorVisualizer bruhVisualizer;
+
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   /** Creates a new Elevator. */
   public Elevator(String name, ElevatorIO io) {
     this.name = name;
     this.io = io;
+
+    bruhVisualizer = new ElevatorVisualizer("bruh");
   }
 
   @Override
@@ -24,6 +28,8 @@ public class Elevator extends SubsystemBase {
     // This method will be called once per scheduler run
     io.updateInputs(inputs);
     Logger.processInputs(name, inputs);
+
+    bruhVisualizer.update(inputs.heightMeters);
   }
 
   public Command runElevator(double volts) {

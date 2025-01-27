@@ -56,6 +56,6 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return elevator.runElevator(3.0);
+    return elevator.runElevator(6.0).withTimeout(10.0);
   }
 }
