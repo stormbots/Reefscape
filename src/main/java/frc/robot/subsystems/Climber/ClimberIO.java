@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems.Climber;
 
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.config.SparkBaseConfig;
 import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
@@ -18,5 +21,12 @@ public interface ClimberIO {
 
   public default void updateInputs(ClimberIOInputs inputs) {}
 
-  public default void setArmAngle(double degrees) {}
+  public default void setReference(double degrees) {}
+
+  public default double getPosition() {
+    return 0;
+  }
+
+  public default void applyConfig(
+      SparkBaseConfig config, ResetMode resetMode, PersistMode persistMode) {}
 }
