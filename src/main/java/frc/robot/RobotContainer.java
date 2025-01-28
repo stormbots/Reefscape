@@ -11,6 +11,11 @@ import frc.robot.Constants.Mode;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorIOReal;
 import frc.robot.subsystems.Elevator.ElevatorIOSim;
+import frc.robot.Constants.OperatorConstants;
+import frc.robot.commands.Autos;
+import frc.robot.commands.ExampleCommand;
+import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Swerve;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -22,6 +27,10 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private Elevator elevator;
+  private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
+
+  Swerve swerveSubsystem = new Swerve();
+  CommandXboxController driverController = new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -46,6 +55,13 @@ public class RobotContainer {
   private void configureBindings() {
     // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
 
+    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
+    // cancelling on release.
+    driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
+
+    swerveSubsystem.setDefaultCommand(
+      swerveSubsystem.driveCommand(()->-driverController.getLeftY(), ()->-driverController.getLeftX(), ()->-driverController.getRightX())
+    );
   }
 
   /**
