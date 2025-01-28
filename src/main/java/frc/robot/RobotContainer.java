@@ -11,9 +11,6 @@ import frc.robot.Constants.Mode;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorIOReal;
 import frc.robot.subsystems.Elevator.ElevatorIOSim;
-import frc.robot.Constants.OperatorConstants;
-import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Swerve;
 
@@ -60,8 +57,10 @@ public class RobotContainer {
     driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
 
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(()->-driverController.getLeftY(), ()->-driverController.getLeftX(), ()->-driverController.getRightX())
-    );
+        swerveSubsystem.driveCommand(
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> -driverController.getRightX()));
   }
 
   /**
@@ -72,6 +71,8 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return elevator.runElevator(6.0).withTimeout(10.0);
+    // return elevator.runElevator(6.0).withTimeout(10.0);
+    // return swerveSubsystem.driveForward();
+    return swerveSubsystem.runExamplePath();
   }
 }

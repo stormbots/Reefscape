@@ -15,7 +15,7 @@ public class Elevator extends SubsystemBase {
   private final ElevatorVisualizer bruhVisualizer;
 
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
-  /** Creates a new Elevator. */
+  /** Creates a new Ele`vator. */
   public Elevator(String name, ElevatorIO io) {
     this.name = name;
     this.io = io;
