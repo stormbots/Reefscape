@@ -165,21 +165,21 @@ public class Swerve extends SubsystemBase {
     return swerveDrive.getGyro().getRotation3d().toRotation2d();
   }
 
-  public Command goToPose(Pose2d targetPose){
+  public Command goToPose(Pose2d targetPoseIgnore){
 
     return run(()->{
       //get current pose
       var pose = getPose();
-      List<Pose2d> list = new ArrayList<>(){{
+      List<Pose2d> list = new ArrayList<>();{{
         // add(new Pose2d(1,2,new Rotation2d())); //how to add to a fixed object
       }};
-  
+      
   
       list.add(debugField2d.getObject("targetPoseOne").getPose());
       list.add(debugField2d.getObject("targetPoseTwo").getPose());
       list.add(debugField2d.getObject("targetPoseThree").getPose());
 
-      var nearest = pose.nearest(list);
+      var targetPose = pose.nearest(list);
 
       var delta = targetPose.relativeTo(pose);  
       
@@ -200,6 +200,7 @@ public class Swerve extends SubsystemBase {
       debugField2d.getRobotObject().setPose(pose);
       debugField2d.getObject("targetPose").setPose(targetPose);
       debugField2d.getObject("delta").setPose(delta);
+      debugField2d.getObject("targetPoses").setPoses(list);
 
       //move -> robot relative
       swerveDrive.drive(new Translation2d(outx * swerveDrive.getMaximumChassisVelocity(),
