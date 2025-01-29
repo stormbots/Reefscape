@@ -18,7 +18,7 @@ public class ElevatorIOSim implements ElevatorIO {
 
   private static final DCMotor modelMotor = DCMotor.getNeoVortex(2);
   private static final double reduction = 3.0; // Fix please
-  private static final double drumRadius = 0.0223012;
+  private static final double drumRadius = Units.inchesToMeters(0.912);
 
   public ElevatorIOSim() {
     sim =
@@ -27,10 +27,10 @@ public class ElevatorIOSim implements ElevatorIO {
             reduction,
             3.11845,
             drumRadius,
-            Units.inchesToMeters(47),
-            Units.inchesToMeters(120),
+            Units.inchesToMeters(10),
+            Units.inchesToMeters(100),
             true,
-            Units.inchesToMeters(47),
+            Units.inchesToMeters(10),
             new double[] {0.0, 0.0});
   }
 

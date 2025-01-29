@@ -4,11 +4,17 @@
 
 package frc.robot.subsystems.Elevator;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class Elevator extends SubsystemBase {
+
+  public static double kScoringOffsetHeight = Units.inchesToMeters(3);
+
   private final String name;
   private final ElevatorIO io;
 
@@ -34,5 +40,26 @@ public class Elevator extends SubsystemBase {
 
   public Command runElevator(double volts) {
     return startEnd(() -> io.setVoltage(volts), () -> io.stop());
+  }
+
+  public void setHeightMeters(double meters) {
+    PIDController pid = new PIDController(6, 0, 0);
+    double error = meters - inputs.heightMeters;
+    Logger.recordOutput("elevator/error", error);
+
+    io.setVoltage(-pid.calculate(error));
+    Logger.recordOutput("elevator/pidOutput", pid.calculate(error));
+  }
+
+  public Command setElevatorHeightCommand(double meters) {
+    return new RunCommand(() -> setHeightMeters(meters), this)
+    // .until doesn't work, something about offset of the mechanism but not sure, will figure out
+    // later.
+    // .until(
+    //     () -> {
+    //       return Math.abs(inputs.heightMeters - meters) < 0.01
+    //           && Math.abs(inputs.velocityMPS) < 0.03;
+    //     });
+    ;
   }
 }

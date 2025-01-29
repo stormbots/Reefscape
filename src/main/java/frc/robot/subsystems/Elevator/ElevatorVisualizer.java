@@ -20,14 +20,20 @@ public class ElevatorVisualizer {
 
   public ElevatorVisualizer(String key) {
     this.key = key;
-    mechanism = new LoggedMechanism2d(3.0, 3.0, new Color8Bit(Color.kWhite));
-    LoggedMechanismRoot2d root = mechanism.getRoot(key, 1.5, 0.4);
-    elevator = new LoggedMechanismLigament2d("elevator", 1.0, 90);
+    mechanism =
+        new LoggedMechanism2d(
+            Units.inchesToMeters(30), Units.inchesToMeters(120), new Color8Bit(Color.kWhite));
+    LoggedMechanismRoot2d root =
+        mechanism.getRoot(
+            key,
+            Units.inchesToMeters(22),
+            Units.inchesToMeters(6)); // These values are nowhere near correct
+    elevator = new LoggedMechanismLigament2d("elevator", 0, 90);
     root.append(elevator);
   }
 
   public void update(double elevatorHeightMeters) {
-    elevator.setLength(elevatorHeightMeters / Units.inchesToMeters(120) * 2.0);
+    elevator.setLength(elevatorHeightMeters);
     Logger.recordOutput("elevator/Mechanism2d/" + key, mechanism);
   }
 }

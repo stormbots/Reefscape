@@ -15,6 +15,7 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -23,12 +24,15 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.FieldConstants;
 import java.io.File;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -153,6 +157,19 @@ public class Swerve extends SubsystemBase {
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 
+  public void resetOdometryAllianceAccounted(Pose2d initalPose) {
+    Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+
+    if (alliance == Alliance.Red) {
+      Translation2d startTranslation = FieldConstants.fieldSize.minus(initalPose.getTranslation());
+      Rotation2d startRotation =
+          new Rotation2d(MathUtil.angleModulus(initalPose.getRotation().getRadians() - Math.PI));
+      initalPose = new Pose2d(startTranslation, startRotation);
+    }
+
+    resetOdometry(initalPose);
+  }
+
   public ChassisSpeeds getChassisSpeeds() {
     return swerveDrive.getRobotVelocity();
   }
@@ -179,10 +196,21 @@ public class Swerve extends SubsystemBase {
           () -> swerveDrive.resetOdometry(new Pose2d(20, 20, new Rotation2d())));
     }
 
+    // RESETS POSE TO CONSTANT POSE, DOES NOT FLIP BASED OFF FIELD
     Command pathFollowingCommand = AutoBuilder.followPath(path);
     return new SequentialCommandGroup(
         new InstantCommand(
             () -> swerveDrive.resetOdometry(path.getStartingHolonomicPose().orElse(getPose()))),
         pathFollowingCommand);
+  }
+
+  public Command runPathManual(String pathName) {
+
+    try {
+      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(pathName));
+    } catch (Exception e) {
+      DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+      return Commands.none();
+    }
   }
 }
