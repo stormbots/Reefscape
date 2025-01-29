@@ -8,6 +8,9 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Pounds;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Degrees;
+
 
 import java.io.File;
 import java.util.ArrayList;
@@ -20,25 +23,23 @@ import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathConstraints;
 
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
-import swervelib.telemetry.SwerveDriveTelemetry;
-import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class Swerve extends SubsystemBase {
 
@@ -55,7 +56,7 @@ public class Swerve extends SubsystemBase {
     debugField2d.getObject("targetPoseTwo").setPose(new Pose2d(4.0, 5.25, new Rotation2d(0.5)));
     debugField2d.getObject("targetPoseThree").setPose(new Pose2d(6.3, 4.1, new Rotation2d(0.5)));
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
-    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"tabiSwerve");
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"connie");
     try
     {
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(maximumSpeed);
@@ -66,7 +67,8 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.080663, 1.9711, 0.36785));
+    // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
   }
 
   @Override
@@ -129,7 +131,10 @@ public class Swerve extends SubsystemBase {
       shouldFlipPath, 
       this
     );
+
+  
   }
+
 
   public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
     return run(() -> {
@@ -165,6 +170,7 @@ public class Swerve extends SubsystemBase {
     return swerveDrive.getGyro().getRotation3d().toRotation2d();
   }
 
+
   public Command goToPose(Pose2d targetPoseIgnore){
 
     return run(()->{
@@ -182,11 +188,14 @@ public class Swerve extends SubsystemBase {
       var targetPose = pose.nearest(list);
 
       var delta = targetPose.relativeTo(pose);  
+      //THIS DON'T WORK YET, but trying to do pathfinding
+      PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
       
+      AutoBuilder.pathfindToPose(targetPose, constraints);
 
       // delta.getTranslation().getNorm(); //distance to target pose
 
-      var gain = pose.interpolate(targetPose, 0.5);
+     /*  var gain = pose.interpolate(targetPose, 0.5);
 
       var distancex_m = delta.getMeasureX().in(Units.Meter); // the distance in the x axis
       var distancey_m = delta.getMeasureY().in(Units.Meter); //distnace in y
@@ -207,7 +216,7 @@ public class Swerve extends SubsystemBase {
                                           outy * swerveDrive.getMaximumChassisVelocity()),
                         outRotation * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
-                        false);
+                        false);*/
 
     });
   }

@@ -54,7 +54,7 @@ public class RobotContainer {
     driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
 
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(()->-driverController.getLeftY()/4.0, ()->-driverController.getLeftX()/4.0, ()->-driverController.getRightX()/4.0)
+      swerveSubsystem.driveCommand(()->-driverController.getLeftY(), ()->-driverController.getLeftX(), ()->-driverController.getRightX())
     );
     driverController.x().whileTrue(
     swerveSubsystem.goToPose(new Pose2d())
