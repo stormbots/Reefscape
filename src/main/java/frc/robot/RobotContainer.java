@@ -11,6 +11,7 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Elevator.Elevator;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -22,6 +23,8 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
+  public final Elevator elevator = new Elevator();
+
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController driverController =
@@ -51,6 +54,16 @@ public class RobotContainer {
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
     driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
+  
+  
+    // driverController.a()
+    // .whileTrue(elevator.moveToPose(elevator.L2))
+    // ;
+    // operatorController.a()
+    // .and(elevator.atTargetPosition)
+    // .whileTrue(elevator.scoreAtPose(elevator.L2));
+
+  
   }
 
   /**

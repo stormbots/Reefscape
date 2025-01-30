@@ -5,11 +5,10 @@
 package frc.robot.subsystems.AlgaeGrabber;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.littletonrobotics.junction.Logger;
 
 public class AlgaeGrabber extends SubsystemBase {
   public final AlgaeGrabberIO io;
-  public final AlgaeGrabberIOInputsAutoLogged inputs = new AlgaeGrabberIOInputsAutoLogged();
+  // public final AlgaeGrabberIOInputsAutoLogged inputs = new AlgaeGrabberIOInputsAutoLogged();
 
   /** Creates a new AlgaeGrabber. */
   public AlgaeGrabber(AlgaeGrabberIO io) {
@@ -19,7 +18,7 @@ public class AlgaeGrabber extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    io.updateInputs(inputs);
-    Logger.processInputs("AlgaeGrabber", inputs);
+    // io.updateInputs(inputs);
+    // Logger.processInputs("AlgaeGrabber", inputs);
   }
 }
