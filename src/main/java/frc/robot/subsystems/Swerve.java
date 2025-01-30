@@ -8,9 +8,6 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Pounds;
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Degrees;
-
 
 import java.io.File;
 import java.util.ArrayList;
@@ -51,10 +48,12 @@ public class Swerve extends SubsystemBase {
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
+
     SmartDashboard.putData("SwerveDebugField",debugField2d);
     debugField2d.getObject("targetPoseOne").setPose(new Pose2d(3.5, 3.1, new Rotation2d(0.0)));
     debugField2d.getObject("targetPoseTwo").setPose(new Pose2d(4.0, 5.25, new Rotation2d(0.5)));
     debugField2d.getObject("targetPoseThree").setPose(new Pose2d(6.3, 4.1, new Rotation2d(0.5)));
+    configurePathplanner();
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
     File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"connie");
     try
@@ -189,13 +188,13 @@ public class Swerve extends SubsystemBase {
 
       var delta = targetPose.relativeTo(pose);  
       //THIS DON'T WORK YET, but trying to do pathfinding
-      PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
+     // PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
       
-      AutoBuilder.pathfindToPose(targetPose, constraints);
+     // AutoBuilder.pathfindToPose(targetPose, constraints);
 
       // delta.getTranslation().getNorm(); //distance to target pose
 
-     /*  var gain = pose.interpolate(targetPose, 0.5);
+       var gain = pose.interpolate(targetPose, 0.5);
 
       var distancex_m = delta.getMeasureX().in(Units.Meter); // the distance in the x axis
       var distancey_m = delta.getMeasureY().in(Units.Meter); //distnace in y
@@ -216,9 +215,24 @@ public class Swerve extends SubsystemBase {
                                           outy * swerveDrive.getMaximumChassisVelocity()),
                         outRotation * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
-                        false);*/
+                        false);
 
     });
+  }
+
+  public Command pathToPose(Pose2d targetPoseIgnore){
+    var pose = getPose();
+    List<Pose2d> list = new ArrayList<>();{{
+      // add(new Pose2d(1,2,new Rotation2d())); //how to add to a fixed object
+    }};
+
+    list.add(debugField2d.getObject("targetPoseOne").getPose());
+    list.add(debugField2d.getObject("targetPoseTwo").getPose());
+    list.add(debugField2d.getObject("targetPoseThree").getPose());
+
+    var targetPose = pose.nearest(list);
+    PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
+    return AutoBuilder.pathfindToPose(targetPose, constraints, Units.MetersPerSecond.of(0.5));
   }
 
   public Pose2d getPose(){

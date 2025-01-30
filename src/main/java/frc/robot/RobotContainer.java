@@ -66,6 +66,9 @@ public class RobotContainer {
     driverController.x().whileTrue(
     swerveSubsystem.goToPose(new Pose2d())
     );
+    driverController.b().whileTrue(
+    swerveSubsystem.pathToPose(new Pose2d())
+    );
     driverController.start().onTrue(swerveSubsystem.resetGyro());
 
   }
