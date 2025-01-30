@@ -13,11 +13,11 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WrapperCommand;
 
 public class AlgaeGrabber extends SubsystemBase {
   public final AlgaeGrabberIO io;
@@ -36,7 +36,6 @@ public class AlgaeGrabber extends SubsystemBase {
   /** Creates a new AlgaeGrabber. */
   public AlgaeGrabber(AlgaeGrabberIO io) {
     this.io = io;
-
 
     var armConf = new SparkMaxConfig();
     armConf.inverted(false);
@@ -88,44 +87,72 @@ public class AlgaeGrabber extends SubsystemBase {
     // set rollers to grab
     // when aquired, end
     return run(() -> {
-      setArmAngle(50);
-      rollerMotor.set(1);
-    })
-    .until(() -> rollerMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
-    .finallyDo( (interrupted) -> {
-        if (interrupted ==false ) {
-          haveAlgae = true;
-        }
-      })
+          setArmAngle(0);
+          rollerMotor.set(ROLLERINTAKEPOWER);
+        })
+        .until(() -> rollerMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
+        .finallyDo(
+            (interrupted) -> {
+              if (interrupted == false) {
+                haveAlgae = true;
+              }
+            })
     // .ifexitsuccessfully(haveAlgae = true)
     ;
   }
 
-  public void pivotToShooter(){
+  public void pivotToShooter() {
     //  if HAVEALGAE ->
     // move arm from bottom to shooter theta
     // shoot out
     // return arm to bottom
 
-    
-  }
-  
+    if (haveAlgae) {
+      setArmAngle(-90);
 
-  public void scoreProcessor() {
+      rollerMotor.set(ROLLEREJECTPOWER);
+
+      setArmAngle(0);
+    }
+  }
+
+  public WrapperCommand scoreProcessor() {
     // arm at neutral angle
     // rollers out
+
+    return run(() -> {
+          setArmAngle(50);
+          rollerMotor.set(ROLLEREJECTPOWER);
+        })
+        .until(() -> rollerMotor.getOutputCurrent() == HAVEGRABBEDALGAEAMPS)
+        .finallyDo(
+            (interrupted) -> {
+              if (interrupted == true) {
+                haveAlgae = false;
+                rollerMotor.stopMotor();
+              }
+            });
   }
 
   public void scoreNetManualSimple() {
     // arm at scoring angle
     // spin up shooter to required rpm
     // shoot out
+    setArmAngle(140);
+    shooterMotor.set(1); // until desired rpm
+    // nyoom
+
   }
 
   public void scoreNetManualComplex(double angle, double rpm) {
     // arm at scoring angle
     // spin up shooter to required rpm
     // shoot out
+
+    setArmAngle(angle);
+    shooterMotor.set(rpm);
+    // index
+
   }
 
   public void scoreNetPose(Pose2d pose) {
