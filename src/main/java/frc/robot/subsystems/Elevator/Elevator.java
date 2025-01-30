@@ -1,6 +1,7 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
+//TODO PUT VALUES ON SMART DASHBOARD Sync encoders so soft limits work
 
 package frc.robot.subsystems.Elevator;
 
@@ -58,25 +59,45 @@ public class Elevator extends SubsystemBase {
     // define motor, and set soft limits set up motors so they dont do wierd stuff
 
     SparkBaseConfig elevatorConfig =
-        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake);
-    elevatorConfig.closedLoop.p(0);
+        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake).inverted(false);
+
+    var elevatorConversionfactor = 1.0;
+    elevatorConfig
+        .encoder
+        .positionConversionFactor(elevatorConversionfactor)
+        .velocityConversionFactor(elevatorConversionfactor / 60.0)
+        .inverted(false);
+
+    elevatorConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).p(0);
 
     elevatorMotor.configure(
         elevatorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     SparkBaseConfig coralOutConfig =
-        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake);
-    coralOutConfig.closedLoop.p(0);
+        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kCoast).inverted(false);
+
+    var coralOutConversionFactor = 1.0;
+    coralOutConfig
+        .encoder
+        .velocityConversionFactor(coralOutConversionFactor / 60.0)
+        .inverted(false);
+
+    coralOutConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).p(0);
 
     coralOutMotor.configure(
         coralOutConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    // turn on robot
-    // start of robot
-    // when robot is enabled
-    // and not homed
 
-    SparkBaseConfig rotateconfig = new SparkMaxConfig();
-    rotateconfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
+    SparkBaseConfig rotateConfig =
+        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake).inverted(false);
+
+    var rotateCoversionFactor = 1.0;
+    rotateConfig
+        .absoluteEncoder
+        .velocityConversionFactor(rotateCoversionFactor / 60.0)
+        .positionConversionFactor(rotateCoversionFactor)
+        .inverted(false);
+
+    rotateConfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder).p(0);
 
     new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
   }
