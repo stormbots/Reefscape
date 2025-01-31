@@ -55,8 +55,7 @@ public class RobotContainer {
     // cancelling on release.
     driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
 
-
-    //Expected algae control stuff
+    // Expected algae control stuff
     // operatorController.x().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
     // operatorController.y().whileTrue(algaeGrabber.scoreProcessor());
     // operatorController.a().whileTrue(algaeGrabber.prepareToShoot());

@@ -15,6 +15,13 @@ import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -68,7 +75,7 @@ public class AlgaeGrabber extends SubsystemBase {
         .inverted(false);
 
     rollerConf.closedLoop.p(0).feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
-    intakeMotor.configure(rollerConf,ResetMode.kResetSafeParameters,PersistMode.kPersistParameters);
+    intakeMotor.configure(rollerConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     // add shooter conf?
 
     var shooterConf = new SparkMaxConfig();
@@ -81,8 +88,8 @@ public class AlgaeGrabber extends SubsystemBase {
         .inverted(false);
 
     shooterConf.closedLoop.p(0).feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
-    shooterMotor.configure(shooterConf,ResetMode.kResetSafeParameters,PersistMode.kPersistParameters);
-       
+    shooterMotor.configure(shooterConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
 
     setDefaultCommand(defaultCommand());
   }
@@ -240,6 +247,7 @@ public class AlgaeGrabber extends SubsystemBase {
     // This method will be called once per scheduler run
     // io.updateInputs(inputs);
     // Logger.processInputs("AlgaeGrabber", inputs);
+    mechanism.mechanismUpdate();
   }
 
   private boolean bounded(double input, double min, double max) {
@@ -247,4 +255,53 @@ public class AlgaeGrabber extends SubsystemBase {
     if (input > max) return false;
     return true;
   }
+
+  /////////////////////////////
+  /// Do the mechanism logging
+  /////////////////////////////
+  // Create the basic mechanism construction
+  class AlgaeMechanism {
+    double angledelta = 15;
+    double barlength = 24;
+
+    public Mechanism2d mech = new Mechanism2d(36, 72);
+    MechanismRoot2d root = mech.getRoot("AlgaeGrabber", 6, 36);
+    MechanismLigament2d intakebarRelative =  root.append(new MechanismLigament2d("AlgaeIntakeBarRelative", 24, -90));
+    MechanismLigament2d intakebar = root.append(new MechanismLigament2d("AlgaeIntakeBar", 24, -90));
+    MechanismLigament2d shooterbar = root.append(new MechanismLigament2d("AlgaeShooterBar", 24, -90 + 10));
+    MechanismLigament2d intake = intakebar.append(new MechanismLigament2d("AlgaeIntake", 0, 90));
+    MechanismLigament2d shooter = shooterbar.append(new MechanismLigament2d("AlgaeShooter", 0, 90));
+
+    private AlgaeMechanism() {
+      var barweight = 10;
+      intakebarRelative.setColor(new Color8Bit(Color.kRed));
+      intakebarRelative.setLineWeight(barweight - 1);
+
+      intakebar.setColor(new Color8Bit(Color.kGray));
+      shooterbar.setColor(new Color8Bit(Color.kGray));
+      intakebar.setLineWeight(barweight);
+      shooterbar.setLineWeight(barweight);
+
+      intake.setColor(new Color8Bit(Color.kDarkGreen));
+      shooter.setColor(new Color8Bit(Color.kDarkRed));
+      intake.setLineWeight(barweight);
+      shooter.setLineWeight(barweight);
+      SmartDashboard.putData("mechanism/algaegrabber", mech);
+    }
+
+    private void mechanismUpdate() {
+      var angle = getAngle();
+      intakebar.setAngle(new Rotation2d(Math.toRadians(angle)));
+      shooterbar.setAngle(new Rotation2d(Math.toRadians(angle + angledelta)));
+
+      intake.setLength(intakeMotor.getEncoder().getVelocity() / 5760.0 * barlength / 4);
+      shooter.setLength(shooterMotor.getEncoder().getVelocity() / 5760.0 * barlength / 4);
+
+      // This is mostly to validate absolute vs relative, since they should be identical
+      intakebarRelative.setAngle(
+          new Rotation2d(Math.toRadians(armMotor.getEncoder().getPosition())));
+    }
+  }
+
+  AlgaeMechanism mechanism = new AlgaeMechanism();
 }
