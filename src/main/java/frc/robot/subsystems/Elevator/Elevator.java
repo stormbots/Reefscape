@@ -1,7 +1,7 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-//TODO PUT VALUES ON SMART DASHBOARD Sync encoders so soft limits work
+//TODO Sync encoders so soft limits work
 
 package frc.robot.subsystems.Elevator;
 
@@ -14,15 +14,14 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-// 1st Define elevator, constants ETC
-// 2nd Home Elevator
-// 3rd Commands for going to L1, L2, and L3
 
 public class Elevator extends SubsystemBase {
   public boolean isHomed = false;
@@ -31,9 +30,10 @@ public class Elevator extends SubsystemBase {
   private final double tolerance = 0.1;
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
 
-  SparkMax elevatorMotor = new SparkMax(0, MotorType.kBrushless);
-  SparkMax rotationMotor = new SparkMax(0, MotorType.kBrushless);
-  SparkMax coralOutMotor = new SparkMax(0, MotorType.kBrushless);
+  SparkMax elevatorMotor = new SparkMax(10, MotorType.kBrushless);
+  SparkMax rotationMotor = new SparkMax(12, MotorType.kBrushless);
+  SparkMax coralOutMotor = new SparkMax(13, MotorType.kBrushless);
+  SparkMax elevatorMotorFollower = new SparkMax(11, MotorType.kBrushless);
 
   public class ElevatorPose {
     double height;
@@ -70,9 +70,6 @@ public class Elevator extends SubsystemBase {
 
     elevatorConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).p(0);
 
-    elevatorMotor.configure(
-        elevatorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
     SparkBaseConfig coralOutConfig =
         new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kCoast).inverted(false);
 
@@ -84,27 +81,37 @@ public class Elevator extends SubsystemBase {
 
     coralOutConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).p(0);
 
-    coralOutMotor.configure(
-        coralOutConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    SparkBaseConfig rotateConfig =
+    SparkBaseConfig rotataionConfig =
         new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake).inverted(false);
 
     var rotateCoversionFactor = 1.0;
-    rotateConfig
+    rotataionConfig
         .absoluteEncoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)
         .inverted(false);
 
-    rotateConfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder).p(0);
+    rotataionConfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder).p(0);
+
+    var elevatorFollowerConfig = new SparkFlexConfig()
+    .apply(elevatorConfig)
+    .follow(elevatorMotor,true);
+
+    elevatorMotor.configure(
+      elevatorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    coralOutMotor.configure(
+      coralOutConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    rotationMotor.configure(
+      rotataionConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    elevatorMotorFollower.configure(
+      elevatorFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    
 
     new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
-  }
-
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
   }
 
   public Command homeElevator() {
@@ -184,7 +191,6 @@ public class Elevator extends SubsystemBase {
   public Trigger atTargetPosition =
       new Trigger(
           () -> {
-            // bounded(height,setpoint - tolerance, setpoint + tolerance)
             if (bounded(
                     elevatorMotor.getEncoder().getPosition(),
                     setpoint.height - tolerance,
@@ -198,25 +204,17 @@ public class Elevator extends SubsystemBase {
             return false;
           });
 
-  // Score to L1
-  // Move elevator up so that it reaches the hight of L1
-  // Rotate coral scorer
-  // use coral scrorer motors to eject coral
-
-  // Score to L2
-  // Move elevator up so that it reaches the hight of L2
-  // Rotate coral scorer
-  // use coral scrorer motors to eject coral
-
-  // Score to L3
-  // Move elevator up so that it reaches the hight of L3
-  // Rotate coral scorer
-  // use coral scrorer motors to eject coral
-
   public boolean bounded(double value, double min, double max) {
     if (value >= min && value <= max) {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public void periodic(){
+    SmartDashboard.putNumber("Elevator Height", elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("Scorer Angle", coralOutMotor.getEncoder().getVelocity());
+    SmartDashboard.putNumber("Coral out Speed", rotationMotor.getAbsoluteEncoder().getPosition());
   }
 }
