@@ -27,7 +27,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   SparkMax shooterMotor = new SparkMax(1, MotorType.kBrushless);
   SparkMax armMotor = new SparkMax(5, MotorType.kBrushless);
-  SparkMax rollerMotor = new SparkMax(3, MotorType.kBrushless);
+  SparkMax intakeMotor = new SparkMax(3, MotorType.kBrushless);
 
   private SlewRateLimiter armAngleSlew = new SlewRateLimiter(90);
 
@@ -67,6 +67,8 @@ public class AlgaeGrabber extends SubsystemBase {
         .velocityConversionFactor(360 / 60.0)
         .inverted(false);
 
+    rollerConf.closedLoop.p(0).feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
+    intakeMotor.configure(rollerConf,ResetMode.kResetSafeParameters,PersistMode.kPersistParameters);
     // add shooter conf?
 
     var shooterConf = new SparkMaxConfig();
@@ -77,6 +79,10 @@ public class AlgaeGrabber extends SubsystemBase {
         .positionConversionFactor(360)
         .velocityConversionFactor(360 / 60.0)
         .inverted(false);
+
+    shooterConf.closedLoop.p(0).feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
+    shooterMotor.configure(shooterConf,ResetMode.kResetSafeParameters,PersistMode.kPersistParameters);
+       
 
     setDefaultCommand(defaultCommand());
   }
@@ -94,7 +100,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   private void setIntakeRPM(double rpm) {
     this.shooterRPMSetpoint = rpm;
-    rollerMotor
+    intakeMotor
         .getClosedLoopController()
         .setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0, 0.0, ArbFFUnits.kVoltage);
   }
@@ -152,7 +158,7 @@ public class AlgaeGrabber extends SubsystemBase {
           setArmAngle(0);
           setIntakeRPM(ROLLERINTAKERPM);
         })
-        .until(() -> rollerMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
+        .until(() -> intakeMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
         .finallyDo(
             (interrupted) -> {
               if (interrupted == false) {
