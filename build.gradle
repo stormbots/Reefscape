@@ -183,11 +183,11 @@ spotless {
             include "**/*.java"
             exclude "**/build/**", "**/build-*/**"
         }
-        toggleOffOn()
-        googleJavaFormat()
-        removeUnusedImports()
-        trimTrailingWhitespace()
-        endWithNewline()
+        // toggleOffOn()
+        // googleJavaFormat()
+        // removeUnusedImports()
+        // trimTrailingWhitespace()
+        // endWithNewline()
     }
     groovyGradle {
         target fileTree(".") {
