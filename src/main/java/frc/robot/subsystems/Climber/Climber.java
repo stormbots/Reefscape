@@ -12,11 +12,13 @@ import org.littletonrobotics.junction.Logger;
 public class Climber extends SubsystemBase {
   private final ClimberIO io;
   private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+  private final ClimberVisualizer visualizer;
   /** Creates a new Climber. */
   public Climber(ClimberIO io) {
     this.io = io;
 
     rateLimit.reset(io.getPosition());
+    visualizer = new ClimberVisualizer("climber");
   }
 
   @Override
@@ -24,6 +26,7 @@ public class Climber extends SubsystemBase {
     // This method will be called once per scheduler run
     io.updateInputs(inputs);
     Logger.processInputs("Climber", inputs);
+    visualizer.update(inputs.climberAbsoluteAngle);
   }
 
   public Command setAngle(double degrees) {
@@ -35,12 +38,12 @@ public class Climber extends SubsystemBase {
   // }
 
   public Command prepareToClimb() {
-    return run(() -> io.setReference(0));
+    return run(() -> io.setReference(-60));
   }
 
   SlewRateLimiter rateLimit = new SlewRateLimiter(30);
 
   public Command climb() {
-    return run(() -> io.setReference(90));
+    return run(() -> io.setReference(43));
   }
 }

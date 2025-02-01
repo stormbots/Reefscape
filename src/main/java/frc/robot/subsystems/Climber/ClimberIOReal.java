@@ -7,31 +7,51 @@ package frc.robot.subsystems.Climber;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
-  SparkMax climbMotor = new SparkMax(6, MotorType.kBrushless);
+  SparkFlex climbMotor = new SparkFlex(9, MotorType.kBrushless);
+  // 0 deg, 50.711
+  // 88 deg, 153.705
+  // lower softlimit 300 deg (abs) around inside bot
+  // upper softlimit/stow 43 (abs) deg
+  // motor invert true, absolute encoder fine
+
+  //TODO: Fix wrapping issues for softlimits
 
   public ClimberIOReal() {
-    var config = new SparkMaxConfig();
-    config.encoder.positionConversionFactor((360 / (9424 / 203.0)));
+    var config = new SparkFlexConfig();
+    // config.encoder.positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
+    config.encoder.positionConversionFactor(1);
     config.absoluteEncoder.positionConversionFactor(360);
-    config.inverted(false);
+
+    
+    config.inverted(true);
     config
         .closedLoop
-        .outputRange(-0.1, 0.1)
-        .p(0.1 / 90.0)
+        .outputRange(-0.5, 0.5)
+        .p(1 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-        .positionWrappingEnabled(true);
-    // config.idleMode(IdleMode.kBrake).smartCurrentLimit(0).voltageCompensation(12.0);
-    config.absoluteEncoder.inverted(true);
+        .positionWrappingEnabled(true)
+        //TODO: wrapping +/- 180
+        .positionWrappingInputRange(-180, 180);
+    config.idleMode(IdleMode.kCoast).smartCurrentLimit(5).voltageCompensation(12.0);
+    config.absoluteEncoder.inverted(false);
+    config
+        .softLimit
+        .forwardSoftLimit(43)
+        .forwardSoftLimitEnabled(false)
+        .reverseSoftLimit(-60)
+        .reverseSoftLimitEnabled(false);
 
     climbMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    climbMotor.getEncoder().setPosition(climbMotor.getAbsoluteEncoder().getPosition());
   }
 
   @Override
