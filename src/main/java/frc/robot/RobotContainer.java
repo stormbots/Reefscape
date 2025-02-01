@@ -31,9 +31,10 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
   public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
-  private final Vision Vision = new Vision(navxGyro);
 
   Swerve swerveSubsystem = new Swerve();
+  private final Vision Vision = new Vision(swerveSubsystem, navxGyro);
+
   CommandXboxController driverController = new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -58,17 +59,16 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
 
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(()->-driverController.getLeftY(), ()->-driverController.getLeftX(), ()->-driverController.getRightX())
+      swerveSubsystem.driveCommand(()->-driverController.getLeftY()/4.0, ()->-driverController.getLeftX()/4.0, ()->-driverController.getRightX()/4.0)
     );
     driverController.x().whileTrue(
     swerveSubsystem.goToPose(new Pose2d())
     );
-    driverController.b().whileTrue(
+   /*  driverController.b().whileTrue(
     swerveSubsystem.pathToPose(new Pose2d())
-    );
+    );*/
     driverController.start().onTrue(swerveSubsystem.resetGyro());
 
   }

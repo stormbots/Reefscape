@@ -24,6 +24,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.estimator.PoseEstimator;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -36,17 +37,20 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Vision extends SubsystemBase {
 
+  Swerve swerve ; 
   AHRS navx;
   AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
 
   NetworkTableInstance table = NetworkTableInstance.getDefault();
-  PhotonCamera camera = new PhotonCamera("photonvision");
+  PhotonCamera camera = new PhotonCamera("c1");
+  
   Transform3d robotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
   PhotonPoseEstimator cameraPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
 
   /** Creates a new Vision. */
-  public Vision(AHRS navxGyro) {
+  public Vision(Swerve swerve, AHRS navxGyro) {
 
+    this.swerve = swerve;
     this.navx = navxGyro;
 
 
@@ -61,6 +65,7 @@ public class Vision extends SubsystemBase {
 
     updateOdometry();
     getDistanceFromCamera();
+    
 
   }
 
@@ -90,27 +95,23 @@ public class Vision extends SubsystemBase {
     var latesResults = camera.getAllUnreadResults();
     for(PhotonPipelineResult result : latesResults){
       Optional<EstimatedRobotPose> estimatedPose = photonPoseEstimator.update(result);
-    
-    SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
+      SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
+      if(estimatedPose.isPresent()){
+        double latency;
 
-    if(estimatedPose.isPresent()){
-    
+        if(result.hasTargets()){
+          latency = result.getTimestampSeconds() / 1.0e3;
+        }
+        else{
+          latency = 0;
+        }
+        Matrix<N3, N1> stddev = getStdDeviation(estimatedPose.get());
 
-      double latency;
+        SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
+        //update pose
 
-      if(result.hasTargets()){
-        latency = result.getTimestampSeconds() / 1.0e3;
+        swerve.swerveDrive.addVisionMeasurement(estimatedPose.get().estimatedPose.toPose2d(), result.getTimestampSeconds());
       }
-      else{
-        latency = 0;
-      }
-      Matrix<N3, N1> stddev = getStdDeviation(estimatedPose.get());
-
-      SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
-
-      //update pose
-
-    }
     }
   }
 

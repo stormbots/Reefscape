@@ -41,6 +41,7 @@ import swervelib.parser.SwerveParser;
 public class Swerve extends SubsystemBase {
 
   public Field2d debugField2d = new Field2d();
+  public Field2d odometryField = new Field2d();
   
   double maximumSpeed = 5.4;
 
@@ -53,9 +54,11 @@ public class Swerve extends SubsystemBase {
     debugField2d.getObject("targetPoseOne").setPose(new Pose2d(3.5, 3.1, new Rotation2d(0.0)));
     debugField2d.getObject("targetPoseTwo").setPose(new Pose2d(4.0, 5.25, new Rotation2d(0.5)));
     debugField2d.getObject("targetPoseThree").setPose(new Pose2d(6.3, 4.1, new Rotation2d(0.5)));
-    configurePathplanner();
+    
+    //Need to turn this back on when running path, commented out for now because its angry
+    //configurePathplanner();
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
-    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"connie");
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"tabiSwerve");
     try
     {
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(maximumSpeed);
@@ -74,6 +77,9 @@ public class Swerve extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     swerveDrive.updateOdometry();
+    odometryField.setRobotPose(swerveDrive.getPose());
+    SmartDashboard.putData("odometryField", odometryField);
+
   }
 
   public void configurePathplanner(){
@@ -99,7 +105,7 @@ public class Swerve extends SubsystemBase {
       1);
 
     robotConfig = new RobotConfig(
-      Pounds.of(140), 
+      Pounds.of(30), 
       KilogramSquareMeters.of(15), 
       moduleConfig, 
       moduleOffsets
@@ -229,7 +235,7 @@ public class Swerve extends SubsystemBase {
     list.add(debugField2d.getObject("targetPoseOne").getPose());
     list.add(debugField2d.getObject("targetPoseTwo").getPose());
     list.add(debugField2d.getObject("targetPoseThree").getPose());
-
+    
     var targetPose = pose.nearest(list);
     PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
     return AutoBuilder.pathfindToPose(targetPose, constraints, Units.MetersPerSecond.of(0.5));
