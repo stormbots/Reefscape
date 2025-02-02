@@ -52,7 +52,11 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
+    driverController.a()
+      .whileTrue(elevator.moveToAngle(0));
+
+    driverController.b()
+      .whileTrue(elevator.moveToAngle(30));
 
     // driverController.a()
     // .whileTrue(elevator.moveToPose(elevator.L2))
@@ -60,6 +64,8 @@ public class RobotContainer {
     // operatorController.a()
     // .and(elevator.atTargetPosition)
     // .whileTrue(elevator.scoreAtPose(elevator.L2));
+
+
 
   }
 

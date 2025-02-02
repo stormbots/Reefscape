@@ -5,6 +5,7 @@
 
 package frc.robot.subsystems.Elevator;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -17,6 +18,8 @@ import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -60,6 +63,8 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose L4 = new ElevatorPose(40, 0, 10);
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
+
+  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0.415, 0, 0);
 
   public Elevator() {
 
@@ -107,23 +112,25 @@ public class Elevator extends SubsystemBase {
 
 
 
-    SparkBaseConfig rotationConfig =new SparkMaxConfig()
-      .smartCurrentLimit(8)
+    SparkBaseConfig rotationConfig = new SparkMaxConfig()
+      .smartCurrentLimit(20)
       .idleMode(IdleMode.kBrake)
       .inverted(false)
       ;
-    rotationConfig.softLimit
-    .reverseSoftLimit(-180)
-    .forwardSoftLimit(180)
-    .forwardSoftLimitEnabled(false)
-    .reverseSoftLimitEnabled(false)
-    ;
 
-    var rotateCoversionFactor = 1;
+    rotationConfig.softLimit
+      .reverseSoftLimit(-180)
+      .forwardSoftLimit(180)
+      .forwardSoftLimitEnabled(false)
+      .reverseSoftLimitEnabled(false)
+      ;
+
+    double rotateCoversionFactor = 87.053/2.5333;
     rotationConfig.encoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)
-        .inverted(false);
+        ;        
+
     rotationConfig.absoluteEncoder
       .velocityConversionFactor(360 / 60.0)
       .positionConversionFactor(360)
@@ -131,7 +138,10 @@ public class Elevator extends SubsystemBase {
 
     rotationConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-      .p(0);
+      .p(0.8/90.0)
+      .positionWrappingEnabled(true)
+      .positionWrappingInputRange(0, 360)
+      ;
 
     var elevatorFollowerConfig = new SparkFlexConfig()
       .apply(elevatorConfig)
@@ -142,7 +152,10 @@ public class Elevator extends SubsystemBase {
     rotationMotor.configure(rotationConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     elevatorMotorFollower.configure(elevatorFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    rotationMotor.getEncoder().setPosition(rotationMotor.getAbsoluteEncoder().getPosition());
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
+
+    new Trigger(DriverStation::isEnabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
   }
 
   public Trigger haveCoral = new Trigger( () -> {
@@ -182,9 +195,10 @@ public class Elevator extends SubsystemBase {
   }
 
   private void setAngle(double angle) {
+    var ff = rotatorFF.calculate(Math.toRadians(angle), 0);
     rotationMotor
-        .getClosedLoopController()
-        .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, 0, ArbFFUnits.kVoltage);
+      .getClosedLoopController()
+      .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
     setpoint.angle = angle;
   }
 
@@ -201,6 +215,15 @@ public class Elevator extends SubsystemBase {
           setHeight(pose.height);
           setAngle(pose.angle);
           setScorerSpeed(0);
+        })
+    // exit condition on arriving?
+    ;
+  }
+  
+  public Command moveToAngle(double angle) {
+    return run(
+        () -> {
+          setAngle(angle);
         })
     // exit condition on arriving?
     ;
@@ -248,10 +271,13 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic(){
-    SmartDashboard.putNumber("Elevator Height", elevatorMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("rotator positon", coralOutMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("Coral rotation", rotationMotor.getAbsoluteEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/height", elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/out-motor position", coralOutMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/rotation abs", rotationMotor.getAbsoluteEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/rotation rel", rotationMotor.getEncoder().getPosition());
 
+    SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
     mechanism.mechanismUpdate();
   }
 
