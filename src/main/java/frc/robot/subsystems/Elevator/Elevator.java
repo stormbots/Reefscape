@@ -65,55 +65,84 @@ public class Elevator extends SubsystemBase {
 
     // define motor, and set soft limits set up motors so they dont do wierd stuff
 
-    SparkBaseConfig elevatorConfig =
-        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake).inverted(false);
-
+    SparkBaseConfig elevatorConfig = new SparkMaxConfig()
+      .smartCurrentLimit(8)
+      .idleMode(IdleMode.kCoast)
+      .inverted(false)
+      ;
+    elevatorConfig.softLimit
+    .forwardSoftLimit(36)//????
+    .reverseSoftLimit(0)
+    .reverseSoftLimitEnabled(true);
+    ;
     var elevatorConversionfactor = 1.0;
     elevatorConfig
         .encoder
         .positionConversionFactor(elevatorConversionfactor)
         .velocityConversionFactor(elevatorConversionfactor / 60.0)
         ;
-    elevatorConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).p(0);
+    elevatorConfig.closedLoop
+      .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+      .p(0);
 
-    SparkBaseConfig coralOutConfig =
-        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kCoast).inverted(false);
+
+
+
+
+    SparkBaseConfig coralOutConfig = new SparkMaxConfig()
+      .smartCurrentLimit(8)
+      .idleMode(IdleMode.kCoast)
+      .inverted(false);
 
     var coralOutConversionFactor = 1.0;
-    coralOutConfig.encoder.velocityConversionFactor(coralOutConversionFactor / 60.0)
+    coralOutConfig.encoder
+      .velocityConversionFactor(coralOutConversionFactor / 60.0)
+      ;
+
+    coralOutConfig.closedLoop
+      .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+      .p(0);
+
+
+
+
+
+    SparkBaseConfig rotationConfig =new SparkMaxConfig()
+      .smartCurrentLimit(8)
+      .idleMode(IdleMode.kBrake)
+      .inverted(false)
+      ;
+    rotationConfig.softLimit
+    .reverseSoftLimit(-180)
+    .forwardSoftLimit(180)
+    .forwardSoftLimitEnabled(false)
+    .reverseSoftLimitEnabled(false)
     ;
 
-    coralOutConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).p(0);
-
-    SparkBaseConfig rotataionConfig =
-        new SparkMaxConfig().smartCurrentLimit(8).idleMode(IdleMode.kBrake).inverted(false);
-
-    var rotateCoversionFactor = 1.0;
-    rotataionConfig
-        .absoluteEncoder
+    var rotateCoversionFactor = 1;
+    rotationConfig.encoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)
         .inverted(false);
+    rotationConfig.absoluteEncoder
+      .velocityConversionFactor(360 / 60.0)
+      .positionConversionFactor(360)
+      .inverted(false);
 
-    rotataionConfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder).p(0);
+    rotationConfig.closedLoop
+      .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+      .p(0);
 
     var elevatorFollowerConfig = new SparkFlexConfig()
-    .apply(elevatorConfig)
-    .follow(elevatorMotor,true);
+      .apply(elevatorConfig)
+      .follow(elevatorMotor,true);
 
-    elevatorMotor.configure(
-      elevatorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    elevatorMotor.configure(elevatorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    coralOutMotor.configure(coralOutConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    rotationMotor.configure(rotationConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    elevatorMotorFollower.configure(elevatorFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    coralOutMotor.configure(
-      coralOutConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    rotationMotor.configure(
-      rotataionConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    elevatorMotorFollower.configure(
-      elevatorFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
+    // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
   }
 
   public Trigger haveCoral = new Trigger( () -> {
@@ -220,8 +249,8 @@ public class Elevator extends SubsystemBase {
   @Override
   public void periodic(){
     SmartDashboard.putNumber("Elevator Height", elevatorMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("Scorer Angle", coralOutMotor.getEncoder().getVelocity());
-    SmartDashboard.putNumber("Coral out Speed", rotationMotor.getAbsoluteEncoder().getPosition());
+    SmartDashboard.putNumber("rotator positon", coralOutMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("Coral rotation", rotationMotor.getAbsoluteEncoder().getPosition());
 
     mechanism.mechanismUpdate();
   }
