@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.AlgaeGrabber;
 
+import java.util.function.DoubleSupplier;
+
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -13,6 +15,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -26,7 +29,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import java.util.function.DoubleSupplier;
 
 public class AlgaeGrabber extends SubsystemBase {
   // public final AlgaeGrabberIO io;
@@ -52,15 +54,31 @@ public class AlgaeGrabber extends SubsystemBase {
   public AlgaeGrabber() {
     // this.io = io;
 
-    var armConf = new SparkMaxConfig();
-    armConf.inverted(false);
+    var armConf = new SparkMaxConfig()
+      .inverted(false)
+      .smartCurrentLimit(5);
+      ;
 
     armConf
         .absoluteEncoder
         .positionConversionFactor(360)
         .velocityConversionFactor(360 / 60.0)
         .inverted(false);
-    armConf.closedLoop.p(0).feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
+    var conversionfactor=1.0;
+    armConf.encoder
+    .positionConversionFactor(conversionfactor)
+    .velocityConversionFactor(conversionfactor/60.0);
+    ;
+    armConf.softLimit
+    .forwardSoftLimit(10).forwardSoftLimitEnabled(false)
+    .reverseSoftLimit(-90).reverseSoftLimitEnabled(false)
+    ;
+
+    armConf.closedLoop
+    .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+    .p(0)
+    ;
+
     armMotor.configure(armConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     // add roller conf
@@ -248,6 +266,11 @@ public class AlgaeGrabber extends SubsystemBase {
     // io.updateInputs(inputs);
     // Logger.processInputs("AlgaeGrabber", inputs);
     mechanism.mechanismUpdate();
+
+    SmartDashboard.putNumber("algae/arm angle rel", armMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("algae/arm angle abs", getAngle());
+    SmartDashboard.putNumber("algae/intake roller pos", intakeMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("algae/shooter roller pos", shooterMotor.getEncoder().getPosition());
   }
 
   private boolean bounded(double input, double min, double max) {
