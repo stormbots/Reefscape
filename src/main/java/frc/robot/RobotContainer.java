@@ -10,7 +10,9 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.Climber.ClimberIO;
 import frc.robot.subsystems.Climber.ClimberIOReal;
+import frc.robot.subsystems.Climber.ClimberIOSim;
 import frc.robot.subsystems.ExampleSubsystem;
 
 /**
@@ -23,8 +25,7 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-  public final Climber climber = new Climber(new ClimberIOReal());
-
+  private final Climber climber;
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController driverController =
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
@@ -33,6 +34,19 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    switch (Constants.currentMode) {
+      case real:
+        climber = new Climber(new ClimberIOReal());
+
+        break;
+
+      case sim:
+        climber = new Climber(new ClimberIOSim());
+        break;
+
+      default:
+        climber = new Climber(new ClimberIO() {});
+    }
     // Configure the trigger bindings
     configureBindings();
   }

@@ -23,7 +23,7 @@ public class ClimberIOReal implements ClimberIO {
   // upper softlimit/stow 43 (abs) deg
   // motor invert true, absolute encoder fine
 
-  //TODO: Fix wrapping issues for softlimits
+  // TODO: Fix wrapping issues for softlimits
 
   public ClimberIOReal() {
     var config = new SparkFlexConfig();
@@ -31,7 +31,6 @@ public class ClimberIOReal implements ClimberIO {
     config.encoder.positionConversionFactor(1);
     config.absoluteEncoder.positionConversionFactor(360);
 
-    
     config.inverted(true);
     config
         .closedLoop
@@ -39,7 +38,7 @@ public class ClimberIOReal implements ClimberIO {
         .p(1 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
-        //TODO: wrapping +/- 180
+        // .positionWrappingInputRange(0, 360);
         .positionWrappingInputRange(-180, 180);
     config.idleMode(IdleMode.kCoast).smartCurrentLimit(5).voltageCompensation(12.0);
     config.absoluteEncoder.inverted(false);

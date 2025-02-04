@@ -23,7 +23,8 @@ public class ClimberVisualizer {
     mechanism =
         new LoggedMechanism2d(
             Units.inchesToMeters(24), Units.inchesToMeters(24), new Color8Bit(Color.kWhite));
-    LoggedMechanismRoot2d root = mechanism.getRoot(key, Units.inchesToMeters(12), Units.inchesToMeters(12)); // placeholder
+    LoggedMechanismRoot2d root =
+        mechanism.getRoot(key, Units.inchesToMeters(12), Units.inchesToMeters(12)); // placeholder
     climber = new LoggedMechanismLigament2d("climber", Units.inchesToMeters(12), 0); // placeholder
     root.append(climber);
   }

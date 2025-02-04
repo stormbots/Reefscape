@@ -4,32 +4,49 @@
 
 package frc.robot.subsystems.Climber;
 
+import com.revrobotics.sim.SparkFlexSim;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.BatterySim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
 /** Add your docs here. */
 public class ClimberIOSim implements ClimberIO {
-  private DCMotorSim sim =
-      new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(DCMotor.getNeoVortex(1), 0, 0),
-          DCMotor.getNeoVortex(1));
+  private final DCMotor gearbox;
+  private final SparkFlex flex;
+  private final SparkFlexSim sim;
+  private final SingleJointedArmSim climberSim;
 
-  private double appliedVolts = 0.0;
+  // private double appliedVolts = 0.0;
+  public ClimberIOSim() {
+    gearbox = DCMotor.getNeoVortex(1);
+    flex = new SparkFlex(9, MotorType.kBrushless);
+    sim = new SparkFlexSim(flex, gearbox);
+    climberSim = new SingleJointedArmSim(gearbox, 360.0, 0.005, 0.5, 0.0, 2*(Math.PI), true, 0.0);
+  
+    
+  }
 
   @Override
   public void updateInputs(ClimberIOInputs inputs) {
-    sim.setInputVoltage(appliedVolts);
-    sim.update(.002);
-
-    inputs.climberRelativeAngle = Units.rotationsToDegrees(sim.getAngularPositionRotations());
-    inputs.climberVoltage = sim.getInputVoltage();
-    inputs.climberCurrentDraw = sim.getCurrentDrawAmps();
+    climberSim.setInput(sim.getAppliedOutput() * RoboRioSim.getVInVoltage());
+    climberSim.update(0.02);
+    sim.iterate(Units.radiansPerSecondToRotationsPerMinute(climberSim.getVelocityRadPerSec()), RoboRioSim.getVInVoltage(), 0.02);
+    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(climberSim.getCurrentDrawAmps()));
+    
   }
 
   @Override
   public void setReference(double angle) {
-    sim.setAngle(Units.degreesToRadians(angle));
+    
   }
+
+  // @Override
+  // public double getPosition() {
+    
+  // }
 }
