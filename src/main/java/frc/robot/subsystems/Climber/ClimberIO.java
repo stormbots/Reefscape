@@ -4,10 +4,12 @@
 
 package frc.robot.subsystems.Climber;
 
+import org.littletonrobotics.junction.AutoLog;
+
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
-import org.littletonrobotics.junction.AutoLog;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 /** Add your docs here. */
 public interface ClimberIO {
@@ -21,7 +23,7 @@ public interface ClimberIO {
 
   public default void updateInputs(ClimberIOInputs inputs) {}
 
-  // public default void setBrakeMode(boolean brakeMode) {}
+  public default void setIdleMode(boolean brakeMode) {}
 
   public default void setReference(double degrees) {}
 
@@ -29,6 +31,7 @@ public interface ClimberIO {
     return 0;
   }
 
-  public default void applyConfig(
-      SparkBaseConfig config, ResetMode resetMode, PersistMode persistMode) {}
+  public default void configureAsync(SparkBaseConfig config, ResetMode resetMode,PersistMode persistMode){}
+  public default void configure(SparkBaseConfig config, ResetMode resetMode,PersistMode persistMode){}
+ 
 }
