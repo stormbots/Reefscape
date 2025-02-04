@@ -53,10 +53,10 @@ public class RobotContainer {
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
     driverController.a()
-      .whileTrue(elevator.moveToHeight(6));
+      .whileTrue(elevator.moveToHeight(12));
 
     driverController.b()
-      .whileTrue(elevator.moveToHeight(2));
+      .whileTrue(elevator.moveToHeight(6));
 
     // driverController.a()
     // .whileTrue(elevator.moveToPose(elevator.L2))

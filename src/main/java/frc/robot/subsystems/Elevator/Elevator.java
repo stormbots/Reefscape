@@ -89,7 +89,7 @@ public class Elevator extends SubsystemBase {
         ;
     elevatorConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .p(0);
+      .p(0.1);
 
 
 
@@ -281,7 +281,10 @@ public class Elevator extends SubsystemBase {
   @Override
   public void periodic(){
     SmartDashboard.putNumber("elevator/height", elevatorMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("elevator/voltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    SmartDashboard.putNumber("elevator/appliedvoltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    SmartDashboard.putNumber("elevator/current", elevatorMotor.getOutputCurrent());
+    
+    
     SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("elevator/rotation/abs", rotationMotor.getAbsoluteEncoder().getPosition());
     SmartDashboard.putNumber("elevator/rotation/rel", rotationMotor.getEncoder().getPosition());
