@@ -26,7 +26,7 @@ public class CoralIntakeIOSim implements CoralIntakeIO{
         Math.toRadians(-50), 
         Math.toRadians(90), 
         true, 
-        Math.toRadians(-40),
+        Math.toRadians(90),
         new double[]{0,0}
     );
 
