@@ -7,23 +7,30 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
 import frc.robot.FieldConstants.ReefHeight;
+import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.CoralIntake.CoralIntake;
+import frc.robot.subsystems.CoralIntake.CoralIntakeIOReal;
+import frc.robot.subsystems.CoralIntake.CoralIntakeIOSim;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorIOReal;
 import frc.robot.subsystems.Elevator.ElevatorIOSim;
-import frc.robot.subsystems.ExampleSubsystem;
-import frc.robot.subsystems.Swerve;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -34,18 +41,22 @@ import frc.robot.subsystems.Swerve;
 public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
+  private Swerve swerveSubsystem = new Swerve();
   private Elevator elevator;
+  private CoralIntake coralIntake;
+  
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
 
-  Swerve swerveSubsystem = new Swerve();
   CommandXboxController driverController = new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     if (Constants.currentMode == Mode.real) {
       elevator = new Elevator("elevator", new ElevatorIOReal());
+      coralIntake = new CoralIntake("coralIntake", new CoralIntakeIOReal());
     } else {
       elevator = new Elevator("elevator", new ElevatorIOSim());
+      coralIntake = new CoralIntake("coralIntake", new CoralIntakeIOSim());
     }
     // Configure the trigger bindings
     configureBindings();
@@ -82,13 +93,8 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    // return elevator.runElevator(6.0).withTimeout(10.0);
-    // return new RunCommand(() -> elevator.setHeightMeters(2.5), elevator);
-    // return swerveSubsystem.driveForward();
-    // return new ParallelCommandGroup(
-    //     swerveSubsystem.runExamplePath(),
-    //     new RunCommand(() -> elevator.setHeightMeters(2), elevator));
     return getStupidFunniTestAuto();
+    // return new RunCommand(()-> coralIntake.setPositionRadians(1.8), coralIntake);
   }
 
   public Command getStupidFunniTestAuto() {
@@ -104,28 +110,37 @@ public class RobotContainer {
                     ReefHeight.L4.height + Elevator.kScoringOffsetHeight))
             .withTimeout(10),
         new WaitCommand(Seconds.of(0.1)),
-        new ParallelDeadlineGroup(
-                swerveSubsystem.runPathManual("JToIntake"),
-                elevator.setElevatorHeightCommand(0.95) // Intaking height
+        intakeThenPlaceCommand("JToIntake", "IntakeToL"),
+        intakeThenPlaceCommand("KToIntake", "IntakeToL"));
+  }
+
+  public Pose3d[] getFinalComponentPoses(){
+    return new Pose3d[] {
+      new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, -coralIntake.getPositionRadians(), 0)), // intake
+      new Pose3d(0,-0.229,0.3805,new Rotation3d(Math.toRadians(0), 0, 0)), // climber,
+      new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(-90), 0)), //Algae Scorer
+      new Pose3d(0,0.235,0.075+elevator.getHeight()/2,new Rotation3d(0, 0,0)) //Elevator first stage
+    };
+  }
+
+  public Command intakeThenPlaceCommand(String intakePath, String scorePath){
+    return new SequentialCommandGroup(
+      new ParallelDeadlineGroup(
+                swerveSubsystem.runPathManual(intakePath),
+                elevator.setElevatorHeightCommand(0.95), // Intaking height
+                coralIntake.setPositionRadiansCommand(-40)
                 )
             .withTimeout(10),
         new WaitCommand(Seconds.of(0.1)),
         new ParallelDeadlineGroup(
-                swerveSubsystem.runPathManual("IntakeToK"),
+                swerveSubsystem.runPathManual(scorePath),
                 elevator.setElevatorHeightCommand(
-                    ReefHeight.L4.height + Elevator.kScoringOffsetHeight))
+                    ReefHeight.L4.height + Elevator.kScoringOffsetHeight),
+                coralIntake.setPositionRadiansCommand(90)
+
+        )
             .withTimeout(10),
-        new WaitCommand(Seconds.of(0.1)),
-        new ParallelDeadlineGroup(
-                swerveSubsystem.runPathManual("KToIntake"),
-                elevator.setElevatorHeightCommand(0.95) // Intaking height
-                )
-            .withTimeout(10),
-        new WaitCommand(Seconds.of(0.1)),
-        new ParallelDeadlineGroup(
-                swerveSubsystem.runPathManual("IntakeToL"),
-                elevator.setElevatorHeightCommand(
-                    ReefHeight.L4.height + Elevator.kScoringOffsetHeight))
-            .withTimeout(10));
+        new WaitCommand(Seconds.of(0.1))
+    );
   }
 }

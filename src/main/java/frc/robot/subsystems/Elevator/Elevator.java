@@ -62,4 +62,8 @@ public class Elevator extends SubsystemBase {
     //     });
     ;
   }
+
+  public double getHeight(){
+    return inputs.heightMeters;
+  }
 }

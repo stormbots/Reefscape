@@ -8,8 +8,17 @@ import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
 public interface CoralIntakeIO {
+
   @AutoLog
-  public static class CoralIntakeIOInputs {}
+  public static class CoralIntakeIOInputs {
+    public double relativePositionRads = 0.0;
+    public double absolutePositionRads = 0.0;
+    public double appliedVoltage = 0.0;
+  }
 
   public default void updateInputs(CoralIntakeIOInputs inputs) {}
+
+  public default void setVoltage(double volts){}
+
+  public default void stop(){}
 }

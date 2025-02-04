@@ -94,27 +94,8 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
 
     Logger.recordOutput("RobotPose", new Pose2d());
-    Logger.recordOutput(
-        "ZeroedComponentPoses", new Pose3d[] {new Pose3d(), new Pose3d(), new Pose3d()});
-    Logger.recordOutput(
-        "FinalComponentPoses",
-        new Pose3d[] {
-          new Pose3d(
-              0.3075,
-              0,
-              0.2525 + 0.05,
-              new Rotation3d(0, Math.sin(Timer.getTimestamp()) - 1.0, 0)), // intake
-          new Pose3d(
-              0,
-              -0.229,
-              0.3805,
-              new Rotation3d(Math.sin(Timer.getTimestamp()) - 1.0, 0, 0)), // climber,
-          new Pose3d(
-              -0.2535,
-              0,
-              0.7045,
-              new Rotation3d(0, Math.sin(Timer.getTimestamp()) - 1.0, Math.toRadians(0)))
-        });
+    Logger.recordOutput("ZeroedComponentPoses", new Pose3d[] {new Pose3d(), new Pose3d(), new Pose3d(), new Pose3d()});
+    Logger.recordOutput( "FinalComponentPoses",robotContainer.getFinalComponentPoses());
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
