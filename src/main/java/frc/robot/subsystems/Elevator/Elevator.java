@@ -20,6 +20,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -64,14 +65,14 @@ public class Elevator extends SubsystemBase {
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0.415, 0, 0);
-
+  ArmFeedforward rotatorFF = new ArmFeedforward(0, .415, 0, 0);
+  ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0, .4, 0);
   public Elevator() {
 
     // define motor, and set soft limits set up motors so they dont do wierd stuff
 
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
-      .smartCurrentLimit(8)
+      .smartCurrentLimit(36)
       .idleMode(IdleMode.kCoast)
       .inverted(false)
       ;
@@ -113,7 +114,7 @@ public class Elevator extends SubsystemBase {
 
 
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
-      .smartCurrentLimit(20)
+      .smartCurrentLimit(8)
       .idleMode(IdleMode.kBrake)
       .inverted(false)
       ;
@@ -138,7 +139,7 @@ public class Elevator extends SubsystemBase {
 
     rotationConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-      .p(0.8/90.0)
+      .p(0.8/60.0)
       .positionWrappingEnabled(true)
       .positionWrappingInputRange(0, 360)
       ;
@@ -188,9 +189,10 @@ public class Elevator extends SubsystemBase {
   }
 
   private void setHeight(double height) {
+    var ff = elevatorFF.getKg();
     elevatorMotor
         .getClosedLoopController()
-        .setReference(height, ControlType.kPosition, ClosedLoopSlot.kSlot0, 0, ArbFFUnits.kVoltage);
+        .setReference(height, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
     setpoint.height = height;
   }
 
@@ -218,6 +220,13 @@ public class Elevator extends SubsystemBase {
         })
     // exit condition on arriving?
     ;
+  }
+
+  public Command moveToHeight(double height) {
+    return runEnd(
+      () -> setHeight(height),
+      () -> {}// elevatorMotor.set(0)
+    );
   }
   
   public Command moveToAngle(double angle) {
@@ -272,10 +281,12 @@ public class Elevator extends SubsystemBase {
   @Override
   public void periodic(){
     SmartDashboard.putNumber("elevator/height", elevatorMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("elevator/out-motor position", coralOutMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("elevator/rotation abs", rotationMotor.getAbsoluteEncoder().getPosition());
-    SmartDashboard.putNumber("elevator/rotation rel", rotationMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/voltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/rotation/abs", rotationMotor.getAbsoluteEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/rotation/rel", rotationMotor.getEncoder().getPosition());
 
+    SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
     SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
     SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
     mechanism.mechanismUpdate();
