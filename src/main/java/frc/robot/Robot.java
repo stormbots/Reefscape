@@ -4,6 +4,10 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -88,6 +92,29 @@ public class Robot extends LoggedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
+    Logger.recordOutput("RobotPose", new Pose2d());
+    Logger.recordOutput(
+        "ZeroedComponentPoses", new Pose3d[] {new Pose3d(), new Pose3d(), new Pose3d()});
+    Logger.recordOutput(
+        "FinalComponentPoses",
+        new Pose3d[] {
+          new Pose3d(
+              0.3075,
+              0,
+              0.2525 + 0.05,
+              new Rotation3d(0, Math.sin(Timer.getTimestamp()) - 1.0, 0)), // intake
+          new Pose3d(
+              0,
+              -0.229,
+              0.3805,
+              new Rotation3d(Math.sin(Timer.getTimestamp()) - 1.0, 0, 0)), // climber,
+          new Pose3d(
+              -0.2535,
+              0,
+              0.7045,
+              new Rotation3d(0, Math.sin(Timer.getTimestamp()) - 1.0, Math.toRadians(0)))
+        });
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

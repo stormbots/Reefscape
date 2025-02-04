@@ -103,25 +103,25 @@ public class RobotContainer {
                 elevator.setElevatorHeightCommand(
                     ReefHeight.L4.height + Elevator.kScoringOffsetHeight))
             .withTimeout(10),
-        new WaitCommand(Seconds.of(0.5)),
+        new WaitCommand(Seconds.of(0.1)),
         new ParallelDeadlineGroup(
                 swerveSubsystem.runPathManual("JToIntake"),
                 elevator.setElevatorHeightCommand(0.95) // Intaking height
                 )
             .withTimeout(10),
-        new WaitCommand(Seconds.of(0.5)),
+        new WaitCommand(Seconds.of(0.1)),
         new ParallelDeadlineGroup(
                 swerveSubsystem.runPathManual("IntakeToK"),
                 elevator.setElevatorHeightCommand(
                     ReefHeight.L4.height + Elevator.kScoringOffsetHeight))
             .withTimeout(10),
-        new WaitCommand(Seconds.of(0.5)),
+        new WaitCommand(Seconds.of(0.1)),
         new ParallelDeadlineGroup(
                 swerveSubsystem.runPathManual("KToIntake"),
                 elevator.setElevatorHeightCommand(0.95) // Intaking height
                 )
             .withTimeout(10),
-        new WaitCommand(Seconds.of(0.5)),
+        new WaitCommand(Seconds.of(0.1)),
         new ParallelDeadlineGroup(
                 swerveSubsystem.runPathManual("IntakeToL"),
                 elevator.setElevatorHeightCommand(
