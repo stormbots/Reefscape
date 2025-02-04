@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
@@ -79,6 +81,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.updateOdometry();
     odometryField.setRobotPose(swerveDrive.getPose());
     SmartDashboard.putData("odometryField", odometryField);
+    Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
 
   }
 
