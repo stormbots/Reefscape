@@ -43,7 +43,7 @@ public class Swerve extends SubsystemBase {
   public Field2d debugField2d = new Field2d();
   public Field2d odometryField = new Field2d();
   
-  double maximumSpeed = 5.4;
+  double maximumSpeed = 5.033;
 
   SwerveDrive swerveDrive;
 
@@ -69,7 +69,7 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.080663, 1.9711, 0.36785));
+    // swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.080663, 1.9711, 0.36785));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
   }
 
@@ -78,6 +78,7 @@ public class Swerve extends SubsystemBase {
     // This method will be called once per scheduler run
     swerveDrive.updateOdometry();
     odometryField.setRobotPose(swerveDrive.getPose());
+    SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
 
   }
