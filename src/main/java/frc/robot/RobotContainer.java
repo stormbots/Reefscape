@@ -28,6 +28,8 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
 import frc.robot.subsystems.CoralIntake.CoralIntakeIOReal;
 import frc.robot.subsystems.CoralIntake.CoralIntakeIOSim;
+import frc.robot.subsystems.Elevator.ArmIOReal;
+import frc.robot.subsystems.Elevator.ArmIOSim;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorIOReal;
 import frc.robot.subsystems.Elevator.ElevatorIOSim;
@@ -52,10 +54,10 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     if (Constants.currentMode == Mode.real) {
-      elevator = new Elevator("elevator", new ElevatorIOReal());
+      elevator = new Elevator("elevator", new ElevatorIOReal(), "coralArm", new ArmIOReal());
       coralIntake = new CoralIntake("coralIntake", new CoralIntakeIOReal());
     } else {
-      elevator = new Elevator("elevator", new ElevatorIOSim());
+      elevator = new Elevator("elevator", new ElevatorIOSim(), "coralArm", new ArmIOSim());
       coralIntake = new CoralIntake("coralIntake", new CoralIntakeIOSim());
     }
     // Configure the trigger bindings
@@ -83,6 +85,8 @@ public class RobotContainer {
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
+
+    elevator.setDefaultCommand(elevator.setAngleRadiansCommand(Math.toRadians(90)));
   }
 
   /**
@@ -93,7 +97,8 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return getStupidFunniTestAuto();
+    return elevator.setAngleRadiansCommand(Math.toRadians(180));
+    // return getStupidFunniTestAuto();
     // return new RunCommand(()-> coralIntake.setPositionRadians(1.8), coralIntake);
   }
 
@@ -119,7 +124,11 @@ public class RobotContainer {
       new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, -coralIntake.getPositionRadians(), 0)), // intake
       new Pose3d(0,-0.229,0.3805,new Rotation3d(Math.toRadians(0), 0, 0)), // climber,
       new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(-90), 0)), //Algae Scorer
-      new Pose3d(0,0.235,0.075+elevator.getHeight()/2,new Rotation3d(0, 0,0)) //Elevator first stage
+      new Pose3d(0,0.235,0.075+elevator.getHeight()/2,new Rotation3d(0, 0,0)), //Elevator first stage
+      new Pose3d(-0.017, 0.15, 0.133+elevator.getHeight(), new Rotation3d(0, -elevator.getArmAngleRadians()+Math.toRadians(90), 0)), //Arm
+      new Pose3d(-0.01+elevator.getArmCoordinates().getX(), 0.085, 0.57+elevator.getArmCoordinates().getY()-0.41, 
+        new Rotation3d(0, elevator.getArmAngleRadians()-Math.toRadians(90)+elevator.getCoralScorerAngleRadians(), 0)), //Coral Scorer
+      new Pose3d(-0.018, 0.2, 0.1+elevator.getHeight(), new Rotation3d()) //Stage 2
     };
   }
 

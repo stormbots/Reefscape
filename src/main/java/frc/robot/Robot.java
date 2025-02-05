@@ -94,7 +94,7 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
 
     Logger.recordOutput("RobotPose", new Pose2d());
-    Logger.recordOutput("ZeroedComponentPoses", new Pose3d[] {new Pose3d(), new Pose3d(), new Pose3d(), new Pose3d()});
+    Logger.recordOutput("ZeroedComponentPoses", new Pose3d[] {new Pose3d(), new Pose3d(), new Pose3d(), new Pose3d(), new Pose3d(),new Pose3d(), new Pose3d()});
     Logger.recordOutput( "FinalComponentPoses",robotContainer.getFinalComponentPoses());
   }
 
