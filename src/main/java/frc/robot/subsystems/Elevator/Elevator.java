@@ -65,8 +65,8 @@ public class Elevator extends SubsystemBase {
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  ArmFeedforward rotatorFF = new ArmFeedforward(0, .415, 0, 0);
-  ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0, .4, 0);
+  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0, 0, 0);
+  ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0, 0.79, 0);
   public Elevator() {
 
     // define motor, and set soft limits set up motors so they dont do wierd stuff
@@ -77,13 +77,12 @@ public class Elevator extends SubsystemBase {
       .inverted(false)
       ;
     elevatorConfig.softLimit
-    .forwardSoftLimit(36)//????
+    .forwardSoftLimit(40)//????
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
-    var elevatorConversionfactor = 1.0;
-    elevatorConfig
-        .encoder
+    var elevatorConversionfactor = (51 - 12)/22.11;
+    elevatorConfig.encoder
         .positionConversionFactor(elevatorConversionfactor)
         .velocityConversionFactor(elevatorConversionfactor / 60.0)
         ;
@@ -226,6 +225,18 @@ public class Elevator extends SubsystemBase {
     return runEnd(
       () -> setHeight(height),
       () -> {}// elevatorMotor.set(0)
+    );
+  }
+
+  public Command manualElevatorPower(double power) {
+    return runEnd(
+      () -> {
+        elevatorMotor.setVoltage(12*power+elevatorFF.getKg());
+        SmartDashboard.putNumber("powerIn", (power));
+      },
+      () -> {
+        elevatorMotor.set(0);
+      } 
     );
   }
   

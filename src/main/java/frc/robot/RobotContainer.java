@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -35,7 +36,11 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
+
   }
+
+    
+  
 
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -52,11 +57,17 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.a()
-      .whileTrue(elevator.moveToHeight(12));
+    // driverController.a()
+    //   .whileTrue(elevator.manualElevatorPower(.5));
+
+    // driverController.x()
+    //   .whileTrue(elevator.moveToHeight(5));
+
+    driverController.y()
+      .whileTrue(elevator.manualElevatorPower(0.1));
 
     driverController.b()
-      .whileTrue(elevator.moveToHeight(6));
+      .whileTrue(elevator.manualElevatorPower(-0.5*-1*0.4));
 
     // driverController.a()
     // .whileTrue(elevator.moveToPose(elevator.L2))
