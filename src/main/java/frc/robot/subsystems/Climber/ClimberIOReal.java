@@ -16,13 +16,14 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
   SparkFlex motor = new SparkFlex(6, MotorType.kBrushless);
+  ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
   public ClimberIOReal() {
   }
 
-  /** Note: Inputs doesn't do anything *other* than get logged. */
   @Override
   public void updateInputs(ClimberIOInputs inputs) {
+    //disregard incoming inputs and just run it. 
     inputs.climberAbsoluteAngle = motor.getAbsoluteEncoder().getPosition();
     inputs.climberCurrentDraw = motor.getOutputCurrent();
     inputs.climberRelativeAngle = motor.getEncoder().getPosition();

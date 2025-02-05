@@ -4,8 +4,11 @@
 
 package frc.robot.subsystems.Climber;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.SlewRateLimiter;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+
+import org.littletonrobotics.junction.Logger;
+
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
@@ -13,19 +16,20 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
-import org.littletonrobotics.junction.Logger;
 
 public class Climber extends SubsystemBase {
   private final ClimberIO io;
@@ -34,14 +38,17 @@ public class Climber extends SubsystemBase {
   private SlewRateLimiter rateLimit = new SlewRateLimiter(30);
   /** Climber setpoint for logging and checking */
   private double setpoint=100;
+  double rate = 20;
+  SlewRateLimiter slew=new SlewRateLimiter(rate);
+
 
   /** Creates a new Climber. */
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
     if (RobotBase.isReal()) {
       this.io = new ClimberIOReal();
-      // }else if(SmartDashboard.getBoolean("simulate", false)){
-      // this.io = new ClimberIOSim();
+    }else if(RobotBase.isSimulation()){
+      this.io = new ClimberIOSim();
     } else {
       this.io = new ClimberIO() {}; // Create a blank stub for replay
     }
@@ -54,23 +61,22 @@ public class Climber extends SubsystemBase {
     config.encoder.positionConversionFactor((360 / (9424 / 203.0)));
     config.absoluteEncoder.positionConversionFactor(360);
     config.absoluteEncoder.inverted(true);
-    config
-        .closedLoop
+    config.closedLoop
         .outputRange(-0.1, 0.1)
         .p(0.1 / 90.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true);
     config
         .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit(0)
+        .smartCurrentLimit(10)
         .voltageCompensation(11.0)
         ;
     io.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
 
-    // setDefaultCommand(setAngle(0));
+    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3)).debounce(0.1);
 
-    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3));
+    setDefaultCommand(holdPosition());
   }
 
   @Override
@@ -85,27 +91,43 @@ public class Climber extends SubsystemBase {
     //Which makes this wrong
     io.updateInputs(inputs);
     Logger.processInputs("Climber", inputs);
+    SmartDashboard.putBoolean("sim/isontarget",isOnTarget.getAsBoolean());
+    SmartDashboard.putNumber("sim/setpoint",setpoint);
+    SmartDashboard.putNumber("sim/position",io.getPosition());
   }
 
-
   public Command prepareToClimb() {
-    return setAngle(0);
+    return setAngle(()->10);
+  }
+
+  public Command stow() {
+    return new InstantCommand(()->setIdleMode(IdleMode.kCoast))
+    .andThen(setAngle(()->110));
   }
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(90));
+    .andThen(setAngle(()->90));
   }
   
-  public Command setAngle(double angle) {
-    return run(() -> setPosition(angle));
+  public Command setAngle(DoubleSupplier angle) {
+    return run(() -> setPosition(angle.getAsDouble())).until(isOnTarget);
+  }
+
+  /** Go to the setpoint if we're actually at it, otherwise just halt */
+  public Command holdPosition(){
+    return new ConditionalCommand(
+      setAngle(()->setpoint),
+      setAngle(io::getPosition),
+      isOnTarget::getAsBoolean
+    );
   }
 
   public Trigger isOnTarget;// Must be initialized in constructor after IO
 
-
   private void setPosition(double angle) {
-    io.setReference(angle);
+    setpoint=angle;
+    io.setReference(slew.calculate(setpoint));
   }
 
   public void setIdleMode(IdleMode idleMode) {
@@ -113,18 +135,25 @@ public class Climber extends SubsystemBase {
     io.configureAsync(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
-  // public void applyConfig(SparkFlexConfig config,ResetMode resetMode,PersistMode persistMode){
-  //   io.applyConfig(config, resetMode, persistMode);
-  // }
-
   // Create the basic mechanism construction
   Mechanism2d mech = new Mechanism2d(20, 20);
-  MechanismRoot2d root = mech.getRoot("ClimberRoot", 10, 10);
+  MechanismRoot2d root = mech.getRoot("ClimberRoot", 12, 10);
   MechanismLigament2d pivot = root.append(new MechanismLigament2d("ClimberPivot", 4, 0));
-  MechanismLigament2d top = pivot.append(new MechanismLigament2d("ClimberPivotTop", 4, 90));
-  MechanismLigament2d bot = pivot.append(new MechanismLigament2d("ClimberPivotBottom", 4, -90));
+  MechanismLigament2d top = pivot.append(new MechanismLigament2d("ClimberPivotTop", 4, 0));
+  MechanismLigament2d bot = pivot.append(new MechanismLigament2d("ClimberPivotBottom", 9, -90));
 
   private void updateMechanism() {
     pivot.setAngle(new Rotation2d(Math.toRadians(io.getPosition())));
+  }
+
+  @Override
+  public void initSendable(SendableBuilder builder) {
+    DoubleConsumer resetSlew=(double d)->{
+      rate=d;
+      slew=new SlewRateLimiter(d);
+      slew.reset(io.getPosition());
+    };
+
+    builder.addDoubleProperty("Ramp Rate", ()->rate,resetSlew);
   }
 }

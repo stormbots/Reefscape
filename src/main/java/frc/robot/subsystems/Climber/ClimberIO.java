@@ -13,6 +13,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 /** Add your docs here. */
 public interface ClimberIO {
+  
   @AutoLog
   public static class ClimberIOInputs {
     double climberAbsoluteAngle = 0.0;
@@ -23,7 +24,7 @@ public interface ClimberIO {
 
   public default void updateInputs(ClimberIOInputs inputs) {}
 
-  public default void setIdleMode(boolean brakeMode) {}
+  public default void setIdleMode(IdleMode idleMode) {}
 
   public default void setReference(double degrees) {}
 
@@ -33,5 +34,4 @@ public interface ClimberIO {
 
   public default void configureAsync(SparkBaseConfig config, ResetMode resetMode,PersistMode persistMode){}
   public default void configure(SparkBaseConfig config, ResetMode resetMode,PersistMode persistMode){}
- 
 }

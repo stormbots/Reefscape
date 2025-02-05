@@ -5,6 +5,8 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
@@ -64,6 +66,15 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Autos.exampleAuto(exampleSubsystem);
+    // return Autos.exampleAuto(exampleSubsystem);
+    return new SequentialCommandGroup(
+      climber.prepareToClimb(),
+      // new WaitCommand(0.5),
+      climber.climb(),
+      // new WaitCommand(0.5),
+      climber.setAngle(()->160),
+      // new WaitCommand(1),
+      climber.stow()
+    );
   }
 }
