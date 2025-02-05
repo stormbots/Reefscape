@@ -35,13 +35,12 @@ public class Climber extends SubsystemBase {
   private final ClimberIO io;
   private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
-  private SlewRateLimiter rateLimit = new SlewRateLimiter(30);
-  /** Climber setpoint for logging and checking */
   private double setpoint=100;
-  double rate = 20;
+  double rate = 30;
   SlewRateLimiter slew=new SlewRateLimiter(rate);
 
 
+  private final ClimberVisualizer visualizer;
   /** Creates a new Climber. */
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
@@ -50,33 +49,58 @@ public class Climber extends SubsystemBase {
     }else if(RobotBase.isSimulation()){
       this.io = new ClimberIOSim();
     } else {
-      this.io = new ClimberIO() {}; // Create a blank stub for replay
+      this.io = new ClimberIO() {}; 
+      //TODO: Make it so replay actually works, as we have no functional mode switch right now
+      // Create a blank stub for replay
     }
 
-    rateLimit.reset(io.getPosition());
-    SmartDashboard.putData("mechanism/climber", mech);
+  // 0 deg, 50.711
+  // 88 deg, 153.705
+  // lower softlimit 300 deg (abs) around inside bot
+  // upper softlimit/stow 43 (abs) deg
+  // motor invert true, absolute encoder fine
 
+  // TODO: Fix wrapping issues for softlimits
 
-    var config = new SparkMaxConfig();
-    config.encoder.positionConversionFactor((360 / (9424 / 203.0)));
-    config.absoluteEncoder.positionConversionFactor(360);
-    config.absoluteEncoder.inverted(true);
+    var config = new SparkFlexConfig();
+    config.encoder
+        .positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
+    // config.encoder.positionConversionFactor(1);
+    config.absoluteEncoder
+        .positionConversionFactor(360);
+
+    config.inverted(true);
     config.closedLoop
-        .outputRange(-0.1, 0.1)
-        .p(0.1 / 90.0)
+        .outputRange(-0.5, 0.5)
+        .p(1 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-        .positionWrappingEnabled(true);
+        .positionWrappingEnabled(true)
+        .positionWrappingInputRange(0, 360);
+        // .positionWrappingInputRange(-180, 180); //TODO: Test this!!
     config
         .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit(10)
-        .voltageCompensation(11.0)
-        ;
+        .smartCurrentLimit(5)
+        .voltageCompensation(11.0);
+    config.absoluteEncoder.inverted(false);
+    config.softLimit
+        .forwardSoftLimit(43)
+        .forwardSoftLimitEnabled(false)
+        .reverseSoftLimit(-60)
+        .reverseSoftLimitEnabled(false);
+
     io.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
 
-    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3)).debounce(0.1);
 
+    //Do some final tidying up. 
+    io.setRelativeEncoderPosition(io.getPosition());
+    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3)).debounce(0.1);
+    slew.reset(io.getPosition());
+    
     setDefaultCommand(holdPosition());
+    visualizer = new ClimberVisualizer("climber");
+    SmartDashboard.putData("mechanism/climber", mech);
+
   }
 
   @Override
@@ -91,13 +115,11 @@ public class Climber extends SubsystemBase {
     //Which makes this wrong
     io.updateInputs(inputs);
     Logger.processInputs("Climber", inputs);
-    SmartDashboard.putBoolean("sim/isontarget",isOnTarget.getAsBoolean());
-    SmartDashboard.putNumber("sim/setpoint",setpoint);
-    SmartDashboard.putNumber("sim/position",io.getPosition());
+    visualizer.update(inputs.climberAbsoluteAngle);
   }
 
   public Command prepareToClimb() {
-    return setAngle(()->10);
+    return setAngle(()->-60);
   }
 
   public Command stow() {
@@ -107,7 +129,7 @@ public class Climber extends SubsystemBase {
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(()->90));
+    .andThen(setAngle(()->43));
   }
   
   public Command setAngle(DoubleSupplier angle) {

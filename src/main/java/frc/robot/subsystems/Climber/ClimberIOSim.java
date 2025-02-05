@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.Climber;
 
-import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
 
 import com.revrobotics.sim.SparkFlexSim;
@@ -17,15 +16,13 @@ import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 /** Add your docs here. */
 public class ClimberIOSim implements ClimberIO {  
@@ -33,14 +30,17 @@ public class ClimberIOSim implements ClimberIO {
   //         LinearSystemId.createDCMotorSystem(DCMotor.getNeoVortex(1), 0, 0),
   //         DCMotor.getNeoVortex(1));
 
-  private SparkFlex sparkFlex = new SparkFlex(6, MotorType.kBrushless);
+  private SparkFlex sparkFlex = new SparkFlex(9, MotorType.kBrushless);
   private DCMotor dcmotor = DCMotor.getNeoVortex(1);
   private SparkFlexSim sparkSim = new SparkFlexSim(sparkFlex, dcmotor);
 
   private LinearSystem plant = LinearSystemId.createSingleJointedArmSystem(dcmotor, 4, 100);
-  // private LinearSystem plant = LinearSystemId.createElevatorSystem(dcmotor, 10, 0.030, 10);
   private DCMotorSim sim = new DCMotorSim(plant, dcmotor);
+  //TODO put this in, as it's a better model as linearysstemID's is terrible.
+  // private SingleJointedArmSim sim = new SingleJointedArmSim(dcmotor, 360.0, 0.005, 0.5, 0.0, 2*(Math.PI), true, 0.0);
+
   private double appliedVolts = 0.0;
+  
 
   public ClimberIOSim(){
     //crudely attempt to define where we expect the simulation to start
@@ -70,6 +70,12 @@ public class ClimberIOSim implements ClimberIO {
     inputs.climberVoltage = sim.getInputVoltage();
     inputs.climberCurrentDraw = sim.getCurrentDrawAmps();
     inputs.climberAbsoluteAngle = sim.getAngularPosition().in(Degrees);
+
+    //TODO: Battery sim
+    // climberSim.setInput(sim.getAppliedOutput() * RoboRioSim.getVInVoltage());
+    // climberSim.update(0.02);
+    // sim.iterate(Units.radiansPerSecondToRotationsPerMinute(climberSim.getVelocityRadPerSec()), RoboRioSim.getVInVoltage(), 0.02);
+    // RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(climberSim.getCurrentDrawAmps()));
   }
 
   @Override
@@ -98,5 +104,10 @@ public class ClimberIOSim implements ClimberIO {
   @Override
   public void configure(SparkBaseConfig config, ResetMode resetMode, PersistMode persistMode) {
     sparkFlex.configure(config, resetMode, persistMode);
+  }
+
+  // @Override
+  public void setRelativeEncoderPosition(double position){
+    sparkFlex.getEncoder().setPosition(position);
   }
 }

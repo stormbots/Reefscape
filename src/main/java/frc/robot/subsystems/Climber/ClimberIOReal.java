@@ -9,13 +9,14 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
-  SparkFlex motor = new SparkFlex(6, MotorType.kBrushless);
+  SparkFlex motor = new SparkFlex(9, MotorType.kBrushless);
   ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
   public ClimberIOReal() {
@@ -54,4 +55,8 @@ public class ClimberIOReal implements ClimberIO {
     configureAsync(new SparkFlexConfig().idleMode(idleMode), ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
+  public void setRelativeEncoderPosition(double position){
+    motor.getEncoder().setPosition(position);
+  }
+  
 }

@@ -34,4 +34,6 @@ public interface ClimberIO {
 
   public default void configureAsync(SparkBaseConfig config, ResetMode resetMode,PersistMode persistMode){}
   public default void configure(SparkBaseConfig config, ResetMode resetMode,PersistMode persistMode){}
+
+  public default void setRelativeEncoderPosition(double position){}
 }
