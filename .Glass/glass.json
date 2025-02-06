@@ -3,6 +3,9 @@
     "transitory": {
       "SmartDashboard": {
         "elevator": {
+          "angle": {
+            "open": true
+          },
           "open": true
         },
         "open": true
@@ -38,6 +41,11 @@
     "Plot <0>": {
       "plots": [
         {
+          "axis": [
+            {
+              "autoFit": true
+            }
+          ],
           "backgroundColor": [
             0.0,
             0.0,
@@ -63,6 +71,15 @@
                 1.0
               ],
               "id": "NT:/SmartDashboard/elevator/angleVoltage"
+            },
+            {
+              "color": [
+                0.3333333432674408,
+                0.658823549747467,
+                0.4078431725502014,
+                1.0
+              ],
+              "id": "NT:/SmartDashboard/powerIn"
             }
           ]
         }

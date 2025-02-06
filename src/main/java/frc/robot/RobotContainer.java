@@ -64,7 +64,7 @@ public class RobotContainer {
     //   .whileTrue(elevator.moveToHeight(5));
 
     driverController.y()
-      .whileTrue(elevator.manualElevatorPower(0.1));
+      .whileTrue(elevator.Score(1));
 
     driverController.b()
       .whileTrue(elevator.manualElevatorPower(-0.5*-1*0.4));
@@ -77,6 +77,9 @@ public class RobotContainer {
     // .whileTrue(elevator.scoreAtPose(elevator.L2));
 
 
+
+  }
+  private void periodic(){
 
   }
 

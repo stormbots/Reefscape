@@ -95,13 +95,14 @@ public class Elevator extends SubsystemBase {
 
 
     SparkBaseConfig coralOutConfig = new SparkMaxConfig()
-      .smartCurrentLimit(8)
+      .smartCurrentLimit(16)
       .idleMode(IdleMode.kCoast)
-      .inverted(false);
+      .inverted(false); //Positive is in, Negative is out
 
-    var coralOutConversionFactor = 1.0;
+    var coralOutConversionFactor = 3.371;
     coralOutConfig.encoder
       .velocityConversionFactor(coralOutConversionFactor / 60.0)
+      .positionConversionFactor(coralOutConversionFactor)
       ;
 
     coralOutConfig.closedLoop
@@ -249,6 +250,18 @@ public class Elevator extends SubsystemBase {
     ;
   }
 
+  public Command Score(double voltage) {
+    return runEnd(
+      ()-> {
+        coralOutMotor.setVoltage(voltage);
+      },
+      () -> {
+        coralOutMotor.setVoltage(0);
+      }
+    );
+  }
+
+
   private Command moveToPoseWithScorer(ElevatorPose pose) {
     return run(
         () -> {
@@ -265,6 +278,7 @@ public class Elevator extends SubsystemBase {
         .until(atTargetPosition /* .and(chassis.atproperreefposition) */)
         .andThen(scoreAtPose(pose));
   }
+
 
   public Trigger atTargetPosition =
       new Trigger(
@@ -297,6 +311,8 @@ public class Elevator extends SubsystemBase {
     
     
     SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
+
     SmartDashboard.putNumber("elevator/rotation/abs", rotationMotor.getAbsoluteEncoder().getPosition());
     SmartDashboard.putNumber("elevator/rotation/rel", rotationMotor.getEncoder().getPosition());
 
