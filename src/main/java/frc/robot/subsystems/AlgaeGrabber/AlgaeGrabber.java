@@ -16,6 +16,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -34,17 +35,23 @@ public class AlgaeGrabber extends SubsystemBase {
   // public final AlgaeGrabberIO io;
   // public final AlgaeGrabberIOInputsAutoLogged inputs = new AlgaeGrabberIOInputsAutoLogged();
 
-  SparkMax shooterMotor = new SparkMax(1, MotorType.kBrushless);
-  SparkMax armMotor = new SparkMax(5, MotorType.kBrushless);
-  SparkMax intakeMotor = new SparkMax(3, MotorType.kBrushless);
+  SparkMax shooterMotor = new SparkMax(16, MotorType.kBrushless);
+  SparkMax armMotor = new SparkMax(15, MotorType.kBrushless);
+  SparkMax intakeMotor = new SparkMax(14, MotorType.kBrushless);
 
   private SlewRateLimiter armAngleSlew = new SlewRateLimiter(90);
+
+  public static final double absconversionfactor=360*1.5/2.0; //account for gearing on the abs encoder
 
   public static final double ROLLERHOLDPOWER = 0.2;
   public static final double ROLLERINTAKERPM = 0.5;
   public static final double ROLLEREJECTPOWER = -0.5;
 
   private static final double ANGLETOLERANCE = 4;
+
+  private static final double LOWERSOFTLIMIT = -90;
+  private static final double UPPERSOFTLIMIT = 10;
+
   private double RPMTOLERANCE = 0;
 
   private double angleSetpoint = -90;
@@ -55,27 +62,28 @@ public class AlgaeGrabber extends SubsystemBase {
     // this.io = io;
 
     var armConf = new SparkMaxConfig()
-      .inverted(false)
+      .inverted(true)
       .smartCurrentLimit(5);
       ;
 
-    armConf
-        .absoluteEncoder
-        .positionConversionFactor(360)
-        .velocityConversionFactor(360 / 60.0)
+    armConf.absoluteEncoder
+        .positionConversionFactor(absconversionfactor)//This is on a 1:1.5 gear step
+        .velocityConversionFactor(absconversionfactor / 60.0)
         .inverted(false);
-    var conversionfactor=1.0;
+    var conversionfactor=(90/30.362);
     armConf.encoder
     .positionConversionFactor(conversionfactor)
     .velocityConversionFactor(conversionfactor/60.0);
     ;
     armConf.softLimit
-    .forwardSoftLimit(10).forwardSoftLimitEnabled(false)
-    .reverseSoftLimit(-90).reverseSoftLimitEnabled(false)
+    .forwardSoftLimit(UPPERSOFTLIMIT).forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(LOWERSOFTLIMIT).reverseSoftLimitEnabled(true)
     ;
 
     armConf.closedLoop
     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+    .positionWrappingEnabled(true)
+    .positionWrappingInputRange(0, absconversionfactor)
     .p(0)
     ;
 
@@ -108,7 +116,7 @@ public class AlgaeGrabber extends SubsystemBase {
     shooterConf.closedLoop.p(0).feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
     shooterMotor.configure(shooterConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-
+    armMotor.getEncoder().setPosition(getAngle());
     setDefaultCommand(defaultCommand());
   }
 
@@ -131,6 +139,8 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   private void setArmAngle(double angle) {
+    angle = MathUtil.clamp(angle, LOWERSOFTLIMIT, UPPERSOFTLIMIT);
+
     this.angleSetpoint = angle;
 
     // one: profiledPid controller -> runs on roborio
@@ -149,7 +159,11 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   private double getAngle() {
-    return armMotor.getAbsoluteEncoder().getPosition();
+    var angle = armMotor.getAbsoluteEncoder().getPosition();
+    if(angle > absconversionfactor/2.0){
+      angle = angle - absconversionfactor;
+    }
+    return angle;
   }
 
   private double getShooterRPM() {
@@ -271,6 +285,7 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/arm angle abs", getAngle());
     SmartDashboard.putNumber("algae/intake roller pos", intakeMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("algae/shooter roller pos", shooterMotor.getEncoder().getPosition());
+    // SmartDashboard.putNumber("algae velocity",shooterMotor.getEncoder().getVelocity());
   }
 
   private boolean bounded(double input, double min, double max) {
