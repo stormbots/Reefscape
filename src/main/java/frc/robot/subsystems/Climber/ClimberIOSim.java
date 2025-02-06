@@ -12,6 +12,7 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
@@ -21,6 +22,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -34,19 +36,51 @@ public class ClimberIOSim implements ClimberIO {
   private DCMotor dcmotor = DCMotor.getNeoVortex(1);
   private SparkFlexSim sparkSim = new SparkFlexSim(sparkFlex, dcmotor);
 
-  private LinearSystem plant = LinearSystemId.createSingleJointedArmSystem(dcmotor, 4, 100);
-  private DCMotorSim sim = new DCMotorSim(plant, dcmotor);
+  // private LinearSystem plant = LinearSystemId.createSingleJointedArmSystem(dcmotor, 4, 100);
+  // private DCMotorSim sim = new DCMotorSim(plant, dcmotor);
   //TODO put this in, as it's a better model as linearysstemID's is terrible.
-  // private SingleJointedArmSim sim = new SingleJointedArmSim(dcmotor, 360.0, 0.005, 0.5, 0.0, 2*(Math.PI), true, 0.0);
+  private SingleJointedArmSim sim = new SingleJointedArmSim(
+    dcmotor, 
+    360.0, 
+    0.005, 
+    0.5, 
+    -(2*Math.PI), 
+    (2*Math.PI), 
+    true, 
+    0.0);
 
   private double appliedVolts = 0.0;
   
 
   public ClimberIOSim(){
     //crudely attempt to define where we expect the simulation to start
-    var startPosition=100; //degrees
-    sim.setState(Math.toRadians(startPosition), 0);
-    sparkSim.enable();
+    //Removed because SingleJointedArmSim does this by default
+    // var startPosition=100; //degrees
+    // sim.setState(Math.toRadians(startPosition), 0);
+
+    //I also don't think this does anything
+    //sparkSim.enable();
+
+    // var config = new SparkFlexConfig();
+    // config.encoder.positionConversionFactor(1);
+    // config.absoluteEncoder.positionConversionFactor(360);
+
+    // config.inverted(true);
+    // config
+    //     .closedLoop
+    //     .outputRange(-0.5, 0.5)
+    //     .p(1 / 30.0)
+    //     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+    //     .positionWrappingEnabled(true)
+    //     .positionWrappingInputRange(0, 360);
+    //     // .positionWrappingInputRange(-180, 180);
+    // config.idleMode(IdleMode.kCoast).smartCurrentLimit(5).voltageCompensation(12.0);
+    // config.absoluteEncoder.inverted(false);
+    // sparkFlex.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+
+    // sparkSim = new SparkFlexSim(sparkFlex, dcmotor);
+    
+    
   }
 
   @Override
@@ -59,17 +93,22 @@ public class ClimberIOSim implements ClimberIO {
 
     sim.update(dt);
 
-    var rps = sim.getAngularVelocityRPM()*60;
-
-    sparkSim.iterate(rps, vbus, dt);
-    sparkSim.getAbsoluteEncoderSim().iterate(rps, dt);
-    sparkSim.getRelativeEncoderSim().iterate(rps, dt);
+    var rpm = Units.radiansPerSecondToRotationsPerMinute(sim.getVelocityRadPerSec());
+    
+    sparkSim.iterate(rpm, vbus, dt);
+    sparkSim.getRelativeEncoderSim().setPositionConversionFactor(360);
+    
+    sparkSim.getAbsoluteEncoderSim().iterate(rpm, dt);
+    sparkSim.getRelativeEncoderSim().iterate(rpm, dt);
 
     //Update the inputs for the log using the system state
-    inputs.climberRelativeAngle = Units.rotationsToDegrees(sim.getAngularPositionRotations());
-    inputs.climberVoltage = sim.getInputVoltage();
+    // inputs.climberRelativeAngle = Units.radiansToDegrees(sim.getAngleRads());
+    inputs.climberRelativeAngle = sparkSim.getRelativeEncoderSim().getPosition();
+    //inputs.climberVoltage = sim.getInputVoltage();
     inputs.climberCurrentDraw = sim.getCurrentDrawAmps();
-    inputs.climberAbsoluteAngle = sim.getAngularPosition().in(Degrees);
+    inputs.climberAbsoluteAngle = sparkSim.getAbsoluteEncoderSim().getPosition();
+
+    SmartDashboard.putNumber("sim/plantangle", Units.radiansToDegrees(sim.getAngleRads()));
 
     //TODO: Battery sim
     // climberSim.setInput(sim.getAppliedOutput() * RoboRioSim.getVInVoltage());
@@ -94,6 +133,7 @@ public class ClimberIOSim implements ClimberIO {
   @Override
   public double getPosition() {
     return sparkSim.getAbsoluteEncoderSim().getPosition();
+    // return Units.radiansToDegrees(sim.getAngleRads()); 
   }
 
   @Override
