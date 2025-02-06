@@ -28,7 +28,7 @@ public class ElevatorIOSim implements ElevatorIO {
             3.11845,
             drumRadius,
             Units.inchesToMeters(0),
-            Units.inchesToMeters(75),
+            Units.inchesToMeters(65),
             true,
             Units.inchesToMeters(0),
             new double[] {0.0, 0.0});

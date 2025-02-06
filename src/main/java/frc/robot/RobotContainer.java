@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -97,15 +98,15 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return elevator.setAngleRadiansCommand(Math.toRadians(180));
-    // return getStupidFunniTestAuto();
+    // return elevator.setAngleRadiansCommand(Math.toRadians(180));
+    return getStupidFunniTestAuto();
     // return new RunCommand(()-> coralIntake.setPositionRadians(1.8), coralIntake);
   }
 
   public Command getStupidFunniTestAuto() {
     Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
 
-    Pose2d startPose = new Pose2d(7.15, 6.5, new Rotation2d(Math.toRadians(180)));
+    Pose2d startPose = new Pose2d(7.15, 6.5, new Rotation2d());
 
     return new SequentialCommandGroup(
         new InstantCommand(() -> swerveSubsystem.resetOdometryAllianceAccounted(startPose)),
@@ -115,8 +116,11 @@ public class RobotContainer {
                     ReefHeight.L4.height + Elevator.kScoringOffsetHeight))
             .withTimeout(10),
         new WaitCommand(Seconds.of(0.1)),
-        intakeThenPlaceCommand("JToIntake", "IntakeToL"),
-        intakeThenPlaceCommand("KToIntake", "IntakeToL"));
+        intakeThenPlaceCommand("JToIntake", "IntakeToK"),
+        intakeThenPlaceCommand("KToIntake", "IntakeToL"),
+        intakeThenPlaceCommand("LToIntake", "IntakeToA"),
+        intakeThenPlaceCommand("AToIntake", "IntakeToB")
+      );
   }
 
   public Pose3d[] getFinalComponentPoses(){
@@ -127,7 +131,7 @@ public class RobotContainer {
       new Pose3d(0,0.235,0.075+elevator.getHeight()/2,new Rotation3d(0, 0,0)), //Elevator first stage
       new Pose3d(-0.017, 0.15, 0.133+elevator.getHeight(), new Rotation3d(0, -elevator.getArmAngleRadians()+Math.toRadians(90), 0)), //Arm
       new Pose3d(-0.01+elevator.getArmCoordinates().getX(), 0.085, 0.57+elevator.getArmCoordinates().getY()-0.41, 
-        new Rotation3d(0, elevator.getArmAngleRadians()-Math.toRadians(90)+elevator.getCoralScorerAngleRadians(), 0)), //Coral Scorer
+        new Rotation3d(0, -elevator.getArmAngleRadians()+Math.toRadians(90)-elevator.getCoralScorerAngleRadians(), 0)), //Coral Scorer
       new Pose3d(-0.018, 0.2, 0.1+elevator.getHeight(), new Rotation3d()) //Stage 2
     };
   }
@@ -135,21 +139,20 @@ public class RobotContainer {
   public Command intakeThenPlaceCommand(String intakePath, String scorePath){
     return new SequentialCommandGroup(
       new ParallelDeadlineGroup(
-                swerveSubsystem.runPathManual(intakePath),
-                elevator.setElevatorHeightCommand(0.95), // Intaking height
-                coralIntake.setPositionRadiansCommand(-40)
-                )
-            .withTimeout(10),
-        new WaitCommand(Seconds.of(0.1)),
-        new ParallelDeadlineGroup(
-                swerveSubsystem.runPathManual(scorePath),
-                elevator.setElevatorHeightCommand(
-                    ReefHeight.L4.height + Elevator.kScoringOffsetHeight),
-                coralIntake.setPositionRadiansCommand(90)
+        swerveSubsystem.runPathManual(intakePath),
+        new RunCommand(()->{elevator.setAngleRadians(Math.toRadians(-50)); elevator.setHeightMeters(0.7);}, elevator),
+        coralIntake.setPositionRadiansCommand(-40)
+      ).withTimeout(10),
 
-        )
-            .withTimeout(10),
-        new WaitCommand(Seconds.of(0.1))
+        new WaitCommand(Seconds.of(0.1)),
+
+      new ParallelDeadlineGroup(
+        swerveSubsystem.runPathManual(scorePath),
+        new RunCommand(()->{elevator.setAngleRadians(Math.toRadians(120)); elevator.setHeightMeters(Units.inchesToMeters(65));}, elevator),
+        new WaitCommand(0.25).andThen(coralIntake.setPositionRadiansCommand(90))
+      ).withTimeout(10),
+
+      new WaitCommand(Seconds.of(0.1))
     );
   }
 }
