@@ -4,22 +4,37 @@
 
 package frc.robot.subsystems.AlgaeGrabber;
 
+import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radian;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
+import com.revrobotics.sim.SparkFlexSim;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
@@ -27,17 +42,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Robot;
 
 public class AlgaeGrabber extends SubsystemBase {
   // public final AlgaeGrabberIO io;
   // public final AlgaeGrabberIOInputsAutoLogged inputs = new AlgaeGrabberIOInputsAutoLogged();
 
-  SparkMax shooterMotor = new SparkMax(16, MotorType.kBrushless);
-  SparkMax armMotor = new SparkMax(15, MotorType.kBrushless);
-  SparkMax intakeMotor = new SparkMax(14, MotorType.kBrushless);
+  SparkFlex shooterMotor = new SparkFlex(16, MotorType.kBrushless);
+  SparkFlex armMotor = new SparkFlex(15, MotorType.kBrushless);
+  SparkFlex intakeMotor = new SparkFlex(14, MotorType.kBrushless);
 
   private SlewRateLimiter armAngleSlew = new SlewRateLimiter(90);
 
@@ -310,6 +328,8 @@ public class AlgaeGrabber extends SubsystemBase {
     MechanismLigament2d intake = intakebar.append(new MechanismLigament2d("AlgaeIntake", 0, 90));
     MechanismLigament2d shooter = shooterbar.append(new MechanismLigament2d("AlgaeShooter", 0, 90));
 
+    MechanismLigament2d armPlant = root.append(new MechanismLigament2d("simBar", 30, 0));
+
     private AlgaeMechanism() {
       var barweight = 10;
       intakebarRelative.setColor(new Color8Bit(Color.kRed));
@@ -324,6 +344,8 @@ public class AlgaeGrabber extends SubsystemBase {
       shooter.setColor(new Color8Bit(Color.kDarkRed));
       intake.setLineWeight(barweight);
       shooter.setLineWeight(barweight);
+      armPlant.setLineWeight(1);
+      if(Robot.isReal())armPlant.setLength(0);
       SmartDashboard.putData("mechanism/algaegrabber", mech);
     }
 
@@ -336,10 +358,72 @@ public class AlgaeGrabber extends SubsystemBase {
       shooter.setLength(shooterMotor.getEncoder().getVelocity() / 5760.0 * barlength / 4);
 
       // This is mostly to validate absolute vs relative, since they should be identical
-      intakebarRelative.setAngle(
-          new Rotation2d(Math.toRadians(armMotor.getEncoder().getPosition())));
+      intakebarRelative.setAngle(new Rotation2d(Math.toRadians(armMotor.getEncoder().getPosition())));
+    
+      armPlant.setAngle(Radian.of(simArm.getAngleRads()).in(Degree));
     }
   }
 
   AlgaeMechanism mechanism = new AlgaeMechanism();
+
+
+  /////////////////////////////
+  /// Simulation stuff
+  /////////////////////////////
+  SparkFlexSim simArmMotor = new SparkFlexSim(armMotor, DCMotor.getNeoVortex(1));
+  SparkFlexSim simShooterMotor = new SparkFlexSim(shooterMotor, DCMotor.getNeoVortex(1));
+  SparkFlexSim simIntakeMotor = new SparkFlexSim(intakeMotor, DCMotor.getNeoVortex(1));
+
+  FlywheelSim simIntake = new FlywheelSim(
+    LinearSystemId.createFlywheelSystem(
+      DCMotor.getNeoVortex(1), 0.00002016125, 1
+    ),
+    DCMotor.getNeoVortex(1)
+  );
+  FlywheelSim simShooter = new FlywheelSim(
+    LinearSystemId.createFlywheelSystem(
+      DCMotor.getNeoVortex(1), 0.00002016125, 1
+    ),
+    DCMotor.getNeoVortex(1)
+  );
+  
+  SingleJointedArmSim simArm = new SingleJointedArmSim(
+    DCMotor.getNeoVortex(1), 
+    20*90/30.362,
+    0.2,
+    0.5,
+    Degree.of(-110).in(Radians),
+    Degree.of(20).in(Radians),
+    true,
+    Degree.of(0).in(Radians)
+  );
+
+  @Override
+  public void simulationPeriodic() {
+    var dt = 0.02;
+    var vbus = 12;
+
+    simArm.setInputVoltage(simArmMotor.getAppliedOutput()*vbus);
+    simArm.update(dt);
+    simArmMotor.iterate(
+      RadiansPerSecond.of(simArm.getVelocityRadPerSec()).in(DegreesPerSecond),
+      vbus, dt
+    );
+
+    simIntake.setInputVoltage(simIntakeMotor.getAppliedOutput()*vbus);
+    simIntake.update(dt);
+    simIntakeMotor.iterate(
+      simShooter.getAngularVelocity().in(RPM),
+      vbus, dt
+    );
+
+    simShooter.setInputVoltage(simShooterMotor.getAppliedOutput()*vbus);
+    simShooter.update(dt);
+    simShooterMotor.iterate(
+      simShooter.getAngularVelocity().in(RPM),
+      vbus, dt
+    );
+
+
+  }
 }
