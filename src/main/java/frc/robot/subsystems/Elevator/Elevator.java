@@ -58,10 +58,17 @@ public class Elevator extends SubsystemBase {
     }
   }
 
-  public final ElevatorPose L1 = new ElevatorPose(24, 0, 10);
-  public final ElevatorPose L2 = new ElevatorPose(30, 0, 10);
-  public final ElevatorPose L3 = new ElevatorPose(36, 0, 10);
-  public final ElevatorPose L4 = new ElevatorPose(40, 0, 10);
+
+  //These values are  not tuned
+
+  public final ElevatorPose kStationPickup =  new ElevatorPose(5, 90, -10);
+  public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 90, -10);
+  public final ElevatorPose kStowed =         new ElevatorPose(0, 90, 0);
+  public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
+  public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
+  public final ElevatorPose kL2 =             new ElevatorPose(30, 90, 10);
+  public final ElevatorPose kL3 =             new ElevatorPose(36, 90, 10);
+  public final ElevatorPose kL4 =             new ElevatorPose(40, 90, 10);
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
@@ -77,7 +84,7 @@ public class Elevator extends SubsystemBase {
       .inverted(false)
       ;
     elevatorConfig.softLimit
-    .forwardSoftLimit(40)//????
+    .forwardSoftLimit(40)//???? This is not enables and wont be tuned until we have compbot
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
