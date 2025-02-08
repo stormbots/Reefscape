@@ -6,13 +6,13 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
-import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.Elevator.Elevator.ElevatorPose;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -52,34 +52,23 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    new Trigger(exampleSubsystem::exampleCondition).onTrue(new ExampleCommand(exampleSubsystem));
 
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // cancelling on release.
-    // driverController.a()
-    //   .whileTrue(elevator.manualElevatorPower(.5));
-
-    // driverController.x()
-    //   .whileTrue(elevator.moveToHeight(5));
-
-    driverController.y()
-      .whileTrue(elevator.Score(1));
+    driverController.a()
+      .whileTrue(elevator.scoreAtPose(elevator.kL1));
+      SmartDashboard.putString("elevator/targetPose", "L1");
+      
 
     driverController.b()
-      .whileTrue(elevator.manualElevatorPower(-0.5*-1*0.4));
+      .whileTrue(elevator.scoreAtPose(elevator.kL2));
+      SmartDashboard.putString("elevator/targetPose", "L2");
 
-    // driverController.a()
-    // .whileTrue(elevator.moveToPose(elevator.L2))
-    // ;
-    // operatorController.a()
-    // .and(elevator.atTargetPosition)
-    // .whileTrue(elevator.scoreAtPose(elevator.L2));
+    driverController.x()
+      .whileTrue(elevator.scoreAtPose(elevator.new ElevatorPose(20, -40, 0)));
+      SmartDashboard.putString("elevator/targetPose", "L3");
 
-
-
-  }
-  private void periodic(){
+    driverController.y()
+      .whileTrue(elevator.scoreAtPose(elevator.kL4));
+      SmartDashboard.putString("elevator/targetPose", "L4");
 
   }
 
@@ -90,6 +79,16 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Autos.exampleAuto(exampleSubsystem);
+    // return Autos.exampleAuto(exampleSubsystem);
+    return new SequentialCommandGroup(
+      elevator.scoreAtPose(elevator.kL2).withTimeout(2),
+      elevator.moveToHeight(20).withTimeout(1),
+      elevator.moveToAngle(90).withTimeout(2),
+      elevator.moveToAngle(-45).withTimeout(2),
+      elevator.moveToAngle(0).withTimeout(2),
+      elevator.scoreAtPose(elevator.kL2).withTimeout(2),
+      elevator.scoreAtPose(elevator.kStowed).withTimeout(2)
+
+    );
   }
 }

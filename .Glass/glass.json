@@ -3,10 +3,10 @@
     "transitory": {
       "SmartDashboard": {
         "elevator": {
-          "angle": {
+          "open": true,
+          "out-motor": {
             "open": true
-          },
-          "open": true
+          }
         },
         "open": true
       }
@@ -26,6 +26,7 @@
       "/SmartDashboard/Motors": "Alerts",
       "/SmartDashboard/Swerve Drive": "Alerts",
       "/SmartDashboard/SwerveDebugField": "Field2d",
+      "/SmartDashboard/mechanism/algaegrabber": "Mechanism2d",
       "/SmartDashboard/mechanism/elevator": "Mechanism2d",
       "/SmartDashboard/odometryField": "Field2d"
     }

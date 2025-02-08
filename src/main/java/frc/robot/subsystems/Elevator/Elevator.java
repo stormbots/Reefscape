@@ -5,7 +5,19 @@
 
 package frc.robot.subsystems.Elevator;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.InchesPerSecond;
+import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Radian;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -19,11 +31,17 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
@@ -38,13 +56,18 @@ public class Elevator extends SubsystemBase {
   public boolean isHomed = false;
   public double power;
   public int current;
-  private final double tolerance = 0.1;
+  private final double toleranceHeight = 0.5;
+  private final double toleranceAngle = 5;
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
 
   SparkMax elevatorMotor = new SparkMax(10, MotorType.kBrushless);
   SparkMax rotationMotor = new SparkMax(12, MotorType.kBrushless);
   SparkMax coralOutMotor = new SparkMax(13, MotorType.kBrushless);
   SparkMax elevatorMotorFollower = new SparkMax(11, MotorType.kBrushless);
+
+  SparkMaxSim simElevatorMotor = new SparkMaxSim(elevatorMotor, DCMotor.getNeoVortex(1));
+  SparkMaxSim simRotationMotor = new SparkMaxSim(rotationMotor, DCMotor.getNeoVortex(1));
+  SparkMaxSim simCoralOutMotor = new SparkMaxSim(coralOutMotor, DCMotor.getNeoVortex(1));
 
   public class ElevatorPose {
     double height;
@@ -61,14 +84,14 @@ public class Elevator extends SubsystemBase {
 
   //These values are  not tuned
 
-  public final ElevatorPose kStationPickup =  new ElevatorPose(5, 90, -10);
-  public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 90, -10);
+  public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
+  public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 15, -10);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 90, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
-  public final ElevatorPose kL2 =             new ElevatorPose(30, 90, 10);
-  public final ElevatorPose kL3 =             new ElevatorPose(36, 90, 10);
-  public final ElevatorPose kL4 =             new ElevatorPose(40, 90, 10);
+  public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
+  public final ElevatorPose kL3 =             new ElevatorPose(36, 135, 10);
+  public final ElevatorPose kL4 =             new ElevatorPose(40, 135, 10);
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
@@ -163,7 +186,9 @@ public class Elevator extends SubsystemBase {
     rotationMotor.getEncoder().setPosition(rotationMotor.getAbsoluteEncoder().getPosition());
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
 
-    new Trigger(DriverStation::isEnabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
+    new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
+
+    simInit();
   }
 
   public Trigger haveCoral = new Trigger( () -> {
@@ -205,6 +230,7 @@ public class Elevator extends SubsystemBase {
 
   private void setAngle(double angle) {
     var ff = rotatorFF.calculate(Math.toRadians(angle), 0);
+    ff=0;//FIXME
     rotationMotor
       .getClosedLoopController()
       .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
@@ -212,9 +238,9 @@ public class Elevator extends SubsystemBase {
   }
 
   private void setScorerSpeed(double speed) {
-    rotationMotor
+    coralOutMotor
         .getClosedLoopController()
-        .setReference(speed, ControlType.kPosition, ClosedLoopSlot.kSlot0, 0, ArbFFUnits.kVoltage);
+        .setReference(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0, 0, ArbFFUnits.kVoltage);
     setpoint.speed = speed;
   }
 
@@ -257,16 +283,16 @@ public class Elevator extends SubsystemBase {
     ;
   }
 
-  public Command Score(double voltage) {
-    return runEnd(
-      ()-> {
-        coralOutMotor.setVoltage(voltage);
-      },
-      () -> {
-        coralOutMotor.setVoltage(0);
-      }
-    );
-  }
+  // public Command Score(double voltage) {
+  //   return runEnd(
+  //     ()-> {
+  //       coralOutMotor.setVoltage(voltage);
+  //     },
+  //     () -> {
+  //       coralOutMotor.setVoltage(0);
+  //     }
+  //   );
+  // }
 
 
   private Command moveToPoseWithScorer(ElevatorPose pose) {
@@ -283,31 +309,21 @@ public class Elevator extends SubsystemBase {
   public Command scoreAtPose(ElevatorPose pose) {
     return moveToPose(pose)
         .until(atTargetPosition /* .and(chassis.atproperreefposition) */)
-        .andThen(scoreAtPose(pose));
+        .andThen(moveToPoseWithScorer(pose));
   }
 
 
   public Trigger atTargetPosition =
-      new Trigger(
-          () -> {
-            if (bounded(
-                    elevatorMotor.getEncoder().getPosition(),
-                    setpoint.height - tolerance,
-                    setpoint.height + tolerance)
-                && bounded(
-                    rotationMotor.getAbsoluteEncoder().getPosition(),
-                    setpoint.angle - tolerance,
-                    setpoint.angle + tolerance)) {
-              return true;
-            }
-            return false;
-          });
+    new Trigger(() -> {
+      return 
+      MathUtil.isNear(setpoint.height, elevatorMotor.getEncoder().getPosition(), toleranceHeight)
+      && 
+      MathUtil.isNear(setpoint.angle, rotationMotor.getAbsoluteEncoder().getPosition(), toleranceAngle);
+    }).debounce(0.02*3)
+    ;
 
   public boolean bounded(double value, double min, double max) {
-    if (value >= min && value <= max) {
-      return true;
-    }
-    return false;
+    return (value >= min && value <= max);
   }
 
   @Override
@@ -322,6 +338,7 @@ public class Elevator extends SubsystemBase {
 
     SmartDashboard.putNumber("elevator/rotation/abs", rotationMotor.getAbsoluteEncoder().getPosition());
     SmartDashboard.putNumber("elevator/rotation/rel", rotationMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevaor/angle/degres", Units.radiansToDegrees(simArm.getAngleRads()));
 
     SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
     SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
@@ -342,8 +359,8 @@ public class Elevator extends SubsystemBase {
     MechanismLigament2d elevator = root.append(new MechanismLigament2d("Elevator", 7, 90));
     //This only exists to re-orient the rotator to a horizontal reference so later setAngles make sense
     MechanismLigament2d rotatorMount = elevator.append(new MechanismLigament2d("RotatorBase", 0, -90));
-    MechanismLigament2d rotator = rotatorMount.append(new MechanismLigament2d("Rotator", 0, 0));
-    MechanismLigament2d coral = rotator.append(new MechanismLigament2d("ElevatorCoral", 0, 0));
+    MechanismLigament2d rotator = rotatorMount.append(new MechanismLigament2d("Rotator", 1, 0));
+    MechanismLigament2d coral = rotator.append(new MechanismLigament2d("ElevatorCoral", 1, 0));
     MechanismLigament2d translator = rotator.append(new MechanismLigament2d("Translator", 0, 0));
     //These are just fixed rigid bars for visual reference
     MechanismLigament2d translatorBarA = rotator.append(new MechanismLigament2d("ATranslatorBarA", 12, 0));
@@ -370,10 +387,10 @@ public class Elevator extends SubsystemBase {
 
       coral.setColor(new Color8Bit(Color.kWhite));
       coral.setLineWeight(barweight * 4);
+      coral.setLength(0);
 
       rotatorRelative.setColor(new Color8Bit(Color.kRed));
       rotatorRelative.setLineWeight(barweight/2-1);
-
 
       SmartDashboard.putData("mechanism/elevator", mech);
     }
@@ -387,9 +404,65 @@ public class Elevator extends SubsystemBase {
       elevator.setLength(height);
       rotator.setAngle(new Rotation2d(Math.toRadians(angle)));
       translator.setLength(translatespeed / 5760 * 12);
-      coral.setLength(isCoralLoaded ? 12 : 0);
+      // coral.setLength(isCoralLoaded ? 12 : 0);
     }
   }
-
   ElevatorMechanism mechanism = new ElevatorMechanism();
+
+
+  ElevatorSim simElevator = new ElevatorSim(
+    DCMotor.getNeoVortex(1),
+    18, 
+    1, 
+    Inches.of(1).in(Meter), 
+    Inches.of(0).in(Meter), 
+    Inches.of(48).in(Meter), 
+    true, 
+    0
+  );
+  
+  double armlength = 0.3;//m
+  SingleJointedArmSim simArm = new SingleJointedArmSim(
+    DCMotor.getNeoVortex(1), 
+    18*4, 
+    2*armlength*armlength/3.0, 
+    armlength, 
+    Degrees.of(-90).in(Radians), 
+    Degrees.of(180).in(Radians), 
+    true, 
+    Degrees.of(90).in(Radians)
+    );
+
+  public void simInit(){
+    simArm.setState(Degrees.of(75).in(Radians), 0);
+  }
+
+  @Override
+  public void simulationPeriodic() {
+      // TODO Auto-generated method stub
+      var vbus = 12;
+      var dt = 0.02;
+
+      simElevator.setInputVoltage(simElevatorMotor.getAppliedOutput()*vbus);
+      simElevator.update(dt);
+
+      simArm.setInputVoltage(simRotationMotor.getAppliedOutput()*vbus);
+      simArm.update(dt);
+      SmartDashboard.putNumber("arm/plant/angle", Math.toDegrees(simArm.getAngleRads()));
+
+      simElevatorMotor.iterate(
+        MetersPerSecond.of(simElevator.getVelocityMetersPerSecond()).in(InchesPerSecond),
+        vbus,
+        dt
+      );
+
+      simRotationMotor.iterate(
+        RadiansPerSecond.of(simArm.getVelocityRadPerSec()).in(DegreesPerSecond),
+        vbus,
+        dt
+      );
+      // simRotationMotor.iterate(velocity, vbus, dt);
+      // simCoralOutMotor.iterate(velocity, vbus, dt);
+
+  }
 }
