@@ -8,7 +8,6 @@ import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
 public interface ElevatorIO {
-
   @AutoLog
   public static class ElevatorIOInputs {
     public double heightMeters = 0.0;
