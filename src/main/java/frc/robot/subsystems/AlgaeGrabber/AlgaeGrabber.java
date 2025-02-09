@@ -5,11 +5,13 @@
 package frc.robot.subsystems.AlgaeGrabber;
 
 import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radian;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
@@ -188,6 +190,10 @@ public class AlgaeGrabber extends SubsystemBase {
     return shooterMotor.getEncoder().getVelocity();
   }
 
+  private double getIntakeRPM() {
+    return shooterMotor.getEncoder().getVelocity();
+  }
+
   //////////////////////////////////
   /// Define some commands
   /// ///////////////////////////////
@@ -288,7 +294,7 @@ public class AlgaeGrabber extends SubsystemBase {
     // This method will be called once per scheduler run
     // io.updateInputs(inputs);
     // Logger.processInputs("AlgaeGrabber", inputs);
-    mechanism.mechanismUpdate();
+    mechanism.update();//TODO: Make this so it takes an Inputs object
 
     var currentcommand = Optional
         .ofNullable(this.getCurrentCommand())
@@ -308,118 +314,17 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/intake velocity",intakeMotor.getEncoder().getVelocity());
   }
 
-  /////////////////////////////
-  /// Do the mechanism logging
-  /////////////////////////////
-  // Create the basic mechanism construction
-  class AlgaeMechanism {
-    double angledelta = 15;
-    double barlength = 24;
-
-    public Mechanism2d mech = new Mechanism2d(36, 72);
-    MechanismRoot2d root = mech.getRoot("AlgaeGrabber", 6, 36);
-    MechanismLigament2d intakebarRelative =  root.append(new MechanismLigament2d("AlgaeIntakeBarRelative", 24, -90));
-    MechanismLigament2d intakebar = root.append(new MechanismLigament2d("AlgaeIntakeBar", 24, -90));
-    MechanismLigament2d shooterbar = root.append(new MechanismLigament2d("AlgaeShooterBar", 24, -90 + 10));
-    MechanismLigament2d intake = intakebar.append(new MechanismLigament2d("AlgaeIntake", 0, 90));
-    MechanismLigament2d shooter = shooterbar.append(new MechanismLigament2d("AlgaeShooter", 0, 90));
-
-    MechanismLigament2d armPlant = root.append(new MechanismLigament2d("simBar", 30, 0));
-
-    private AlgaeMechanism() {
-      var barweight = 10;
-      intakebarRelative.setColor(new Color8Bit(Color.kRed));
-      intakebarRelative.setLineWeight(barweight - 1);
-
-      intakebar.setColor(new Color8Bit(Color.kGray));
-      shooterbar.setColor(new Color8Bit(Color.kGray));
-      intakebar.setLineWeight(barweight);
-      shooterbar.setLineWeight(barweight);
-
-      intake.setColor(new Color8Bit(Color.kDarkGreen));
-      shooter.setColor(new Color8Bit(Color.kDarkRed));
-      intake.setLineWeight(barweight);
-      shooter.setLineWeight(barweight);
-      armPlant.setLineWeight(1);
-      if(Robot.isReal())armPlant.setLength(0);
-      SmartDashboard.putData("mechanism/algaegrabber", mech);
-    }
-
-    private void mechanismUpdate() {
-      var angle = getAngle();
-      intakebar.setAngle(new Rotation2d(Math.toRadians(angle)));
-      shooterbar.setAngle(new Rotation2d(Math.toRadians(angle + angledelta)));
-
-      intake.setLength(intakeMotor.getEncoder().getVelocity() / 5760.0 * barlength / 4);
-      shooter.setLength(shooterMotor.getEncoder().getVelocity() / 5760.0 * barlength / 4);
-
-      // This is mostly to validate absolute vs relative, since they should be identical
-      intakebarRelative.setAngle(new Rotation2d(Math.toRadians(armMotor.getEncoder().getPosition())));
-    
-      armPlant.setAngle(Radian.of(simArm.getAngleRads()).in(Degree));
-    }
-  }
-
-  AlgaeMechanism mechanism = new AlgaeMechanism();
-
-
-  /////////////////////////////
-  /// Simulation stuff
-  /////////////////////////////
-  SparkFlexSim simArmMotor = new SparkFlexSim(armMotor, DCMotor.getNeoVortex(1));
-  SparkFlexSim simShooterMotor = new SparkFlexSim(shooterMotor, DCMotor.getNeoVortex(1));
-  SparkFlexSim simIntakeMotor = new SparkFlexSim(intakeMotor, DCMotor.getNeoVortex(1));
-
-  FlywheelSim simIntake = new FlywheelSim(
-    LinearSystemId.createFlywheelSystem(
-      DCMotor.getNeoVortex(1), 0.00002016125, 1
-    ),
-    DCMotor.getNeoVortex(1)
-  );
-  FlywheelSim simShooter = new FlywheelSim(
-    LinearSystemId.createFlywheelSystem(
-      DCMotor.getNeoVortex(1), 0.00002016125, 1
-    ),
-    DCMotor.getNeoVortex(1)
-  );
-  
-  SingleJointedArmSim simArm = new SingleJointedArmSim(
-    DCMotor.getNeoVortex(1), 
-    20*90/30.362,
-    0.2,
-    0.5,
-    Degree.of(-110).in(Radians),
-    Degree.of(20).in(Radians),
-    true,
-    Degree.of(0).in(Radians)
-  );
-
+  AlgaeSim sim = new AlgaeSim(armMotor,intakeMotor,shooterMotor);
   @Override
   public void simulationPeriodic() {
-    var dt = 0.02;
-    var vbus = 12;
-
-    simArm.setInputVoltage(simArmMotor.getAppliedOutput()*vbus);
-    simArm.update(dt);
-    simArmMotor.iterate(
-      RadiansPerSecond.of(simArm.getVelocityRadPerSec()).in(DegreesPerSecond),
-      vbus, dt
-    );
-
-    simIntake.setInputVoltage(simIntakeMotor.getAppliedOutput()*vbus);
-    simIntake.update(dt);
-    simIntakeMotor.iterate(
-      simShooter.getAngularVelocity().in(RPM),
-      vbus, dt
-    );
-
-    simShooter.setInputVoltage(simShooterMotor.getAppliedOutput()*vbus);
-    simShooter.update(dt);
-    simShooterMotor.iterate(
-      simShooter.getAngularVelocity().in(RPM),
-      vbus, dt
-    );
-
-
+    sim.update();
   }
+
+  AlgaeMech2d mechanism = new AlgaeMech2d(
+    ()->Degrees.of(getAngle()),
+    ()->RPM.of(getShooterRPM()),
+    ()->RPM.of(getIntakeRPM()),
+    sim::getAngle
+  );
+
 }
