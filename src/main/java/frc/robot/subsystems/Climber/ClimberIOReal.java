@@ -17,6 +17,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
   SparkFlex climbMotor = new SparkFlex(9, MotorType.kBrushless);
+  SparkFlexConfig config;
   // 0 deg, 50.711
   // 88 deg, 153.705
   // lower softlimit 300 deg (abs) around inside bot
@@ -26,7 +27,7 @@ public class ClimberIOReal implements ClimberIO {
   // TODO: Fix wrapping issues for softlimits
 
   public ClimberIOReal() {
-    var config = new SparkFlexConfig();
+    config = new SparkFlexConfig();
     // config.encoder.positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
     config.encoder.positionConversionFactor(1);
     config.absoluteEncoder.positionConversionFactor(360);
@@ -38,9 +39,9 @@ public class ClimberIOReal implements ClimberIO {
         .p(1 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
-        // .positionWrappingInputRange(0, 360);
-        .positionWrappingInputRange(-180, 180);
-    config.idleMode(IdleMode.kCoast).smartCurrentLimit(5).voltageCompensation(12.0);
+        .positionWrappingInputRange(0, 360);
+        // .positionWrappingInputRange(-180, 180);
+    config.idleMode(IdleMode.kCoast).smartCurrentLimit(60).voltageCompensation(11.0);
     config.absoluteEncoder.inverted(false);
     config
         .softLimit
@@ -59,20 +60,23 @@ public class ClimberIOReal implements ClimberIO {
     inputs.climberRelativeAngle = climbMotor.getEncoder().getPosition();
     inputs.climberVoltage = climbMotor.getAppliedOutput() * climbMotor.getBusVoltage();
     inputs.climberCurrentDraw = climbMotor.getOutputCurrent();
+    inputs.climberVelocity = climbMotor.getAbsoluteEncoder().getVelocity()/60;
+
   }
 
-  // @Override
-  // public void setBrakeMode(boolean brakeMode) {
-  //   if (brakeMode) {
-  //     config.idleMode(IdleMode.kBrake);
-  //   } else {
-  //     config.idleMode(IdleMode.kCoast);
-  //   }
-  // }
+  @Override
+  public void setBrakeMode() {
+      config.idleMode(IdleMode.kBrake);
+  }
 
   @Override
   public double getPosition() {
     return climbMotor.getAbsoluteEncoder().getPosition();
+  }
+
+  @Override
+  public double getVelocity() {
+    return climbMotor.getAbsoluteEncoder().getVelocity()/60;
   }
 
   @Override

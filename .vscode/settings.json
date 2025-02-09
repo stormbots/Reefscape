@@ -69,5 +69,6 @@
   "[java]": {
     "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle"
   },
-  "java.completion.guessMethodArguments": "insertParameterNames"
+  "java.completion.guessMethodArguments": "insertParameterNames",
+  "wpilib.autoStartRioLog": false
 }

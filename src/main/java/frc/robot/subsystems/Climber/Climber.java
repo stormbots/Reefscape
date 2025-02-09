@@ -7,18 +7,24 @@ package frc.robot.subsystems.Climber;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import java.util.function.DoubleSupplier;
+
 import org.littletonrobotics.junction.Logger;
 
 public class Climber extends SubsystemBase {
   private final ClimberIO io;
   private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
   private final ClimberVisualizer visualizer;
+  SlewRateLimiter rateLimit = new SlewRateLimiter(15);
   /** Creates a new Climber. */
   public Climber(ClimberIO io) {
     this.io = io;
 
-    rateLimit.reset(io.getPosition());
+    rateLimit.reset(getPosition());
     visualizer = new ClimberVisualizer("climber");
+
+    setDefaultCommand(holdPosition(this::getPosition));
   }
 
   @Override
@@ -29,21 +35,40 @@ public class Climber extends SubsystemBase {
     visualizer.update(inputs.climberAbsoluteAngle);
   }
 
-  public Command setAngle(double degrees) {
-    return run(() -> io.setReference(degrees));
+  public Command holdPosition(DoubleSupplier degrees) {
+    return startRun(
+      () -> io.setReference(degrees.getAsDouble()),
+      ()-> {}
+    );
   }
 
-  // public Command setBrakeMode(boolean brakeMode) {
-  //   return run(() -> io.setBrakeMode(brakeMode));
-  // }
+
+  public Command setAngle(double degrees) {
+    return startRun(
+      ()-> rateLimit.reset(getPosition()),
+      () -> io.setReference(rateLimit.calculate(degrees))
+      );
+    // return run(() -> io.setReference(degrees));
+
+  }
+
+  public Command setBrakeMode() {
+    return run(() -> io.setBrakeMode());
+  }
 
   public Command prepareToClimb() {
-    return run(() -> io.setReference(-60));
+    return setAngle(-60);
   }
 
-  SlewRateLimiter rateLimit = new SlewRateLimiter(30);
+  
 
   public Command climb() {
-    return run(() -> io.setReference(43));
+    return setAngle(60);
+  }
+
+  public double getPosition(){
+    var angle = io.getPosition();
+    if(angle>180) angle = angle-360;
+    return angle;
   }
 }

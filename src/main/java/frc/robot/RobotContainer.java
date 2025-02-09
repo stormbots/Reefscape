@@ -49,6 +49,7 @@ public class RobotContainer {
     }
     // Configure the trigger bindings
     configureBindings();
+    
   }
 
   /**
@@ -66,9 +67,13 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.b().onTrue(climber.climb());
-    driverController.a().onTrue(climber.prepareToClimb());
+    driverController.b().whileTrue(climber.climb());
+    driverController.a().whileTrue(climber.prepareToClimb());
   }
+
+  // private void configureDefaultCommands(){
+  //   climber.setDefaultCommand(climber.setAngle(climber.getPosition()));
+  // }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.

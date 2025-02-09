@@ -17,15 +17,22 @@ public interface ClimberIO {
     double climberRelativeAngle = 0.0;
     double climberVoltage = 0.0;
     double climberCurrentDraw = 0.0;
+    double climberVelocity = 0.0;
   }
 
   public default void updateInputs(ClimberIOInputs inputs) {}
 
-  // public default void setBrakeMode(boolean brakeMode) {}
+  public default void setBrakeMode() {}
+
+  public default void setCoastMode() {}
 
   public default void setReference(double degrees) {}
 
   public default double getPosition() {
+    return 0;
+  }
+
+  public default double getVelocity() {
     return 0;
   }
 
