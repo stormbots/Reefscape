@@ -37,8 +37,8 @@ public class ClimberIOSim implements ClimberIO {
     10*10, 
     0.5*momentArm*momentArm,
     momentArm, 
-    Math.toRadians(-600), 
-    Math.toRadians(1100), 
+    Math.toRadians(-180), 
+    Math.toRadians(180), 
     true, 
     Math.toRadians(startPosition)
   );  
@@ -86,6 +86,7 @@ public class ClimberIOSim implements ClimberIO {
   @Override
   public double getPosition() {
     return sparkSim.getAbsoluteEncoderSim().getPosition();
+    // return Units.radiansToDegrees(sim.getAngleRads()); 
   }
 
   @Override
