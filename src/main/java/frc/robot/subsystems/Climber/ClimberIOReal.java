@@ -23,7 +23,7 @@ public class ClimberIOReal implements ClimberIO {
   }
 
   @Override
-  public void updateInputs(ClimberIOInputs inputs) {
+  public void updateInputs(ClimberIOInputs newinputs) {
     //disregard incoming inputs and just run it. 
     inputs.climberAbsoluteAngle = motor.getAbsoluteEncoder().getPosition();
     inputs.climberCurrentDraw = motor.getOutputCurrent();
@@ -58,5 +58,5 @@ public class ClimberIOReal implements ClimberIO {
   public void setRelativeEncoderPosition(double position){
     motor.getEncoder().setPosition(position);
   }
-  
+
 }

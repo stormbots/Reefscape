@@ -65,14 +65,15 @@ public class Climber extends SubsystemBase {
     var config = new SparkFlexConfig();
     config.encoder
         .positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
-    // config.encoder.positionConversionFactor(1);
+        // .positionConversionFactor(1);
     config.absoluteEncoder
-        .positionConversionFactor(360);
-
+    .positionConversionFactor(360)
+    .velocityConversionFactor(360/60.0)
+    ;
     config.inverted(true);
     config.closedLoop
         .outputRange(-0.5, 0.5)
-        .p(1 / 30.0)
+        .p(1 / 10.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, 360);
@@ -90,17 +91,15 @@ public class Climber extends SubsystemBase {
 
     io.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
-
-
     //Do some final tidying up. 
     io.setRelativeEncoderPosition(io.getPosition());
     isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3)).debounce(0.1);
     slew.reset(io.getPosition());
-    
+
     setDefaultCommand(holdPosition());
     visualizer = new ClimberVisualizer("climber");
     SmartDashboard.putData("mechanism/climber", mech);
-
+    SmartDashboard.putData("subsystems/climber",this);
   }
 
   @Override
@@ -149,6 +148,8 @@ public class Climber extends SubsystemBase {
 
   private void setPosition(double angle) {
     setpoint=angle;
+    SmartDashboard.putNumber("sim/setpoint",setpoint);
+    SmartDashboard.putNumber("sim/position",io.getPosition());
     io.setReference(slew.calculate(setpoint));
   }
 
@@ -160,7 +161,8 @@ public class Climber extends SubsystemBase {
   // Create the basic mechanism construction
   Mechanism2d mech = new Mechanism2d(20, 20);
   MechanismRoot2d root = mech.getRoot("ClimberRoot", 12, 10);
-  MechanismLigament2d pivot = root.append(new MechanismLigament2d("ClimberPivot", 4, 0));
+  double offsetBecauseWrongAngleReferenceChosen = 90;
+  MechanismLigament2d pivot = root.append(new MechanismLigament2d("ClimberPivot", 4, 0+offsetBecauseWrongAngleReferenceChosen));
   MechanismLigament2d top = pivot.append(new MechanismLigament2d("ClimberPivotTop", 4, 0));
   MechanismLigament2d bot = pivot.append(new MechanismLigament2d("ClimberPivotBottom", 9, -90));
 
@@ -177,5 +179,7 @@ public class Climber extends SubsystemBase {
     };
 
     builder.addDoubleProperty("Ramp Rate", ()->rate,resetSlew);
+    builder.addDoubleProperty("Position(abs)", io::getPosition, null);
+    builder.addDoubleProperty("Setpoint", ()->setpoint, null /*(s)->setpoint=s*/);
   }
 }

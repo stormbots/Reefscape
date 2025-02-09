@@ -4,7 +4,10 @@
 
 package frc.robot.subsystems.Climber;
 
-import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import com.revrobotics.sim.SparkFlexSim;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -16,66 +19,55 @@ import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
-import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 /** Add your docs here. */
 public class ClimberIOSim implements ClimberIO {  
-  // private DCMotorSim sim = new DCMotorSim(
-  //         LinearSystemId.createDCMotorSystem(DCMotor.getNeoVortex(1), 0, 0),
-  //         DCMotor.getNeoVortex(1));
 
   private SparkFlex sparkFlex = new SparkFlex(9, MotorType.kBrushless);
   private DCMotor dcmotor = DCMotor.getNeoVortex(1);
   private SparkFlexSim sparkSim = new SparkFlexSim(sparkFlex, dcmotor);
+  double startPosition=110; //degrees
 
-  private LinearSystem plant = LinearSystemId.createSingleJointedArmSystem(dcmotor, 4, 100);
-  private DCMotorSim sim = new DCMotorSim(plant, dcmotor);
-  //TODO put this in, as it's a better model as linearysstemID's is terrible.
-  // private SingleJointedArmSim sim = new SingleJointedArmSim(dcmotor, 360.0, 0.005, 0.5, 0.0, 2*(Math.PI), true, 0.0);
-
-  private double appliedVolts = 0.0;
-  
+  double momentArm=Inches.of(4).in(Meter);
+  private SingleJointedArmSim sim = new SingleJointedArmSim(dcmotor, 
+    10*10, 
+    0.5*momentArm*momentArm,
+    momentArm, 
+    Math.toRadians(-600), 
+    Math.toRadians(1100), 
+    true, 
+    Math.toRadians(startPosition)
+  );  
 
   public ClimberIOSim(){
-    //crudely attempt to define where we expect the simulation to start
-    var startPosition=100; //degrees
     sim.setState(Math.toRadians(startPosition), 0);
-    sparkSim.enable();
+    sparkSim.setPosition(startPosition);
   }
 
   @Override
   public void updateInputs(ClimberIOInputs inputs) {
     var dt = 0.02;
     var vbus = 12;
+    //log the current system state
     inputs.climberVoltage = sparkSim.getAppliedOutput() * vbus;
-    //output of the system is now known; We can finally update the simulation
-    sim.setInputVoltage(inputs.climberVoltage);
-
-    sim.update(dt);
-
-    var rps = sim.getAngularVelocityRPM()*60;
-
-    sparkSim.iterate(rps, vbus, dt);
-    sparkSim.getAbsoluteEncoderSim().iterate(rps, dt);
-    sparkSim.getRelativeEncoderSim().iterate(rps, dt);
-
-    //Update the inputs for the log using the system state
-    inputs.climberRelativeAngle = Units.rotationsToDegrees(sim.getAngularPositionRotations());
-    inputs.climberVoltage = sim.getInputVoltage();
-    inputs.climberCurrentDraw = sim.getCurrentDrawAmps();
-    inputs.climberAbsoluteAngle = sim.getAngularPosition().in(Degrees);
+    inputs.climberCurrentDraw = sparkSim.getMotorCurrent();
+    inputs.climberRelativeAngle = getPosition();
+    inputs.climberAbsoluteAngle = getPosition();
 
     //TODO: Battery sim
     // climberSim.setInput(sim.getAppliedOutput() * RoboRioSim.getVInVoltage());
     // climberSim.update(0.02);
     // sim.iterate(Units.radiansPerSecondToRotationsPerMinute(climberSim.getVelocityRadPerSec()), RoboRioSim.getVInVoltage(), 0.02);
     // RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(climberSim.getCurrentDrawAmps()));
+
+    sim.setInputVoltage(inputs.climberVoltage);
+    sim.update(dt);
+    var angVel = RadiansPerSecond.of(sim.getVelocityRadPerSec()).in(DegreesPerSecond);
+    sparkSim.iterate(angVel, vbus, dt);
   }
 
   @Override
