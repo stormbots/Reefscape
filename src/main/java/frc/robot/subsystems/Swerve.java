@@ -18,11 +18,15 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -58,9 +62,9 @@ public class Swerve extends SubsystemBase {
     debugField2d.getObject("targetPoseThree").setPose(new Pose2d(6.3, 4.1, new Rotation2d(0.5)));
     
     //Need to turn this back on when running path, commented out for now because its angry
-    //configurePathplanner();
+    configurePathplanner();
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
-    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"practiceBot");
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"tabiSwerve");
     try
     {
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(maximumSpeed);
@@ -230,19 +234,18 @@ public class Swerve extends SubsystemBase {
     });
   }
 
-  public Command pathToPose(Pose2d targetPoseIgnore){
-    var pose = getPose();
-    List<Pose2d> list = new ArrayList<>();{{
-      // add(new Pose2d(1,2,new Rotation2d())); //how to add to a fixed object
-    }};
-
-    list.add(debugField2d.getObject("targetPoseOne").getPose());
-    list.add(debugField2d.getObject("targetPoseTwo").getPose());
-    list.add(debugField2d.getObject("targetPoseThree").getPose());
+  public Command pathToPose(Pose2d targetPose){
     
-    var targetPose = pose.nearest(list);
+   
+   
+    //robot constraints for pathplanner
     PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-    return AutoBuilder.pathfindToPose(targetPose, constraints, Units.MetersPerSecond.of(0.5));
+
+  
+    
+    //following path
+   return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
+
   }
 
   public Pose2d getPose(){
@@ -265,8 +268,4 @@ public class Swerve extends SubsystemBase {
   public Command resetGyro(){
     return runOnce(swerveDrive::zeroGyro).ignoringDisable(true);
   }
-
-  //public Command driveToPose(){
-   // 
-  //}
 }
