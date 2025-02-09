@@ -4,33 +4,35 @@
 
 package frc.robot.subsystems.Climber;
 
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj.util.Color8Bit;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
 import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
 import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 /** Add your docs here. */
 public class ClimberVisualizer {
-  private final LoggedMechanism2d mechanism;
-  private final LoggedMechanismLigament2d climber;
-  private final String key;
+  private String key;
+
+  double offsetBecauseWrongAngleReferenceChosen = 90;
+
+  // Create the basic mechanism construction
+  LoggedMechanism2d mechanism = new LoggedMechanism2d(24, 24);
+  LoggedMechanismRoot2d root = mechanism.getRoot("ClimberRoot", 12, 10);
+  LoggedMechanismLigament2d pivot = root.append(new LoggedMechanismLigament2d("Climber", 4, 0));
+  LoggedMechanismLigament2d top = pivot.append(new LoggedMechanismLigament2d("ClimberHook", 4, 0));
+  LoggedMechanismLigament2d bot = pivot.append(new LoggedMechanismLigament2d("ClimberBottomBar", 9, -90));
+  LoggedMechanismLigament2d foot = bot.append(new LoggedMechanismLigament2d("Climberfoot", 3, 90));
+
 
   public ClimberVisualizer(String key) {
     this.key = key;
-    mechanism =
-        new LoggedMechanism2d(
-            Units.inchesToMeters(24), Units.inchesToMeters(24), new Color8Bit(Color.kWhite));
-    LoggedMechanismRoot2d root =
-        mechanism.getRoot(key, Units.inchesToMeters(12), Units.inchesToMeters(12)); // placeholder
-    climber = new LoggedMechanismLigament2d("climber", Units.inchesToMeters(12), 0); // placeholder
-    root.append(climber);
+    SmartDashboard.putData("mechanism/climber",mechanism);
   }
 
   public void update(double climberAngleDegrees) {
-    climber.setAngle(climberAngleDegrees);
+    pivot.setAngle(climberAngleDegrees+offsetBecauseWrongAngleReferenceChosen);
     Logger.recordOutput("climber/Mechanism2d/" + key, mechanism);
   }
 }
