@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
@@ -56,10 +57,10 @@ public class RobotContainer {
     driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
 
     // Expected algae control stuff
-    // operatorController.x().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
-    // operatorController.y().whileTrue(algaeGrabber.scoreProcessor());
-    // operatorController.a().whileTrue(algaeGrabber.prepareToShoot());
-    // operatorController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
+    // driverController.x().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+    // driverController.y().whileTrue(algaeGrabber.scoreProcessor());
+    // driverController.a().whileTrue(algaeGrabber.prepareToShoot());
+    // driverController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
   }
 
   /**
