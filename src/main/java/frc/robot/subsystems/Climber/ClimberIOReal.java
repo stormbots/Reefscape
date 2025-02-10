@@ -29,6 +29,12 @@ public class ClimberIOReal implements ClimberIO {
     inputs.climberCurrentDraw = motor.getOutputCurrent();
     inputs.climberRelativeAngle = motor.getEncoder().getPosition();
     inputs.climberVoltage = motor.getAppliedOutput() * motor.getBusVoltage();
+    inputs.climberVelocity = motor.getAbsoluteEncoder().getVelocity();
+  }
+
+  @Override
+  public double getVelocity() {
+    return motor.getAbsoluteEncoder().getVelocity();
   }
 
   @Override

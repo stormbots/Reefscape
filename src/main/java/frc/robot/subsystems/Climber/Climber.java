@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.Climber;
 
-import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -17,7 +16,6 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -31,11 +29,9 @@ public class Climber extends SubsystemBase {
   private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
   private double setpoint=100;
-  double rate = 30;
-  SlewRateLimiter slew=new SlewRateLimiter(rate);
-
 
   private final ClimberVisualizer visualizer;
+  SlewRateLimiter rateLimit = new SlewRateLimiter(15);
   /** Creates a new Climber. */
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
@@ -55,48 +51,50 @@ public class Climber extends SubsystemBase {
   // upper softlimit/stow 43 (abs) deg
   // motor invert true, absolute encoder fine
 
-
     io.configure(getClimberMotorConfig(), ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
     //Do some final tidying up. 
     io.setRelativeEncoderPosition(io.getPosition());
     isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3)).debounce(0.1);
-    slew.reset(io.getPosition());
+    rateLimit.reset(getPosition());
 
-    setDefaultCommand(holdPosition());
     visualizer = new ClimberVisualizer("climber");
 
+    setDefaultCommand(holdPosition());
     SmartDashboard.putData("subsystems/climber",this);
   }
 
 
   private SparkFlexConfig getClimberMotorConfig(){
     var config = new SparkFlexConfig();
+    config = new SparkFlexConfig();
+    //unused and uncalibrated value config.encoder.positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
     config.encoder
-        .positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
-        // .positionConversionFactor(1);
+    .positionConversionFactor(1);
     config.absoluteEncoder
     .positionConversionFactor(360)
-    .velocityConversionFactor(360/60.0)
-    ;
+    .velocityConversionFactor(360/60);
+
     config.inverted(true);
     config.closedLoop
         .outputRange(-0.5, 0.5)
-        .p(1 / 10.0)
+        .p(1 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, 360);
-        // .positionWrappingInputRange(-180, 180); //TODO: Test this!!
+
     config
-        .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit(5)
-        .voltageCompensation(11.0);
+    .idleMode(IdleMode.kCoast)
+    .smartCurrentLimit(60)
+    .voltageCompensation(11.0);
+
     config.absoluteEncoder.inverted(false);
     config.softLimit
         .forwardSoftLimit(43)
         .forwardSoftLimitEnabled(false)
         .reverseSoftLimit(-60)
         .reverseSoftLimitEnabled(false);
+
     return config;
   }
 
@@ -114,7 +112,8 @@ public class Climber extends SubsystemBase {
   }
 
   public Command prepareToClimb() {
-    return setAngle(()->-60);
+    return new InstantCommand(()->setIdleMode(IdleMode.kCoast))
+    .andThen(setAngle(()->-60));
   }
 
   public Command stow() {
@@ -124,29 +123,21 @@ public class Climber extends SubsystemBase {
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(()->43));
+    .andThen(setAngle(()->60));
   }
   
   public Command setAngle(DoubleSupplier angle) {
-    return run(() -> setPosition(angle.getAsDouble())).until(isOnTarget);
-  }
-
-  /** Go to the setpoint if we're actually at it, otherwise just halt */
-  public Command holdPosition(){
-    return new ConditionalCommand(
-      setAngle(()->setpoint),
-      setAngle(io::getPosition),
-      isOnTarget::getAsBoolean
-    );
+    return startRun(
+      ()-> rateLimit.reset(getPosition()),
+      () -> setPosition(angle.getAsDouble())
+      );
   }
 
   public Trigger isOnTarget;// Must be initialized in constructor after IO
 
   private void setPosition(double angle) {
     setpoint=angle;
-    SmartDashboard.putNumber("sim/setpoint",setpoint);
-    SmartDashboard.putNumber("sim/position",io.getPosition());
-    io.setReference(slew.calculate(setpoint));
+    io.setReference(rateLimit.calculate(setpoint));
   }
 
   public void setIdleMode(IdleMode idleMode) {
@@ -154,16 +145,25 @@ public class Climber extends SubsystemBase {
     io.configureAsync(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
-  @Override
-  public void initSendable(SendableBuilder builder) {
-    DoubleConsumer resetSlew=(double d)->{
-      rate=d;
-      slew=new SlewRateLimiter(d);
-      slew.reset(io.getPosition());
-    };
-
-    builder.addDoubleProperty("Ramp Rate", ()->rate,resetSlew);
-    builder.addDoubleProperty("Position(abs)", io::getPosition, null);
-    builder.addDoubleProperty("Setpoint", ()->setpoint, null /*(s)->setpoint=s*/);
+  /** Go to the setpoint if we're actually near it, otherwise just halt 
+   * Without doing this, you wind up being off by the allowed tolerance */
+  public Command holdPosition(){
+    return new ConditionalCommand(
+      setAngle(()->setpoint),
+      startRun(
+        //Set the position to where we're at now, ignoring potential rate limiting
+        () -> {setpoint = getPosition(); io.setReference(setpoint);}, 
+        ()-> {} // Do nothing for the lifetime of the command
+      ),
+      isOnTarget::getAsBoolean
+    );
   }
+
+
+  public double getPosition(){
+    var angle = io.getPosition();
+    if(angle>180) angle = angle-360;
+    return angle;
+  }
+
 }
