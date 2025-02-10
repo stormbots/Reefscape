@@ -60,7 +60,8 @@ public class Climber extends SubsystemBase {
 
     visualizer = new ClimberVisualizer("climber");
 
-    setDefaultCommand(holdPosition());
+    //TODO: Remove automated motion until tested
+    // setDefaultCommand(holdPosition());
     SmartDashboard.putData("subsystems/climber",this);
   }
 
