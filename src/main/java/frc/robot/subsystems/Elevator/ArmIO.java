@@ -8,7 +8,7 @@ import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
 public interface ArmIO {
-    @AutoLog
+  @AutoLog
   public static class ArmIOInputs {
     public double armRelativePositionRads = 0.0;
     public double armAbsolutePositionRads = 0.0;
