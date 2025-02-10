@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.CoralIntake.CoralIntake;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -24,6 +25,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
   public final Climber climber = new Climber();
+  public final CoralIntake intake = new CoralIntake();
 
   // private final Tabi tabi = new Tabi();
 
