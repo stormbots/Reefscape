@@ -62,7 +62,7 @@ public class Swerve extends SubsystemBase {
     }
 
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.11553, 1.956, 0.33358));
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.11553, 3.956, 0.33358));
 
     swerveDrive.resetOdometry(new Pose2d(1.0, 5.0, new Rotation2d()));
 
@@ -79,29 +79,10 @@ public class Swerve extends SubsystemBase {
   public void configurePathplanner() {
     RobotConfig robotConfig;
 
-    double kModuleXOffset = Meters.convertFrom(23.5, Inches) / 2.0;
-    double kModuleYOffset = Meters.convertFrom(23.5, Inches) / 2.0;
+    //Initialize robotConfig from gui, lessons were learned
 
-    Translation2d[] moduleOffsets =
-        new Translation2d[] {
-          new Translation2d(kModuleXOffset, kModuleYOffset),
-          new Translation2d(kModuleXOffset, -kModuleYOffset),
-          new Translation2d(-kModuleXOffset, kModuleYOffset),
-          new Translation2d(-kModuleXOffset, -kModuleYOffset)
-        };
-
-    ModuleConfig moduleConfig =
-        new ModuleConfig(
-            Units.inchesToMeters(3),
-            5.1,
-            1.3,
-            DCMotor.getNeoVortex(1).withReduction(5.076923076923077),
-            600,
-            1);
-
-    robotConfig =
-        new RobotConfig(Pounds.of(100), KilogramSquareMeters.of(15), moduleConfig, moduleOffsets);
-
+    try {
+      robotConfig = RobotConfig.fromGUISettings();
     BooleanSupplier shouldFlipPath =
         () -> {
           // Boolean supplier that controls when the path will be mirrored for the red alliance
@@ -122,12 +103,15 @@ public class Swerve extends SubsystemBase {
         this::setChassisSpeeds,
         new PPHolonomicDriveController( // PPHolonomicController is the built in path following
             // controller for holonomic drive trains
-            new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+            new PIDConstants(0.0, 0.0, 0.0), // Translation PID constants
             new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
             ),
         robotConfig,
         shouldFlipPath,
         this);
+    } catch (Exception e) {
+      // TODO: handle exception
+    }
   }
 
   public Command driveCommand(
