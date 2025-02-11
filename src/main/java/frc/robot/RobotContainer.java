@@ -12,6 +12,12 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.OperatorConstants;
+import frc.robot.commands.Autos;
+import frc.robot.commands.ExampleCommand;
+import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Climber.Climber;
 
@@ -28,6 +34,8 @@ public class RobotContainer {
   public final Climber climber = new Climber();
 
   // private final Tabi tabi = new Tabi();
+
+  private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController driverController =
@@ -57,8 +65,13 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.b().whileTrue(climber.climb());
-    driverController.a().whileTrue(climber.prepareToClimb());
+    driverController.b().whileTrue(exampleSubsystem.exampleMethodCommand());
+
+    // Expected algae control stuff
+    // driverController.x().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+    // driverController.y().whileTrue(algaeGrabber.scoreProcessor());
+    // driverController.a().whileTrue(algaeGrabber.prepareToShoot());
+    // driverController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
   }
 
   // private void configureDefaultCommands(){

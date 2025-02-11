@@ -179,6 +179,7 @@ createVersionFile.dependsOn(eventDeploy)
 project.compileJava.dependsOn(spotlessApply)
 spotless {
     java {
+        // Automatic code mangling. >:(
         // target fileTree(".") {
         //     include "**/*.java"
         //     exclude "**/build/**", "**/build-*/**"
