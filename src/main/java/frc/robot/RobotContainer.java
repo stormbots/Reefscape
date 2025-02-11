@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -81,5 +83,31 @@ public class RobotContainer {
       climber.stow()
       
     );
+  }
+
+  public Pose3d[] getFinalComponentPoses(){
+    //Original, use once methods get implemented
+    // return new Pose3d[] {
+    //   new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, -coralIntake.getPositionRadians(), 0)), // intake
+    //   new Pose3d(0,-0.229,0.3805,new Rotation3d(Math.toRadians(0), 0, 0)), // climber,
+    //   new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(-90), 0)), //Algae Scorer
+    //   new Pose3d(0,0.235,0.075+elevator.getHeight()/2,new Rotation3d(0, 0,0)), //Elevator first stage
+    //   new Pose3d(-0.017, 0.15, 0.133+elevator.getHeight(), new Rotation3d(0, -elevator.getArmAngleRadians()+Math.toRadians(90), 0)), //Arm
+    //   new Pose3d(-0.01+elevator.getArmCoordinates().getX(), 0.085, 0.57+elevator.getArmCoordinates().getY()-0.41, 
+    //     new Rotation3d(0, -elevator.getArmAngleRadians()+Math.toRadians(90)-elevator.getCoralScorerAngleRadians(), 0)), //Coral Scorer
+    //   new Pose3d(-0.018, 0.2, 0.1+elevator.getHeight(), new Rotation3d()) //Stage 2
+    // };
+
+    //defaulted w/o subsytems
+    return new Pose3d[] {
+      new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, Math.toRadians(90), 0)), // intake
+      new Pose3d(0,-0.229,0.3805,new Rotation3d(-Math.toRadians(climber.getPosition()), 0, 0)), // climber,
+      new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(-90), 0)), //Algae Scorer
+      new Pose3d(0,0.235,0.075,new Rotation3d(0, 0,0)), //Elevator first stage
+      new Pose3d(-0.017, 0.15, 0.133, new Rotation3d(0, Math.toRadians(90), 0)), //Arm
+      new Pose3d(-0.01, 0.085, 0.57+0.41-0.41, 
+        new Rotation3d(0, 0, 0)), //Coral Scorer
+      new Pose3d(-0.018, 0.2, 0.1, new Rotation3d()) //Stage 2
+    };
   }
 }
