@@ -14,6 +14,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CoralIntake extends SubsystemBase {
@@ -73,5 +74,9 @@ public class CoralIntake extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     sim.update();
+  }
+
+  public Angle getAngle(){
+    return Degrees.of(pivotMotor.getAbsoluteEncoder().getPosition());
   }
 }
