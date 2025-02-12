@@ -115,7 +115,7 @@ public class RobotContainer {
     return new Pose3d[] {
       new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, Math.toRadians(90), 0)), // intake
       new Pose3d(0,-0.229,0.3805,new Rotation3d(-Math.toRadians(climber.getPosition()), 0, 0)), // climber,
-      new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(-90), 0)), //Algae Scorer
+      new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(algaeGrabber.getAngle()), 0)), //Algae Scorer
       new Pose3d(0,0.235,0.075,new Rotation3d(0, 0,0)), //Elevator first stage
       new Pose3d(-0.017, 0.15, 0.133, new Rotation3d(0, Math.toRadians(90), 0)), //Arm
       new Pose3d(-0.01, 0.085, 0.57+0.41-0.41, 

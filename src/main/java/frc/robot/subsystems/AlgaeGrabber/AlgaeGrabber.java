@@ -181,7 +181,7 @@ public class AlgaeGrabber extends SubsystemBase {
             ArbFFUnits.kVoltage);
   }
 
-  private double getAngle() {
+  public double getAngle() {
     var angle = armMotor.getAbsoluteEncoder().getPosition();
     if(angle > absconversionfactor/2.0){
       angle = angle - absconversionfactor;
@@ -317,7 +317,7 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/intake velocity",intakeMotor.getEncoder().getVelocity());
   }
 
-  AlgaeSim sim = new AlgaeSim(armMotor,intakeMotor,shooterMotor);
+  public AlgaeSim sim = new AlgaeSim(armMotor,intakeMotor,shooterMotor);
   @Override
   public void simulationPeriodic() {
     sim.update();
