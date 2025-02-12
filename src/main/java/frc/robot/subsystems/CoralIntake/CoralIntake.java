@@ -14,6 +14,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CoralIntake extends SubsystemBase {
@@ -64,7 +65,7 @@ public class CoralIntake extends SubsystemBase {
     // This method will be called once per scheduler run
 
     mech.update(
-      Degrees.of(pivotMotor.getAbsoluteEncoder().getPosition()),
+      getAngle(),
       InchesPerSecond.of(rollerMotor.getEncoder().getVelocity())
       // ,sim.getSimAngle()
     );
@@ -73,5 +74,24 @@ public class CoralIntake extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     sim.update();
+  }
+
+  ////////////////////////////////////
+  /// Commands and public functions
+  ////////////////////////////////////
+
+
+
+  ////////////////////////////////////
+  /// Helper functions
+  ////////////////////////////////////
+  private double getAdjustedAngle(){
+    var angle = pivotMotor.getAbsoluteEncoder().getPosition();
+    if(angle > 180) angle -= 360;
+    return angle;
+  }
+
+  public Angle getAngle(){
+    return Degrees.of(getAdjustedAngle());
   }
 }
