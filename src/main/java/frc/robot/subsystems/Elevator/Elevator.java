@@ -6,6 +6,7 @@
 package frc.robot.subsystems.Elevator;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -23,6 +24,8 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -119,6 +122,11 @@ public class Elevator extends SubsystemBase {
                 // sethomedflag
               }
             });
+  }
+
+  public Distance getHeight(){
+    //DDD:<<<<
+    return Inches.of(elevatorMotor.getEncoder().getPosition());
   }
 
   private void setHeight(double height) {

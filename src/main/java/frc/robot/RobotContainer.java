@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -117,15 +118,20 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return new SequentialCommandGroup(
-      climber.prepareToClimb(),
-      new WaitCommand(1),
-      climber.climb(),
-      new WaitCommand(3),
-      climber.setAngle(()->45),
-      // new WaitCommand(1),
-      climber.stow()
+    // return new SequentialCommandGroup(
+    //   climber.prepareToClimb(),
+    //   new WaitCommand(1),
+    //   climber.climb(),
+    //   new WaitCommand(3),
+    //   climber.setAngle(()->45),
+    //   // new WaitCommand(1),
+    //   climber.stow()
       
+    // );
+
+    return new SequentialCommandGroup(
+      new WaitCommand(5),
+      elevator.scoreAtPose(elevator.kL4).withTimeout(15)
     );
   }
 
@@ -147,11 +153,11 @@ public class RobotContainer {
       new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, Math.toRadians(90), 0)), // intake
       new Pose3d(0,-0.229,0.3805,new Rotation3d(-Math.toRadians(climber.getPosition()), 0, 0)), // climber,
       new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(algaeGrabber.getAngle()), 0)), //Algae Scorer
-      new Pose3d(0,0.235,0.075,new Rotation3d(0, 0,0)), //Elevator first stage
-      new Pose3d(-0.017, 0.15, 0.133, new Rotation3d(0, Math.toRadians(90), 0)), //Arm
+      new Pose3d(0,0.235,0.075+elevator.getHeight().in(Units.Meters)/2,new Rotation3d(0, 0,0)), //Elevator first stage
+      new Pose3d(-0.017, 0.15, 0.133+elevator.getHeight().in(Units.Meters), new Rotation3d(0, Math.toRadians(90), 0)), //Arm
       new Pose3d(-0.01, 0.085, 0.57+0.41-0.41, 
         new Rotation3d(0, 0, 0)), //Coral Scorer
-      new Pose3d(-0.018, 0.2, 0.1, new Rotation3d()) //Stage 2
+        new Pose3d(-0.018, 0.2, 0.1+elevator.getHeight().in(Units.Meters), new Rotation3d()) //Stage 2
     };
   }
 }
