@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.AlgaeGrabber;
 
+import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
 
@@ -26,6 +27,7 @@ import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -129,11 +131,11 @@ public class AlgaeGrabber extends SubsystemBase {
     .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
     shooterMotor.configure(shooterConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    armMotor.getEncoder().setPosition(getAngle());
+    armMotor.getEncoder().setPosition(getAngleDegrees());
     setDefaultCommand(defaultCommand());
     //Automatically reset the slew rate if the bot is disabled
     new Trigger(DriverStation::isEnabled)
-        .onTrue(new InstantCommand(()->armAngleSlew.reset(getAngle())));
+        .onTrue(new InstantCommand(()->armAngleSlew.reset(getAngleDegrees())));
   }
 
   //////////////////////////////////
@@ -174,7 +176,7 @@ public class AlgaeGrabber extends SubsystemBase {
             ArbFFUnits.kVoltage);
   }
 
-  private double getAngle() {
+  private double getAngleDegrees() {
     var angle = armMotor.getAbsoluteEncoder().getPosition();
     if(angle > absconversionfactor/2.0){
       angle = angle - absconversionfactor;
@@ -190,6 +192,10 @@ public class AlgaeGrabber extends SubsystemBase {
     return shooterMotor.getEncoder().getVelocity();
   }
 
+  public Angle getAngle(){
+    return Degree.of(getAngleDegrees());
+  }
+
   //////////////////////////////////
   /// Define some commands
   /// ///////////////////////////////
@@ -198,7 +204,7 @@ public class AlgaeGrabber extends SubsystemBase {
     return startRun(
       ()->{
         //Seed the initial state/setpoint with the current state
-        armSetpoint = new TrapezoidProfile.State(getAngle(), armMotor.getAbsoluteEncoder().getVelocity());
+        armSetpoint = new TrapezoidProfile.State(getAngleDegrees(), armMotor.getAbsoluteEncoder().getVelocity());
         // armGoal = new TrapezoidProfile.State(position.getAsDouble(), 0);
       }, 
       ()->{
@@ -304,7 +310,7 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   public Trigger isAtTargetAngle = new Trigger(() -> {
-    return MathUtil.isNear(angleSetpoint, getAngle(), ANGLETOLERANCE);
+    return MathUtil.isNear(angleSetpoint, getAngleDegrees(), ANGLETOLERANCE);
   }).debounce(0.060);
 
   public Trigger isAtTargetRPM = new Trigger(() -> {
@@ -326,7 +332,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
 
     SmartDashboard.putNumber("algae/arm angle rel", armMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("algae/arm angle abs", getAngle());
+    SmartDashboard.putNumber("algae/arm angle abs", getAngleDegrees());
     // SmartDashboard.putNumber("algae/intake roller pos", intakeMotor.getEncoder().getPosition());
     // SmartDashboard.putNumber("algae/shooter roller pos", shooterMotor.getEncoder().getPosition());
 
@@ -343,7 +349,7 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   AlgaeMech2d mechanism = new AlgaeMech2d(
-    ()->Degrees.of(getAngle()),
+    this::getAngle,
     ()->RPM.of(getShooterRPM()),
     ()->RPM.of(getIntakeRPM()),
     sim::getAngle
