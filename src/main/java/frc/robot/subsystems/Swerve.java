@@ -77,13 +77,16 @@ public class Swerve extends SubsystemBase {
 
     // swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.080663, 1.9711, 0.36785));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
+    
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     swerveDrive.updateOdometry();
+    debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
+
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
     Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
@@ -91,33 +94,39 @@ public class Swerve extends SubsystemBase {
   }
 
   public void configurePathplanner(){
-    RobotConfig robotConfig;
+    RobotConfig robotConfig = null;
 
-    double kModuleXOffset = Meters.convertFrom(23.5, Inches)/2.0;
-    double kModuleYOffset = Meters.convertFrom(23.5, Inches)/2.0;
+    // double kModuleXOffset = Meters.convertFrom(23.5, Inches)/2.0;
+    // double kModuleYOffset = Meters.convertFrom(23.5, Inches)/2.0;
 
 
-    Translation2d[] moduleOffsets = new Translation2d[]{
-      new Translation2d(kModuleXOffset, kModuleYOffset),
-      new Translation2d(kModuleXOffset, -kModuleYOffset),
-      new Translation2d(-kModuleXOffset, kModuleYOffset),
-      new Translation2d(-kModuleXOffset, -kModuleYOffset)
-    };
+    // Translation2d[] moduleOffsets = new Translation2d[]{
+    //   new Translation2d(kModuleXOffset, kModuleYOffset),
+    //   new Translation2d(kModuleXOffset, -kModuleYOffset),
+    //   new Translation2d(-kModuleXOffset, kModuleYOffset),
+    //   new Translation2d(-kModuleXOffset, -kModuleYOffset)
+    // };
 
-    ModuleConfig moduleConfig = new ModuleConfig(
-      3, 
-      5.1, 
-      1.3, 
-      DCMotor.getNeoVortex(1).withReduction(5.076923076923077), 
-      40, 
-      1);
+    // ModuleConfig moduleConfig = new ModuleConfig(
+    //   Meters.convertFrom(1.5, Inches), 
+    //   5.1, 
+    //   1.3, 
+    //   DCMotor.getNeoVortex(1).withReduction(5.076923076923077), 
+    //   40, 
+    //   1);
 
-    robotConfig = new RobotConfig(
-      Pounds.of(30), 
-      KilogramSquareMeters.of(15), 
-      moduleConfig, 
-      moduleOffsets
-    );
+    // robotConfig = new RobotConfig(
+    //   Pounds.of(30), 
+    //   KilogramSquareMeters.of(15), 
+    //   moduleConfig, 
+    //   moduleOffsets
+    // );
+
+    try {
+      robotConfig = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      // TODO: handle exception
+    }
 
     BooleanSupplier shouldFlipPath = () -> {
       // Boolean supplier that controls when the path will be mirrored for the red alliance
@@ -234,18 +243,22 @@ public class Swerve extends SubsystemBase {
     });
   }
 
-  public Command pathToPose(Pose2d targetPose){
+  public Command pathToPose(Pose2d targetPoseIgnore){
     
-   
-   
+   Pose2d targetPose = debugField2d.getObject("targetPoseThree").getPose();
     //robot constraints for pathplanner
     PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-
   
-    
     //following path
-   return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
+   return AutoBuilder.pathfindToPose(targetPose, constraints, 0.5);
+  }
+  
+  public Command pathToPath(PathPlannerPath targetPath){
+    //robot constraints for pathPlanner
+    PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
 
+    //Go to target Path and follow it
+    return AutoBuilder.pathfindThenFollowPath(targetPath, constraints);
   }
 
   public Pose2d getPose(){
