@@ -6,6 +6,10 @@
 package frc.robot.subsystems.Elevator;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Radian;
+
+import java.util.function.DoubleSupplier;
 
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -14,20 +18,24 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 public class Elevator extends SubsystemBase {
   public boolean isHomed = false;
@@ -35,6 +43,11 @@ public class Elevator extends SubsystemBase {
   public int current;
   private final double toleranceHeight = 0.5;
   private final double toleranceAngle = 5;
+  private final double kArmMaxVelocity = 50.0;
+  private final double kArmMaxAcceleration = 0.5;
+  private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
+  private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
+  private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
 
   SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
@@ -45,6 +58,8 @@ public class Elevator extends SubsystemBase {
   ElevatorMech2d mechanism = new ElevatorMech2d();
   ElevatorSimulation sim = new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor);
 
+  public static final Angle ElevatorArmMinSoftLimitMin=Degrees.of(30);
+  public static final Angle ElevatorArmMinSoftLimitMax=Degrees.of(90+30);
 
   public class ElevatorPose {
     double height;
@@ -61,6 +76,8 @@ public class Elevator extends SubsystemBase {
 
   //These values are  not tuned
 
+
+
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
   public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 15, -10);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 90, 0);
@@ -72,7 +89,7 @@ public class Elevator extends SubsystemBase {
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0, 0, 0);
+  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0.063943 * 12, 0., 0);
   ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0, 0.79, 0);
   public Elevator() {
 
@@ -121,6 +138,14 @@ public class Elevator extends SubsystemBase {
             });
   }
 
+  private Angle getArmAngle(){
+    return Degrees.of(rotationMotor.getAbsoluteEncoder().getPosition());
+  }
+
+  private Distance getCarraigeHeight(){
+    return Inches.of(elevatorMotor.getAbsoluteEncoder().getPosition());
+  }
+
   private void setHeight(double height) {
     var ff = elevatorFF.getKg();
     elevatorMotor
@@ -129,8 +154,13 @@ public class Elevator extends SubsystemBase {
     setpoint.height = height;
   }
 
+  SlewRateLimiter slewRateAngle = new SlewRateLimiter(2);
+  
   private void setAngle(double angle) {
-    var ff = rotatorFF.calculate(Math.toRadians(angle), 0);
+    angle = MathUtil.clamp(angle, ElevatorArmMinSoftLimitMin.in(Degrees), ElevatorArmMinSoftLimitMax.in(Degrees));
+    angle = slewRateAngle.calculate(angle);
+  
+    var ff = rotatorFF.calculate(getArmAngle().in(Radian), 0);
     rotationMotor
       .getClosedLoopController()
       .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
@@ -143,18 +173,32 @@ public class Elevator extends SubsystemBase {
         .setReference(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0, 0, ArbFFUnits.kVoltage);
     setpoint.speed = speed;
   }
+  
 
-  public Command moveToPose(ElevatorPose pose) {
-    return run(
-        () -> {
-          setHeight(pose.height);
-          setAngle(pose.angle);
-          setScorerSpeed(0);
-        })
-    // exit condition on arriving?
-    ;
+  public Command testMoveElevatorArmWithTrap(DoubleSupplier position){
+    return startRun(
+      ()->{
+        //Seed the initial state/setpoint with the current state
+        armSetpoint = new TrapezoidProfile.State(getArmAngle().in(Degrees), rotationMotor.getAbsoluteEncoder().getVelocity());
+      }, 
+      ()->{
+        //Make sure the goal is dynamically updated
+        armGoal = new TrapezoidProfile.State(position.getAsDouble(), 0);
+
+        //update our setpoint to be our next state
+        armSetpoint = armTrapezoidProfile.calculate(0.02, armSetpoint, armGoal);
+    
+        //var ff = rotatorFF.calculate(armSetpoint.position, armSetpoint.velocity);
+        var ff = 0;
+        rotationMotor.getClosedLoopController()
+        .setReference(
+          armSetpoint.position,
+          ControlType.kPosition, ClosedLoopSlot.kSlot0,
+          ff, ArbFFUnits.kVoltage
+        );
+      }
+    );
   }
-
   public Command moveToHeight(double height) {
     return runEnd(
       () -> setHeight(height),
@@ -175,23 +219,54 @@ public class Elevator extends SubsystemBase {
   }
   
   public Command moveToAngle(double angle) {
-    return run(
+    return startRun(
+        () -> {
+          slewRateAngle.reset(getArmAngle().in(Degrees));
+        },
         () -> {
           setAngle(angle);
-        })
-    // exit condition on arriving?
-    ;
+        }
+      // exit condition on arriving?
+    );
   }
 
-  private Command moveToPoseWithScorer(ElevatorPose pose) {
-    return run(
+  public Command moveToPose(ElevatorPose pose) {
+    return startRun(
+        () -> {
+          slewRateAngle.reset(getArmAngle().in(Degrees));
+        },
+        () -> {
+          setHeight(pose.height);
+          setAngle(pose.angle);
+          setScorerSpeed(0);
+        }
+    // exit condition on arriving?
+    );
+  }
+
+  SysIdRoutineLog log = new SysIdRoutineLog("elevatorArm");
+  SysIdRoutine routine = new SysIdRoutine(
+    new SysIdRoutine.Config(),
+    new SysIdRoutine.Mechanism(this.rotationMotor::setVoltage, (logg)->{}, this)
+  );
+
+  
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return routine.quasistatic(direction);
+  }
+
+  public Command moveToPoseWithScorer(ElevatorPose pose) {
+    return startRun(
+        () -> {
+          slewRateAngle.reset(getArmAngle().in(Degrees));
+        },
         () -> {
           setHeight(pose.height);
           setAngle(pose.angle);
           setScorerSpeed(pose.speed);
-        })
+        }
     // exit condition on arriving?
-    ;
+    );
   }
 
   public Command scoreAtPose(ElevatorPose pose) {

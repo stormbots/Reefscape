@@ -9,8 +9,11 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
+import static edu.wpi.first.units.Units.Kilogram;
 import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
@@ -65,14 +68,15 @@ public class ElevatorSimulation {
     0
   );
 
-  double armlength = 0.3;//m
+  double armlength = Inches.of(16).in(Meters);
+  double armMass = Pounds.of(7.6).in(Kilogram);
   SingleJointedArmSim simArm = new SingleJointedArmSim(
     DCMotor.getNeoVortex(1), 
-    18*4, 
-    2*armlength*armlength/3.0, 
+    5*5*64/18.0, 
+    armMass*armlength*armlength, 
     armlength, 
-    Degrees.of(-90).in(Radians), 
-    Degrees.of(180).in(Radians), 
+    Degrees.of(-180).in(Radians), 
+    Degrees.of(270).in(Radians), 
     true, 
     Degrees.of(90).in(Radians)
   );

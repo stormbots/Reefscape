@@ -9,6 +9,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Elevator.Elevator;
@@ -54,8 +56,8 @@ public class RobotContainer {
   private void configureBindings() {
 
     driverController.a()
-      .whileTrue(elevator.scoreAtPose(elevator.kL1));
-      SmartDashboard.putString("elevator/targetPose", "L1");
+      .whileTrue(elevator.sysIdQuasistatic(Direction.kForward));
+    SmartDashboard.putString("elevator/targetPose", "L1");
       
 
     driverController.b()
@@ -67,7 +69,7 @@ public class RobotContainer {
       SmartDashboard.putString("elevator/targetPose", "L3");
 
     driverController.y()
-      .whileTrue(elevator.scoreAtPose(elevator.kL4));
+      .whileTrue(elevator.testMoveElevatorArmWithTrap(()->12));
       SmartDashboard.putString("elevator/targetPose", "L4");
 
   }
@@ -81,16 +83,16 @@ public class RobotContainer {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
     return new SequentialCommandGroup(
-      elevator.scoreAtPose(elevator.kL2).withTimeout(5),
-      elevator.moveToPoseWithScorer(elevator.new ElevatorPose(20, 90, 3000)).withTimeout(5),
-      elevator.moveToPoseWithScorer(elevator.new ElevatorPose(20, 90, -3000)).withTimeout(5),
-      elevator.moveToPose(elevator.kL2).withTimeout(5),
-      elevator.moveToHeight(20).withTimeout(5),
-      elevator.moveToAngle(90).withTimeout(5),
-      elevator.moveToAngle(-45).withTimeout(5),
-      elevator.moveToAngle(0).withTimeout(5),
-      elevator.scoreAtPose(elevator.kL2).withTimeout(5),
-      elevator.scoreAtPose(elevator.kStowed).withTimeout(5)
+      elevator.scoreAtPose(elevator.kL3).withTimeout(5),
+      elevator.moveToPoseWithScorer(elevator.kL2).withTimeout(5),
+      elevator.moveToPoseWithScorer(elevator.new ElevatorPose(20, 90, -3000)).withTimeout(5)
+      // elevator.moveToPose(elevator.kL2).withTimeout(5),
+      // elevator.moveToHeight(20).withTimeout(5),
+      // elevator.moveToAngle(90).withTimeout(5),
+      // elevator.moveToAngle(-45).withTimeout(5),
+      // elevator.moveToAngle(0).withTimeout(5),
+      // elevator.scoreAtPose(elevator.kL2).withTimeout(5),
+      // elevator.scoreAtPose(elevator.kStowed).withTimeout(5)
 
     );
   }
