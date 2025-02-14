@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.Climber;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -16,6 +18,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -161,10 +164,14 @@ public class Climber extends SubsystemBase {
   }
 
 
-  public double getPosition(){
+  private double getPosition(){
     var angle = io.getPosition();
     if(angle>180) angle = angle-360;
     return angle;
+  }
+
+  public Angle getAngle(){
+    return Degrees.of(getPosition());
   }
 
 }
