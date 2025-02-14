@@ -15,6 +15,15 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+
+import edu.wpi.first.math.estimator.PoseEstimator;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
@@ -33,9 +42,11 @@ import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Elevator.Elevator.ElevatorPose;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
+import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
+ * This class is where the bulk of the robot should be declared. Since Command-based i]
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
  * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
  * subsystems, commands, and trigger mappings) should be declared here.
@@ -57,6 +68,10 @@ public class RobotContainer {
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
   // private final CommandXboxController operatorController =
   //     new CommandXboxController(OperatorConstants.kDriverControllerPort);
+  public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
+
+  Swerve swerveSubsystem = new Swerve();
+  private final Vision Vision = new Vision(swerveSubsystem, navxGyro);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -108,6 +123,15 @@ public class RobotContainer {
       .whileTrue(elevator.scoreAtPose(elevator.kL4));
       SmartDashboard.putString("elevator/targetPose", "L4");
 
+    swerveSubsystem.setDefaultCommand(
+      swerveSubsystem.driveCommand(()->-driverController.getLeftY()/4.0, ()->-driverController.getLeftX()/4.0, ()->-driverController.getRightX()/4.0)
+    );
+
+   /*  driverController.b().whileTrue(
+    swerveSubsystem.pathToPose(new Pose2d())
+    );*/
+    driverController.start().onTrue(swerveSubsystem.resetGyro());
+
   }
 
   // private void configureDefaultCommands(){
@@ -155,7 +179,7 @@ public class RobotContainer {
     //defaulted w/o subsytems
     return new Pose3d[] {
       new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, -intake.getAngle().in(Units.Radians), 0)), // intake
-      new Pose3d(0,-0.229,0.3805,new Rotation3d(-Math.toRadians(climber.getPosition()+90), 0, 0)), // climber,
+      new Pose3d(0,-0.229,0.3805,new Rotation3d(-Math.toRadians(climber.getAngle().in(Radians)+90), 0, 0)), // climber,
       new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(algaeGrabber.getAngle()), 0)), //Algae Scorer
       new Pose3d(0,0.235,0.075+elevator.getHeight().in(Units.Meters)/2,new Rotation3d(0, 0,0)), //Elevator first stage
       new Pose3d(-0.017, 0.15, 0.133+elevator.getHeight().in(Units.Meters), new Rotation3d(0, -elevator.getArmAngle().in(Radians)+Math.toRadians(90), 0)), //Arm
