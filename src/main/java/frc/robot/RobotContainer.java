@@ -37,6 +37,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Elevator.Elevator;
@@ -107,8 +109,8 @@ public class RobotContainer {
     // driverController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
 
     driverController.a()
-      .whileTrue(elevator.scoreAtPose(elevator.kL1));
-      SmartDashboard.putString("elevator/targetPose", "L1");
+      .whileTrue(elevator.sysIdQuasistatic(Direction.kForward));
+    SmartDashboard.putString("elevator/targetPose", "L1");
       
 
     driverController.b()
@@ -120,7 +122,7 @@ public class RobotContainer {
       SmartDashboard.putString("elevator/targetPose", "L3");
 
     driverController.y()
-      .whileTrue(elevator.scoreAtPose(elevator.kL4));
+      .whileTrue(elevator.testMoveElevatorArmWithTrap(()->12));
       SmartDashboard.putString("elevator/targetPose", "L4");
 
     swerveSubsystem.setDefaultCommand(
@@ -181,11 +183,11 @@ public class RobotContainer {
       new Pose3d(0.3075,0,0.2525 + 0.05,new Rotation3d(0, -intake.getAngle().in(Units.Radians), 0)), // intake
       new Pose3d(0,-0.229,0.3805,new Rotation3d(-Math.toRadians(climber.getAngle().in(Radians)+90), 0, 0)), // climber,
       new Pose3d(-0.2535,0,0.7045,new Rotation3d(0, Math.toRadians(algaeGrabber.getAngle()), 0)), //Algae Scorer
-      new Pose3d(0,0.235,0.075+elevator.getHeight().in(Units.Meters)/2,new Rotation3d(0, 0,0)), //Elevator first stage
-      new Pose3d(-0.017, 0.15, 0.133+elevator.getHeight().in(Units.Meters), new Rotation3d(0, -elevator.getArmAngle().in(Radians)+Math.toRadians(90), 0)), //Arm
+      new Pose3d(0,0.235,0.075+elevator.getCarraigeHeight().in(Units.Meters)/2,new Rotation3d(0, 0,0)), //Elevator first stage
+      new Pose3d(-0.017, 0.15, 0.133+elevator.getCarraigeHeight().in(Units.Meters), new Rotation3d(0, -elevator.getArmAngle().in(Radians)+Math.toRadians(90), 0)), //Arm
       new Pose3d(-0.01, 0.085, 0.57+0.41-0.41, 
         new Rotation3d(0, 0, 0)), //Coral Scorer
-        new Pose3d(-0.018, 0.2, 0.1+elevator.getHeight().in(Units.Meters), new Rotation3d()) //Stage 2
+        new Pose3d(-0.018, 0.2, 0.1+elevator.getCarraigeHeight().in(Units.Meters), new Rotation3d()) //Stage 2
     };
   }
 }

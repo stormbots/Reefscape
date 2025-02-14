@@ -19,7 +19,7 @@ public class ElevatorMech2d {
     double barlength = 24;
     //physical constants
     double scorerLinkGearRatio = 1.5;
-    double rotationArmLength=12; //inches
+    double rotationArmLength = 16; //inches
     double rotationArmClockingOffsetAtVertical=0;
 
 
