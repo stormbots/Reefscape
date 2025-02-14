@@ -65,7 +65,7 @@ public class CoralIntake extends SubsystemBase {
     // This method will be called once per scheduler run
 
     mech.update(
-      Degrees.of(pivotMotor.getAbsoluteEncoder().getPosition()),
+      getAngle(),
       InchesPerSecond.of(rollerMotor.getEncoder().getVelocity())
       // ,sim.getSimAngle()
     );
@@ -76,7 +76,22 @@ public class CoralIntake extends SubsystemBase {
     sim.update();
   }
 
+  ////////////////////////////////////
+  /// Commands and public functions
+  ////////////////////////////////////
+
+
+
+  ////////////////////////////////////
+  /// Helper functions
+  ////////////////////////////////////
+  private double getAdjustedAngle(){
+    var angle = pivotMotor.getAbsoluteEncoder().getPosition();
+    if(angle > 180) angle -= 360;
+    return angle;
+  }
+
   public Angle getAngle(){
-    return Degrees.of(pivotMotor.getAbsoluteEncoder().getPosition());
+    return Degrees.of(getAdjustedAngle());
   }
 }
