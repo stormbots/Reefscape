@@ -27,6 +27,8 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CoralIntake extends SubsystemBase {
@@ -153,4 +155,17 @@ public class CoralIntake extends SubsystemBase {
       }
     );
   }
+
+  public void setRollerVelocity(double velocity){
+    rollerMotor.getClosedLoopController().setReference(velocity, ControlType.kVelocity);
+  }
+
+  public Command intake() {
+    return new ParallelCommandGroup(testRunPivotTrapezoidal(()->-45), new RunCommand(()-> setRollerVelocity(2.0)));
+  }
+
+  public Command stow() {
+    return new ParallelCommandGroup(testRunPivotTrapezoidal(()->90), new RunCommand(()-> setRollerVelocity(0.0)));
+  }
+
 }
