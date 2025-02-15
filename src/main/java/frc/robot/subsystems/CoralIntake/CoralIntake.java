@@ -24,6 +24,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -46,7 +47,7 @@ public class CoralIntake extends SubsystemBase {
   private TrapezoidProfile.State pivotSetpoint = new TrapezoidProfile.State();
 
 
-  CoralIntakeSimulation sim = new CoralIntakeSimulation(pivotMotor,rollerMotor);
+  // CoralIntakeSimulation sim = new CoralIntakeSimulation(pivotMotor,rollerMotor);
   CoralIntakeMech2d mech = new CoralIntakeMech2d();
 
   /** Creates a new CoralIntake. */
@@ -62,14 +63,21 @@ public class CoralIntake extends SubsystemBase {
   private void configPivotMotors(){
     var config = new SparkFlexConfig();
 
+    config.inverted(true);
+    config.smartCurrentLimit(30);
+
     config.absoluteEncoder
     .positionConversionFactor(360)
     .velocityConversionFactor(360/60)
+    .inverted(true)
     ;
 
     config.closedLoop
     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
     .p(.1/90)
+    .positionWrappingEnabled(true)
+    .positionWrappingInputRange(0, 360)
+    
     ;
 
     
@@ -78,6 +86,9 @@ public class CoralIntake extends SubsystemBase {
 
   private void configRollerMotors(){
     var config = new SparkFlexConfig();
+
+    config.inverted(true);
+    config.smartCurrentLimit(40);
     
     var rollerwheeldiameter=2;
     var conversionfactor = Math.PI*rollerwheeldiameter; //convert rotations to inches
@@ -88,7 +99,7 @@ public class CoralIntake extends SubsystemBase {
     config.closedLoop
     .outputRange(-0.5,0.5)
     .p(0.1/10);
-    
+
     rollerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
@@ -103,11 +114,14 @@ public class CoralIntake extends SubsystemBase {
       InchesPerSecond.of(rollerMotor.getEncoder().getVelocity())
       // ,sim.getSimAngle()
     );
+
+    Logger.recordOutput("rollerSpeed", getRollerVelocity().in(InchesPerSecond));
+    Logger.recordOutput("pivotAngle", getAngle().in(Units.Degrees));
   }
 
   @Override
   public void simulationPeriodic() {
-    sim.update();
+    // sim.update();
   }
 
   ////////////////////////////////////
@@ -158,6 +172,16 @@ public class CoralIntake extends SubsystemBase {
 
   public void setRollerVelocity(double velocity){
     rollerMotor.getClosedLoopController().setReference(velocity, ControlType.kVelocity);
+  }
+
+  public void setPivotAngle(double angle){
+    pivotMotor.getClosedLoopController().setReference(angle, ControlType.kPosition);
+  }
+
+  public void setAngleSpeed(double angle, double speed){
+    setPivotAngle(angle);
+    // setRollerVelocity(speed);
+    rollerMotor.setVoltage(6);
   }
 
   public Command intake() {

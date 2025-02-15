@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -60,7 +61,9 @@ public class RobotContainer {
     // driverController.b().whileTrue(climber.climb());
     // driverController.a().whileTrue(climber.prepareToClimb());
 
-    driverController.a().whileTrue(intake.testRunPivotTrapezoidal(()->45));
+
+    // driverController.a().whileTrue(intake.testRunPivotTrapezoidal(()->45));
+    driverController.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 600), intake));
   }
 
   // private void configureDefaultCommands(){
