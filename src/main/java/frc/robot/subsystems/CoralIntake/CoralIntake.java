@@ -7,28 +7,54 @@ package frc.robot.subsystems.CoralIntake;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 
+import java.util.function.DoubleSupplier;
+
+import org.littletonrobotics.junction.Logger;
+
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CoralIntake extends SubsystemBase {
 
-  private SparkFlex pivotMotor = new SparkFlex(22, MotorType.kBrushless);
-  private SparkFlex rollerMotor = new SparkFlex(23, MotorType.kBrushless);
+  private SparkFlex pivotMotor = new SparkFlex(13, MotorType.kBrushless);
+  private SparkFlex rollerMotor = new SparkFlex(14, MotorType.kBrushless);
+  private final CoralIntakeIOInputsAutoLogged inputs = new CoralIntakeIOInputsAutoLogged();
+  // private final CoralIntakeIO io;
+  //TODO: Find actual values
+  private final TrapezoidProfile pivotProfile = new TrapezoidProfile(
+    new TrapezoidProfile.Constraints(10, 10));
+  private ArmFeedforward pivotFF = new ArmFeedforward(0, 0, 0);
+
+  private TrapezoidProfile.State pivotGoal = new TrapezoidProfile.State();
+  private TrapezoidProfile.State pivotSetpoint = new TrapezoidProfile.State();
+
 
   CoralIntakeSimulation sim = new CoralIntakeSimulation(pivotMotor,rollerMotor);
   CoralIntakeMech2d mech = new CoralIntakeMech2d();
 
   /** Creates a new CoralIntake. */
   public CoralIntake() {
+    //TODO: Change this
+    // io = new CoralIntakeIOReal();
     configPivotMotors();
     configRollerMotors();
+
+    //setDefaultCommand(testRunPivotTrapezoidal(90.0));
   }
 
   private void configPivotMotors(){
@@ -41,6 +67,7 @@ public class CoralIntake extends SubsystemBase {
 
     config.closedLoop
     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+    .p(.1/90)
     ;
 
     
@@ -55,6 +82,10 @@ public class CoralIntake extends SubsystemBase {
     config.encoder
     .positionConversionFactor(conversionfactor)
     .velocityConversionFactor(conversionfactor/60.0); //inches-> InchesPerSecond
+    //TODO: Placeholder
+    config.closedLoop
+    .outputRange(-0.5,0.5)
+    .p(0.1/10);
     
     rollerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
@@ -63,7 +94,8 @@ public class CoralIntake extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-
+    // io.updateInputs(inputs);
+    // Logger.processInputs("Coral Intake", inputs);
     mech.update(
       getAngle(),
       InchesPerSecond.of(rollerMotor.getEncoder().getVelocity())
@@ -91,7 +123,34 @@ public class CoralIntake extends SubsystemBase {
     return angle;
   }
 
+  public LinearVelocity getRollerVelocity(){
+    return InchesPerSecond.of(rollerMotor.getEncoder().getVelocity());
+  }
+
   public Angle getAngle(){
     return Degrees.of(getAdjustedAngle());
+  }
+
+  public Command testRunPivotTrapezoidal(DoubleSupplier angle){
+    return startRun(
+      ()->{
+        pivotSetpoint = new TrapezoidProfile.State(getAdjustedAngle(), pivotMotor.getEncoder().getVelocity());
+      }, 
+      ()->{
+        pivotGoal = new TrapezoidProfile.State(angle.getAsDouble(), 0.0);
+
+        pivotSetpoint = pivotProfile.calculate(0.02, pivotSetpoint, pivotGoal);
+
+        var ff = pivotFF.calculate(pivotSetpoint.position, pivotSetpoint.velocity);
+
+        pivotMotor.getClosedLoopController()
+        .setReference(
+          pivotSetpoint.position, 
+          ControlType.kPosition, 
+          ClosedLoopSlot.kSlot0, 
+          ff, ArbFFUnits.kVoltage
+        );
+      }
+    );
   }
 }

@@ -57,8 +57,10 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.b().whileTrue(climber.climb());
-    driverController.a().whileTrue(climber.prepareToClimb());
+    // driverController.b().whileTrue(climber.climb());
+    // driverController.a().whileTrue(climber.prepareToClimb());
+
+    driverController.a().whileTrue(intake.testRunPivotTrapezoidal(()->45));
   }
 
   // private void configureDefaultCommands(){
