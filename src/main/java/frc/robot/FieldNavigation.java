@@ -4,12 +4,17 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -17,6 +22,13 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 
 /** Add your docs here. */
 public class FieldNavigation {
+
+    double coralX = Inches.of(34/2).in(Meters);
+    double coralY = Inches.of(34/2).in(Meters);
+
+    Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY, new Rotation2d(Degrees.of(180))));
+    Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY, new Rotation2d(Degrees.of(180))));
+
 
     public static List<Pose2d> tagsReef = new ArrayList<>(){{
         add(AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape).getTagPose(6).get().toPose2d());
@@ -49,9 +61,10 @@ public class FieldNavigation {
     public static Pose2d redBar = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape).getTagPose(14).get().toPose2d();
 
 
-    public static Pose2d getNearestReef(Pose2d currentPose)
+    public Pose2d getNearestReef(Pose2d currentPose)
     {
-        return currentPose.nearest(tagsReef);
+        var nearest = currentPose.nearest(tagsReef);
+        return nearest;
     }
     public static Pose2d getNearestSource(Pose2d currentPose)
     {
@@ -63,14 +76,23 @@ public class FieldNavigation {
 
         return currentPose.nearest(tagsProcessor);
     }
-    public Pose2d getTransform(Pose2d poseMoved)
+    public Pose2d getTransformMid(Pose2d targetPose)
     {
         //This is WIP, forgot to set up a bunch of stuff
-       var tag = field.getObject("tag").getPose();
-
-        field.getObject("poseRight").setPose(tag.transformBy(new Transform2d(new Pose2d(), poseMoved)));
-        return new Pose2d();
-
+        field.getObject("Coral").setPoses(targetPose.transformBy(coralRight), targetPose.transformBy(coralLeft));
+        return field.getObject("Coral").getPose();
+    }
+    public Pose2d getTransformRight(Pose2d targetPose)
+    {
+        //This is WIP, forgot to set up a bunch of stuff
+        field.getObject("Coral").setPose(targetPose.transformBy(coralRight));
+        return field.getObject("Coral").getPose();
+    }
+    public Pose2d getTransformLeft(Pose2d targetPose)
+    {
+        //This is WIP, forgot to set up a bunch of stuff
+        field.getObject("Coral").setPose(targetPose.transformBy(coralLeft));
+        return field.getObject("Coral").getPose();
     }
 
 }
