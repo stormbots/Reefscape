@@ -43,8 +43,8 @@ public class Elevator extends SubsystemBase {
   public int current;
   private final double toleranceHeight = 0.5;
   private final double toleranceAngle = 5;
-  private final double kArmMaxVelocity = 50.0;
-  private final double kArmMaxAcceleration = 0.5;
+  private final double kArmMaxVelocity = 10.0;
+  private final double kArmMaxAcceleration = 2.0;
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
@@ -89,8 +89,8 @@ public class Elevator extends SubsystemBase {
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0.063943 * 12, 0., 0);
-  ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0, 0.79, 0);
+  ArmFeedforward rotatorFF = new ArmFeedforward(0.0, 0.0, 0.0, 0.0);
+  ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0.0, 0.0, 0.0);
   public Elevator() {
 
     //Set up motor configs
@@ -160,7 +160,8 @@ public class Elevator extends SubsystemBase {
     angle = MathUtil.clamp(angle, ElevatorArmMinSoftLimitMin.in(Degrees), ElevatorArmMinSoftLimitMax.in(Degrees));
     angle = slewRateAngle.calculate(angle);
   
-    var ff = rotatorFF.calculate(getArmAngle().in(Radian), 0);
+    //var ff = rotatorFF.calculate(getArmAngle().in(Radian), 0);
+    var ff = 0;
     rotationMotor
       .getClosedLoopController()
       .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);

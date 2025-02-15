@@ -83,9 +83,9 @@ public class RobotContainer {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
     return new SequentialCommandGroup(
-      elevator.scoreAtPose(elevator.kL3).withTimeout(5),
-      elevator.moveToPoseWithScorer(elevator.kL2).withTimeout(5),
-      elevator.moveToPoseWithScorer(elevator.new ElevatorPose(20, 90, -3000)).withTimeout(5)
+      //elevator.moveToAngle(180),
+      elevator.moveToHeight(9).withTimeout(5),
+      elevator.testMoveElevatorArmWithTrap(() -> 10)
       // elevator.moveToPose(elevator.kL2).withTimeout(5),
       // elevator.moveToHeight(20).withTimeout(5),
       // elevator.moveToAngle(90).withTimeout(5),

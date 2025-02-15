@@ -17,12 +17,12 @@ public class ElevatorMotorConfigs {
 
   public static SparkBaseConfig getElevatorConfig(){
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
-      .smartCurrentLimit(36)
+      .smartCurrentLimit(16)
       .idleMode(IdleMode.kCoast)
       .inverted(false)
       ;
     elevatorConfig.softLimit
-    .forwardSoftLimit(40)//???? This is not enables and wont be tuned until we have compbot
+    .forwardSoftLimit(16)//????
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
@@ -64,7 +64,7 @@ public class ElevatorMotorConfigs {
 
   public static SparkBaseConfig getRotationConfig(){
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
-      .smartCurrentLimit(32)
+      .smartCurrentLimit(16)
       .idleMode(IdleMode.kBrake)
       .inverted(false)
       ;
