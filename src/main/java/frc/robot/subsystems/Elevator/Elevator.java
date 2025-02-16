@@ -50,7 +50,7 @@ public class Elevator extends SubsystemBase {
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
 
-  SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
+  SparkFlex elevatorMotor = new SparkFlex(5, MotorType.kBrushless);
   SparkFlex rotationMotor = new SparkFlex(12, MotorType.kBrushless);
   SparkFlex coralOutMotor = new SparkFlex(13, MotorType.kBrushless);
   SparkFlex elevatorMotorFollower = new SparkFlex(11, MotorType.kBrushless);

@@ -19,14 +19,14 @@ public class ElevatorMotorConfigs {
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
       .smartCurrentLimit(16)
       .idleMode(IdleMode.kCoast)
-      .inverted(false)
+      .inverted(true)
       ;
     elevatorConfig.softLimit
     .forwardSoftLimit(16)//????
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
-    var elevatorConversionfactor = (51 - 12)/22.11;
+    var elevatorConversionfactor = (72.375 - 125.275)/(8.5-18.121);
     elevatorConfig.encoder
         .positionConversionFactor(elevatorConversionfactor)
         .velocityConversionFactor(elevatorConversionfactor / 60.0)
