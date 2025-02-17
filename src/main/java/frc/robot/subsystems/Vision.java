@@ -17,6 +17,7 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import com.studica.frc.AHRS;
 
@@ -25,6 +26,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.PoseEstimator;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -42,7 +44,8 @@ public class Vision extends SubsystemBase {
   AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
 
   NetworkTableInstance table = NetworkTableInstance.getDefault();
-  PhotonCamera camera = new PhotonCamera("c1");
+  PhotonCamera leftCamera = new PhotonCamera("Left");
+  PhotonCamera rightCamera = new PhotonCamera("Right");
   
   Transform3d robotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
   PhotonPoseEstimator cameraPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
@@ -59,12 +62,12 @@ public class Vision extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    PhotonPipelineResult results = camera.getLatestResult();
+    PhotonPipelineResult results = leftCamera.getLatestResult();
 
     SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
 
     updateOdometry();
-    getDistanceFromCamera();
+    //getDistanceFromCamera();
     
 
   }
@@ -72,11 +75,11 @@ public class Vision extends SubsystemBase {
 
   public void updateOdometry(){
 
-    updateCameraSideOdometry(cameraPoseEstimator, camera);
+    updateCameraSideOdometry(cameraPoseEstimator, leftCamera);
 
   }
 
-  public void getDistanceFromCamera(){
+  /*public void getDistanceFromCamera(){
 
     var results = camera.getLatestResult();
     if(results.hasTargets()){
@@ -87,8 +90,7 @@ public class Vision extends SubsystemBase {
     -Radians.convertFrom(pitch, Degrees)));   
 
     }
-  }
-  
+  }*/
 
   private void updateCameraSideOdometry(PhotonPoseEstimator photonPoseEstimator, PhotonCamera camera){
 
@@ -96,7 +98,7 @@ public class Vision extends SubsystemBase {
     for(PhotonPipelineResult result : latesResults){
       Optional<EstimatedRobotPose> estimatedPose = photonPoseEstimator.update(result);
       SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
-      if(estimatedPose.isPresent()){
+      if(estimatedPose.isPresent()){  
         double latency;
 
         if(result.hasTargets()){
@@ -158,6 +160,24 @@ public class Vision extends SubsystemBase {
     return estStdDeviation;
 
   }
+
+  public Optional<Rotation2d> getRotationToObject(){
+    PhotonPipelineResult results = rightCamera.getLatestResult();
+
+    if (results.hasTargets()){
+      PhotonTrackedTarget target = results.getBestTarget();
+      return Optional.of(new Rotation2d(Degrees.of(target.getYaw())));
+    }
+
+    return Optional.empty();
+  }
+
+
+
+
+
+
+  
 
 
 }
