@@ -81,11 +81,12 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
   public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 15, -10);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 90, 0);
+  public final ElevatorPose kStowedUp =         new ElevatorPose(5, 90, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
   public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
   public final ElevatorPose kL3 =             new ElevatorPose(36, 135, 10);
-  public final ElevatorPose kL4 =             new ElevatorPose(40, 135, 10);
+  public final ElevatorPose kL4 =             new ElevatorPose(20, 135, 10);
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
@@ -108,13 +109,13 @@ public class Elevator extends SubsystemBase {
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
   }
-
+  
   public Trigger haveCoral = new Trigger( () -> {
     return elevatorMotor.getOutputCurrent() > current;
   }).debounce(0.1);
 
   public Command homeElevator() {
-    // step 0: Make sure scorerisin safeposition
+    // step 0: Make sure scorer s insafeposition
 
     return run(() -> {
           // logic here

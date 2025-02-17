@@ -19,14 +19,15 @@ public class ElevatorMotorConfigs {
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
       .smartCurrentLimit(16)
       .idleMode(IdleMode.kCoast)
-      .inverted(false)
+      .inverted(true)
       ;
     elevatorConfig.softLimit
     .forwardSoftLimit(16)//????
+    .forwardSoftLimitEnabled(false)
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
-    var elevatorConversionfactor = (51 - 12)/22.11;
+    var elevatorConversionfactor = (72.375-8.5)/(52.9+18.1);
     elevatorConfig.encoder
         .positionConversionFactor(elevatorConversionfactor)
         .velocityConversionFactor(elevatorConversionfactor / 60.0)
@@ -66,17 +67,17 @@ public class ElevatorMotorConfigs {
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
       .smartCurrentLimit(16)
       .idleMode(IdleMode.kBrake)
-      .inverted(false)
+      .inverted(true)
       ;
 
     rotationConfig.softLimit
-      .reverseSoftLimit(-180)
-      .forwardSoftLimit(180)
+      .reverseSoftLimit(-90)
+      .forwardSoftLimit(170)
       .forwardSoftLimitEnabled(false)
       .reverseSoftLimitEnabled(false)
       ;
 
-    double rotateCoversionFactor = 87.053/2.5333;
+    double rotateCoversionFactor = 81;//NOT 360, that isforabs encoder, also  not 81,onlyapproximate
     rotationConfig.encoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)
@@ -85,7 +86,7 @@ public class ElevatorMotorConfigs {
     rotationConfig.absoluteEncoder
       .velocityConversionFactor(360 / 60.0)
       .positionConversionFactor(360)
-      .inverted(false);
+      .inverted(true);
 
     rotationConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)

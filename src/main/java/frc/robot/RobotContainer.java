@@ -56,20 +56,21 @@ public class RobotContainer {
   private void configureBindings() {
 
     driverController.a()
-      .whileTrue(elevator.sysIdQuasistatic(Direction.kForward));
-    SmartDashboard.putString("elevator/targetPose", "L1");
+      .whileTrue(elevator.moveToPose(elevator.kStowed));
+    SmartDashboard.putString("elevator/targetPose", "Stowed Up");
       
 
     driverController.b()
-      .whileTrue(elevator.scoreAtPose(elevator.kL2));
-      SmartDashboard.putString("elevator/targetPose", "L2");
+      .whileTrue(elevator.moveToPose(elevator.kFloorPickup));
+      //.whileTrue(elevator.scoreAtPose(elevator.kFloorPickup));
+      SmartDashboard.putString("elevator/targetPose", "Floor PickUp");
 
     driverController.x()
-      .whileTrue(elevator.scoreAtPose(elevator.new ElevatorPose(20, -40, 0)));
-      SmartDashboard.putString("elevator/targetPose", "L3");
+      .whileTrue(elevator.scoreAtPose(elevator.kStowedUp));
+      SmartDashboard.putString("elevator/targetPose", "Stowed");
 
     driverController.y()
-      .whileTrue(elevator.testMoveElevatorArmWithTrap(()->12));
+      .whileTrue(elevator.scoreAtPose(elevator.kL2));
       SmartDashboard.putString("elevator/targetPose", "L4");
 
   }
