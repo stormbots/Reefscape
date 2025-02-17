@@ -18,7 +18,8 @@ public class ElevatorStateManager {
     GraphCommandNode floorPickup;
     GraphCommandNode moveToL1Algae;
     GraphCommandNode moveToL2Algae;
-    GraphCommandNode intakeAlgae;
+    GraphCommandNode intakeAlgaeL1;
+    GraphCommandNode intakeAlgaeL2;
     GraphCommandNode moveToL1;
     GraphCommandNode scoreToL1;
     GraphCommandNode moveToL2;
@@ -46,9 +47,9 @@ public class ElevatorStateManager {
         stowedUp.AddNode(prepareToSourcePickup, 1);
         prepareToFloorPickUp.AddNode(sourcePickup, 1);
         stowedUp.AddNode(moveToL1Algae, 1);
-        moveToL1Algae.AddNode(intakeAlgae, 1);
+        moveToL1Algae.AddNode(intakeAlgaeL1, 1);
         stowedUp.AddNode(moveToL2Algae, 1);
-        moveToL2Algae.AddNode(intakeAlgae, 1);
+        moveToL2Algae.AddNode(intakeAlgaeL2, 1);
         stowedUp.AddNode(moveToL1, 1);
         moveToL1.AddNode(scoreToL1, 1);
         stowedUp.AddNode(moveToL2, 1);
@@ -82,14 +83,14 @@ public class ElevatorStateManager {
 
         //TODO NEEDS TO EXIST PROPERLY
         prepareToSourcePickup = graph.new GraphCommandNode("prepareToSourePickUp", 
-        elevator.moveToPose(elevator.kMoveToSurcePickUp), 
-        elevator.moveToPose(elevator.kMoveToSurcePickUp), 
-        elevator.moveToPose(elevator.kMoveToSurcePickUp));
+        elevator.moveToPose(elevator.kMoveToSourcePickUp), 
+        elevator.moveToPose(elevator.kMoveToSourcePickUp), 
+        elevator.moveToPose(elevator.kMoveToSourcePickUp));
 
         sourcePickup = graph.new GraphCommandNode("SourcePickup",
-        elevator.moveToPose(elevator.kStationPickup),
-        elevator.moveToPose(elevator.kStationPickup),
-        elevator.moveToPose(elevator.kStationPickup));
+        elevator.moveToPose(elevator.kSourcePickup),
+        elevator.moveToPose(elevator.kSourcePickup),
+        elevator.moveToPose(elevator.kSourcePickup));
 
         //TODO NEEDS TO EXIST PROPERLY
         prepareToFloorPickUp = graph.new GraphCommandNode("prepareToFloorPickUp", 
@@ -104,21 +105,27 @@ public class ElevatorStateManager {
 
         //TODO NEEDS TO EXIST PROPERLY
         moveToL1Algae = graph.new GraphCommandNode("moveToL1Algae",
-        elevator.moveToPose(elevator.moveToL1Algae),
-        elevator.moveToPose(elevator.moveToL1Algae),
-        elevator.moveToPose(elevator.moveToL1Algae));
+        elevator.moveToPose(elevator.kMoveToL1Algae),
+        elevator.moveToPose(elevator.kMoveToL1Algae),
+        elevator.moveToPose(elevator.kMoveToL1Algae));
 
         //TODO NEEDS TO EXIST PROPERLY
         moveToL2Algae = graph.new GraphCommandNode("moveToL2Algae",
-        elevator.moveToPose(elevator.moveToL2Algae),
-        elevator.moveToPose(elevator.moveToL2Algae),
-        elevator.moveToPose(elevator.moveToL2Algae));
+        elevator.moveToPose(elevator.kMoveToL2Algae),
+        elevator.moveToPose(elevator.kMoveToL2Algae),
+        elevator.moveToPose(elevator.kMoveToL2Algae));
 
         //TODO NEEDS TO EXIST PROPERLY
-        intakeAlgae = graph.new GraphCommandNode("moveToL2Algae",
-        elevator.moveToPose(elevator.intakeAlgae),
-        elevator.moveToPose(elevator.intakeAlgae),
-        elevator.moveToPose(elevator.intakeAlgae));
+        intakeAlgaeL1 = graph.new GraphCommandNode("moveToL2Algae",
+        elevator.moveToPose(elevator.kIntakeAlgaeL1),
+        elevator.moveToPose(elevator.kIntakeAlgaeL1),
+        elevator.moveToPose(elevator.kIntakeAlgaeL1));
+
+        //TODO NEEDS TO EXIST PROPERLY
+        intakeAlgaeL2 = graph.new GraphCommandNode("moveToL2Algae",
+        elevator.moveToPose(elevator.kIntakeAlgaeL2),
+        elevator.moveToPose(elevator.kIntakeAlgaeL2),
+        elevator.moveToPose(elevator.kIntakeAlgaeL2));
 
         moveToL1 = graph.new GraphCommandNode("moveToL1", 
         elevator.moveToPose(elevator.kL1), 

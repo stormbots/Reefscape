@@ -77,15 +77,21 @@ public class Elevator extends SubsystemBase {
   //These values are  not tuned
 
 
-
-  public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
-  public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 15, -10);
-  public final ElevatorPose kStowed =         new ElevatorPose(0, 90, 0);
-  public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
-  public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
-  public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
-  public final ElevatorPose kL3 =             new ElevatorPose(36, 135, 10);
-  public final ElevatorPose kL4 =             new ElevatorPose(40, 135, 10);
+  public final ElevatorPose kMoveToSourcePickUp = new ElevatorPose(5, 60, 0);
+  public final ElevatorPose kSourcePickup = new ElevatorPose(5, 60, -10);
+  public final ElevatorPose kMoveToFloorPickUp = new ElevatorPose(0, 15, 0);
+  public final ElevatorPose kFloorPickup = new ElevatorPose(0, 15, -10);
+  public final ElevatorPose kStowed = new ElevatorPose(0, 90, 0);
+  public final ElevatorPose kStowedUp = new ElevatorPose(20, 90, 0);
+  public final ElevatorPose kClimbing = new ElevatorPose(0, 90, 0);
+  public final ElevatorPose kMoveToL1Algae = new ElevatorPose(27, 90, 0);
+  public final ElevatorPose kMoveToL2Algae = new ElevatorPose(33, 90, 0);
+  public final ElevatorPose kIntakeAlgaeL1 = new ElevatorPose(27, 90, 10);
+  public final ElevatorPose kIntakeAlgaeL2 = new ElevatorPose(33,90, 10);
+  public final ElevatorPose kL1 = new ElevatorPose(24, 90, 10);
+  public final ElevatorPose kL2 = new ElevatorPose(30, 135, 10);
+  public final ElevatorPose kL3 = new ElevatorPose(36, 135, 10);
+  public final ElevatorPose kL4 = new ElevatorPose(40, 135, 10);
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
