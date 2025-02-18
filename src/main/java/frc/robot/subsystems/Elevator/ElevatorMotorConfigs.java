@@ -34,7 +34,7 @@ public class ElevatorMotorConfigs {
         ;
     elevatorConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .p(0.1);
+      .p(0.1/12.0);
 
     return elevatorConfig;
   }
@@ -77,7 +77,8 @@ public class ElevatorMotorConfigs {
       .reverseSoftLimitEnabled(false)
       ;
 
-    double rotateCoversionFactor = 81;//NOT 360, that isforabs encoder, also  not 81,onlyapproximate
+    //90 degrees is 18.8 rotations 
+    double rotateCoversionFactor = 1/25.0*(18.0/64.0) * 360;
     rotationConfig.encoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)
@@ -89,9 +90,9 @@ public class ElevatorMotorConfigs {
       .inverted(true);
 
     rotationConfig.closedLoop
-      .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+      .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
       .p(0.8/60.0)
-      .positionWrappingEnabled(true)
+      .positionWrappingEnabled(false)
       .positionWrappingInputRange(0, 360)
       ;
     return rotationConfig;

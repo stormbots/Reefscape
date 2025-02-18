@@ -51,12 +51,11 @@ public class Elevator extends SubsystemBase {
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
 
   SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
-  SparkFlex rotationMotor = new SparkFlex(12, MotorType.kBrushless);
-  SparkFlex coralOutMotor = new SparkFlex(13, MotorType.kBrushless);
-  SparkFlex elevatorMotorFollower = new SparkFlex(11, MotorType.kBrushless);
+  SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
+  SparkFlex coralOutMotor = new SparkFlex(12, MotorType.kBrushless);
 
   ElevatorMech2d mechanism = new ElevatorMech2d();
-  ElevatorSimulation sim = new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor);
+  // ElevatorSimulation sim = new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor);
 
   public static final Angle ElevatorArmMinSoftLimitMin=Degrees.of(30);
   public static final Angle ElevatorArmMinSoftLimitMax=Degrees.of(90+30);
@@ -79,9 +78,10 @@ public class Elevator extends SubsystemBase {
 
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
-  public final ElevatorPose kFloorPickup =    new ElevatorPose(0, 15, -10);
-  public final ElevatorPose kStowed =         new ElevatorPose(0, 90, 0);
-  public final ElevatorPose kStowedUp =         new ElevatorPose(5, 90, 0);
+  public final ElevatorPose kFloorPickup =    new ElevatorPose(28.425886, -159.75804, -10);
+  public final ElevatorPose kPrepareToFloorPickup =    new ElevatorPose(44.584030, -159.758041, 0);
+  public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
+  public final ElevatorPose kStowedUp =         new ElevatorPose(35.062923, 84, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
   public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
@@ -103,9 +103,12 @@ public class Elevator extends SubsystemBase {
     var elevatorFollowerConfig = new SparkFlexConfig()
       .apply(ElevatorMotorConfigs.getElevatorConfig())
       .follow(elevatorMotor,true);
-    elevatorMotorFollower.configure(elevatorFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    rotationMotor.getEncoder().setPosition(rotationMotor.getAbsoluteEncoder().getPosition());
+    double absoluteAngle = rotationMotor.getAbsoluteEncoder().getPosition();
+    if(absoluteAngle>225){
+      absoluteAngle-=360;
+    }
+    rotationMotor.getEncoder().setPosition(absoluteAngle);
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
   }
@@ -158,8 +161,8 @@ public class Elevator extends SubsystemBase {
   SlewRateLimiter slewRateAngle = new SlewRateLimiter(2);
   
   private void setAngle(double angle) {
-    angle = MathUtil.clamp(angle, ElevatorArmMinSoftLimitMin.in(Degrees), ElevatorArmMinSoftLimitMax.in(Degrees));
-    angle = slewRateAngle.calculate(angle);
+    // angle = MathUtil.clamp(angle, ElevatorArmMinSoftLimitMin.in(Degrees), ElevatorArmMinSoftLimitMax.in(Degrees));
+    // angle = slewRateAngle.calculate(angle);
   
     //var ff = rotatorFF.calculate(getArmAngle().in(Radian), 0);
     var ff = 0;
@@ -318,8 +321,8 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void simulationPeriodic() {
-      sim.update();
-      SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees));
+      // sim.update();
+      // SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees));
   }
 
 }
