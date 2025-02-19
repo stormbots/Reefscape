@@ -70,6 +70,9 @@ public class AlgaeSim {
 
     simArm.setInputVoltage(simArmMotor.getAppliedOutput()*vbus);
     simArm.update(dt);
+
+    double velocity = RadiansPerSecond.of(simArm.getVelocityRadPerSec()).in(DegreesPerSecond);
+    simArmMotor.getAbsoluteEncoderSim().iterate(velocity, dt);
     simArmMotor.iterate(
       RadiansPerSecond.of(simArm.getVelocityRadPerSec()).in(DegreesPerSecond),
       vbus, dt
