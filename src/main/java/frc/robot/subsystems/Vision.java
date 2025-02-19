@@ -7,7 +7,6 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Radians;
 
 import java.util.Optional;
 
@@ -68,7 +67,9 @@ public class Vision extends SubsystemBase {
 
     updateOdometry();
     //getDistanceFromCamera();
-    
+
+    SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());
+  
 
   }
 
