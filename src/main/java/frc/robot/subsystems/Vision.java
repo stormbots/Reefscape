@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
+import java.lang.StackWalker.Option;
 import java.util.Optional;
 
 import org.photonvision.EstimatedRobotPose;
@@ -43,8 +44,8 @@ public class Vision extends SubsystemBase {
   AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
 
   NetworkTableInstance table = NetworkTableInstance.getDefault();
-  PhotonCamera leftCamera = new PhotonCamera("Left");
-  PhotonCamera rightCamera = new PhotonCamera("Right");
+  Optional<PhotonCamera> leftCamera;
+  Optional<PhotonCamera> rightCamera;
   
   Transform3d robotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
   PhotonPoseEstimator cameraPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
@@ -55,15 +56,36 @@ public class Vision extends SubsystemBase {
     this.swerve = swerve;
     this.navx = navxGyro;
 
+    //move camera constructors here
+    leftCamera = Optional.of(new PhotonCamera("Left"));
+    try{
+
+    }catch(Error e){
+      System.err.print(e);
+      leftCamera = Optional.empty();
+    }
+
+    try{
+      rightCamera = Optional.of(new PhotonCamera("Right"));
+    }catch(Error e){
+      System.err.print(e);
+      rightCamera = Optional.empty();
+    }
+
+
+
 
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    PhotonPipelineResult results = leftCamera.getLatestResult();
+    if(leftCamera.isPresent()){
+      PhotonPipelineResult results = leftCamera.get().getLatestResult();
+    
 
-    SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
+      SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
+    }
 
     updateOdometry();
     //getDistanceFromCamera();
@@ -75,9 +97,10 @@ public class Vision extends SubsystemBase {
 
 
   public void updateOdometry(){
-
-    updateCameraSideOdometry(cameraPoseEstimator, leftCamera);
-
+    //if camera is present
+    if(leftCamera.isPresent()){
+      updateCameraSideOdometry(cameraPoseEstimator, leftCamera.get());
+    }
   }
 
   /*public void getDistanceFromCamera(){
@@ -163,14 +186,16 @@ public class Vision extends SubsystemBase {
   }
 
   public Optional<Rotation2d> getRotationToObject(){
-    PhotonPipelineResult results = rightCamera.getLatestResult();
+    if(rightCamera.isPresent()){
+    PhotonPipelineResult results = rightCamera.get().getLatestResult();
 
     if (results.hasTargets()){
       PhotonTrackedTarget target = results.getBestTarget();
       return Optional.of(new Rotation2d(Degrees.of(target.getYaw())));
     }
-
+    }
     return Optional.empty();
+    
   }
 
 
