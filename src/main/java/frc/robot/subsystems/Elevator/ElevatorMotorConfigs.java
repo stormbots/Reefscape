@@ -17,13 +17,13 @@ public class ElevatorMotorConfigs {
 
   public static SparkBaseConfig getElevatorConfig(){
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
-      .smartCurrentLimit(16)
+      .smartCurrentLimit(30)
       .idleMode(IdleMode.kCoast)
       .inverted(true)
       ;
     elevatorConfig.softLimit
-    .forwardSoftLimit(16)//????
-    .forwardSoftLimitEnabled(false)
+    .forwardSoftLimit(64)//????
+    .forwardSoftLimitEnabled(true)
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
@@ -34,7 +34,7 @@ public class ElevatorMotorConfigs {
         ;
     elevatorConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .p(0.1/12.0);
+      .p(0.1/12.0*2*2);
 
     return elevatorConfig;
   }

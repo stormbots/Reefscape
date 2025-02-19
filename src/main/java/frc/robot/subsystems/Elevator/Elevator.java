@@ -78,15 +78,17 @@ public class Elevator extends SubsystemBase {
 
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
-  public final ElevatorPose kFloorPickup =    new ElevatorPose(28.425886, -159.75804, -10);
-  public final ElevatorPose kPrepareToFloorPickup =    new ElevatorPose(44.584030, -159.758041, 0);
+  public final ElevatorPose kFloorPickup =    new ElevatorPose(28.425886, -75, -10);
+  public final ElevatorPose kPrepareToFloorPickup =    new ElevatorPose(44.584030, -75, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
   public final ElevatorPose kStowedUp =         new ElevatorPose(35.062923, 84, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
   public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
   public final ElevatorPose kL3 =             new ElevatorPose(36, 135, 10);
-  public final ElevatorPose kL4 =             new ElevatorPose(20, 135, 10);
+  public final ElevatorPose kL4 =             new ElevatorPose(60, 145, 10);
+ // public final ElevatorPose kL4bruh =             new ElevatorPose(60, 90, 0);
+
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
@@ -280,6 +282,16 @@ public class Elevator extends SubsystemBase {
         .andThen(moveToPoseWithScorer(pose));
   }
 
+  public Command holdPosition(){
+    return run(
+      () -> {
+        setHeight(elevatorMotor.getEncoder().getPosition());
+        setAngle(elevatorMotor.getEncoder().getPosition());
+        setScorerSpeed(elevatorMotor.getEncoder().getPosition());
+      }
+    );
+  }
+
 
   public Trigger atTargetPosition =
     new Trigger(() -> {
@@ -322,7 +334,10 @@ public class Elevator extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
       // sim.update();
-      // SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees));
+      // SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees))
+  }
+  public void initDefaultCommand() {
+    setDefaultCommand(holdPosition());
   }
 
 }

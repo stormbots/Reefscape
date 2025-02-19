@@ -59,11 +59,18 @@ public class RobotContainer {
       .whileTrue(elevator.moveToPose(elevator.kStowed));
     SmartDashboard.putString("elevator/targetPose", "Stowed Up");
       
+    
+
+    // driverController.b()
+    //   .whileTrue(elevator.moveToPose(elevator.kFloorPickup));
+    //   //.whileTrue(elevator.scoreAtPose(elevator.kFloorPickup));
+    //   SmartDashboard.putString("elevator/targetPose", "Floor PickUp");
 
     driverController.b()
-      .whileTrue(elevator.moveToPose(elevator.kFloorPickup));
-      //.whileTrue(elevator.scoreAtPose(elevator.kFloorPickup));
-      SmartDashboard.putString("elevator/targetPose", "Floor PickUp");
+    .whileTrue(new SequentialCommandGroup(
+      //elevator.moveToPose(elevator.kL4bruh).withTimeout(7),
+      elevator.moveToPose(elevator.kL4)
+    ));
 
     driverController.x()
       .whileTrue(elevator.scoreAtPose(elevator.kStowedUp));
