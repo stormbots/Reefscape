@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.Pounds;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
@@ -43,7 +44,9 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldNavigation;
 import swervelib.SwerveDrive;
@@ -58,6 +61,8 @@ public class Swerve extends SubsystemBase {
   double maximumSpeed = 5.033;
 
   SwerveDrive swerveDrive;
+
+  PathConstraints constraintsFast = new PathConstraints(5, 3.5, 5, 3);
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
@@ -251,24 +256,23 @@ public class Swerve extends SubsystemBase {
   }
 
 
-  public Command pathToPose(Pose2d targetPoseIn, int selector){
-    //robot constraints for pathplanner
-    PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-
-    Pose2d nearestReef = fieldNav.getNearestReef(swerveDrive.getPose());
-    debugField2d.getObject("targetReef").setPose(nearestReef);
-    var targetPose = fieldNav.getTransformMid(nearestReef);
-    debugField2d.getObject("targetwTransform").setPose(targetPose);
-    if(selector == 0){
-      targetPose = fieldNav.getTransformRight(nearestReef);
-      debugField2d.getObject("targetwTransform").setPose(targetPose);
-  }
-    else if(selector == 1){
-      targetPose = fieldNav.getTransformRight(nearestReef);
-      debugField2d.getObject("targetwTransform").setPose(targetPose);
+  private Command privatePathToPose(Pose2d pose){
+      return AutoBuilder.pathfindToPose(pose, constraintsFast);
     }
-    return AutoBuilder.pathfindToPose(targetPose, constraints);
+
+  public Command pathToCoralLeft(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())),set);
   }
+  public Command pathToCoralRight(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())),set);
+  }
+  public Command pathToCoralMid(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralMid(getPose())),set);
+  }
+  
 
 
   public Command pathToPath(PathPlannerPath targetPath){
