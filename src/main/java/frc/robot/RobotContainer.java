@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -25,7 +26,7 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-  public final Climber climber = new Climber();
+  // public final Climber climber = new Climber();
   public final CoralIntake intake = new CoralIntake();
 
   // private final Tabi tabi = new Tabi();
@@ -64,6 +65,7 @@ public class RobotContainer {
 
     // driverController.a().whileTrue(intake.testRunPivotTrapezoidal(()->45));
     driverController.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 600), intake));
+    driverController.b().whileTrue(intake.runStupidEndEffector());
   }
 
   // private void configureDefaultCommands(){
@@ -78,15 +80,16 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return new SequentialCommandGroup(
-      climber.prepareToClimb(),
-      new WaitCommand(1),
-      climber.climb(),
-      new WaitCommand(3),
-      climber.setAngle(()->45),
-      // new WaitCommand(1),
-      climber.stow()
+    // return new SequentialCommandGroup(
+    //   climber.prepareToClimb(),
+    //   new WaitCommand(1),
+    //   climber.climb(),
+    //   new WaitCommand(3),
+    //   climber.setAngle(()->45),
+    //   // new WaitCommand(1),
+    //   climber.stow()
       
-    );
+    // );
+    return new InstantCommand();
   }
 }
