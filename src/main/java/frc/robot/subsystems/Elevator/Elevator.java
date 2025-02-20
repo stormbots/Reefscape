@@ -6,6 +6,7 @@
 package frc.robot.subsystems.Elevator;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radian;
 
@@ -78,10 +79,11 @@ public class Elevator extends SubsystemBase {
 
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
-  public final ElevatorPose kFloorPickup =    new ElevatorPose(28.425886, -75, -10);
-  public final ElevatorPose kPrepareToFloorPickup =    new ElevatorPose(44.584030, -75, 0);
+  public final ElevatorPose kFloorPickup =    new ElevatorPose(28.5, -75, -10);
+  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(44.5, -75, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
-  public final ElevatorPose kStowedUp =         new ElevatorPose(35.062923, 84, 0);
+  public final ElevatorPose kStowedUp =         new ElevatorPose(25, 84, 0);
+  public final ElevatorPose kStowedUpBruh =         new ElevatorPose(45, 84, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
   public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
@@ -92,19 +94,14 @@ public class Elevator extends SubsystemBase {
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  ArmFeedforward rotatorFF = new ArmFeedforward(0.0, 0.0, 0.0, 0.0);
-  ElevatorFeedforward elevatorFF = new ElevatorFeedforward(0.0, 0.0, 0.0);
+  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0, 0.0, 0.0);
+  ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, (.45-.071)/2, 0.0);
   public Elevator() {
 
     //Set up motor configs
     elevatorMotor.configure(ElevatorMotorConfigs.getElevatorConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     coralOutMotor.configure(ElevatorMotorConfigs.getScorerConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rotationMotor.configure(ElevatorMotorConfigs.getRotationConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    
-    //Practice bot only!!!
-    var elevatorFollowerConfig = new SparkFlexConfig()
-      .apply(ElevatorMotorConfigs.getElevatorConfig())
-      .follow(elevatorMotor,true);
 
     double absoluteAngle = rotationMotor.getAbsoluteEncoder().getPosition();
     if(absoluteAngle>225){
@@ -113,11 +110,22 @@ public class Elevator extends SubsystemBase {
     rotationMotor.getEncoder().setPosition(absoluteAngle);
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
+
+    // setDefaultCommand(holdPosition());
+    setDefaultCommand(run(()->{
+      elevatorMotor.stopMotor();
+      rotationMotor.stopMotor();
+      coralOutMotor.stopMotor();
+    }));
   }
   
   public Trigger haveCoral = new Trigger( () -> {
     return elevatorMotor.getOutputCurrent() > current;
   }).debounce(0.1);
+
+  public Trigger isAtSafePosition = new Trigger( () ->  getCarraigeHeight().in(Inch) > 20 )
+  .and( ()-> getArmAngle().in(Degrees) > 0 && getArmAngle().in(Degrees) < 93);
+
 
   public Command homeElevator() {
     // step 0: Make sure scorer s insafeposition
@@ -336,8 +344,16 @@ public class Elevator extends SubsystemBase {
       // sim.update();
       // SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees))
   }
-  public void initDefaultCommand() {
-    setDefaultCommand(holdPosition());
-  }
 
+
+  public Command setVoltage(DoubleSupplier voltage){
+    return run(()->{
+      SmartDashboard.putNumber("elevator/voltage", voltage.getAsDouble());
+      elevatorMotor.setVoltage(elevatorFF.calculate(0));
+      rotationMotor.setVoltage(voltage.getAsDouble());
+    }).finallyDo(()->{
+      elevatorMotor.setVoltage(0);
+      rotationMotor.setVoltage(0);
+    });
+  }
 }

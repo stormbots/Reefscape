@@ -6,7 +6,13 @@
           "open": true,
           "out-motor": {
             "open": true
+          },
+          "rotation": {
+            "open": true
           }
+        },
+        "mechanism": {
+          "open": true
         },
         "open": true
       }

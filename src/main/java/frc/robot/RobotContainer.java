@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -55,31 +56,42 @@ public class RobotContainer {
    */
   private void configureBindings() {
 
-    driverController.a()
-      .whileTrue(elevator.moveToPose(elevator.kStowed));
-    SmartDashboard.putString("elevator/targetPose", "Stowed Up");
-      
-    
-
-    // driverController.b()
-    //   .whileTrue(elevator.moveToPose(elevator.kFloorPickup));
-    //   //.whileTrue(elevator.scoreAtPose(elevator.kFloorPickup));
-    //   SmartDashboard.putString("elevator/targetPose", "Floor PickUp");
+    driverController.a().whileTrue(new SequentialCommandGroup(
+      elevator.moveToPose(elevator.kStowedUp)
+      // elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
+      // elevator.moveToPose(elevator.kPrepareToFloorPickup),//.until(intake.isDown) //TODO no intake yet
+      // elevator.scoreAtPose(elevator.kFloorPickup) //.run(intake) .until(haveCoral) //TODO no grapple or intake
+    ));
 
     driverController.b()
     .whileTrue(new SequentialCommandGroup(
-      //elevator.moveToPose(elevator.kL4bruh).withTimeout(7),
-      elevator.moveToPose(elevator.kL4)
+      elevator.moveToPose(elevator.kStowedUpBruh)
+      // elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
+      // elevator.moveToPose(elevator.kL2),
+      // elevator.scoreAtPose(elevator.kL2)//.until(noCoral) //TODO no grapple
     ));
 
     driverController.x()
-      .whileTrue(elevator.scoreAtPose(elevator.kStowedUp));
-      SmartDashboard.putString("elevator/targetPose", "Stowed");
+    .whileTrue(new SequentialCommandGroup(
+      elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
+      elevator.moveToPose(elevator.kL3),
+      elevator.scoreAtPose(elevator.kL3)//.until(noCoral) //TODO no grapple
+    ));
 
+    // driverController.y()
+    // .whileTrue(new SequentialCommandGroup(
+    //   elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
+    //   elevator.moveToPose(elevator.kL4),
+    //   elevator.scoreAtPose(elevator.kL4)//.until(noCoral) //TODO no grapple
+    // ));
+
+
+    // new Trigger(DriverStation::isEnabled)
     driverController.y()
-      .whileTrue(elevator.scoreAtPose(elevator.kL2));
-      SmartDashboard.putString("elevator/targetPose", "L4");
-
+    .whileTrue(
+      elevator.setVoltage(()->driverController.getLeftY()*3*-1)
+    )
+    .onFalse(elevator.setVoltage(()->0));
   }
 
   /**
@@ -91,16 +103,6 @@ public class RobotContainer {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
     return new SequentialCommandGroup(
-      //elevator.moveToAngle(180),
-      elevator.moveToHeight(9).withTimeout(5),
-      elevator.testMoveElevatorArmWithTrap(() -> 10)
-      // elevator.moveToPose(elevator.kL2).withTimeout(5),
-      // elevator.moveToHeight(20).withTimeout(5),
-      // elevator.moveToAngle(90).withTimeout(5),
-      // elevator.moveToAngle(-45).withTimeout(5),
-      // elevator.moveToAngle(0).withTimeout(5),
-      // elevator.scoreAtPose(elevator.kL2).withTimeout(5),
-      // elevator.scoreAtPose(elevator.kStowed).withTimeout(5)
 
     );
   }
