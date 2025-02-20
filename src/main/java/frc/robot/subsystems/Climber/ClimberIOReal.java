@@ -65,4 +65,8 @@ public class ClimberIOReal implements ClimberIO {
     motor.getEncoder().setPosition(position);
   }
 
+  public void stop(){
+    motor.stopMotor();
+  }
+
 }

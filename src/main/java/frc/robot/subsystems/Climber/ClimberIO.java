@@ -43,4 +43,6 @@ public interface ClimberIO {
 
   public default void setRelativeEncoderPosition(double position){}
   public default double getVelocity() { return 0;}
+
+  public default void stop(){}
 }

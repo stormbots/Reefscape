@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -64,8 +65,10 @@ public class Climber extends SubsystemBase {
     visualizer = new ClimberVisualizer("climber");
 
     //TODO: Remove automated motion until tested
-    // setDefaultCommand(holdPosition());
+    // setDefaultCommand(cl);
     SmartDashboard.putData("subsystems/climber",this);
+
+    setDefaultCommand(holdPosition());
   }
 
 
@@ -79,10 +82,10 @@ public class Climber extends SubsystemBase {
     .positionConversionFactor(360)
     .velocityConversionFactor(360/60);
 
-    config.inverted(true);
+    config.inverted(false);
     config.closedLoop
         .outputRange(-0.5, 0.5)
-        .p(1 / 30.0)
+        .p(0.2 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, 360);
@@ -92,7 +95,7 @@ public class Climber extends SubsystemBase {
     .smartCurrentLimit(60)
     .voltageCompensation(11.0);
 
-    config.absoluteEncoder.inverted(false);
+    config.absoluteEncoder.inverted(true);
     config.softLimit
         .forwardSoftLimit(43)
         .forwardSoftLimitEnabled(false)
@@ -161,6 +164,10 @@ public class Climber extends SubsystemBase {
       ),
       isOnTarget::getAsBoolean
     );
+  }
+
+  public Command stop(){
+    return run(()->io.stop());
   }
 
 
