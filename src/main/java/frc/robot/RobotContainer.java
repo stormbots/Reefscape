@@ -64,8 +64,9 @@ public class RobotContainer {
 
 
     // driverController.a().whileTrue(intake.testRunPivotTrapezoidal(()->45));
-    driverController.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 600), intake));
-    driverController.b().whileTrue(intake.runStupidEndEffector());
+    driverController.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 100), intake));
+    driverController.b().whileTrue(new RunCommand(()->intake.setAngleSpeed(60, 0), intake));
+    // driverController.b().whileTrue(intake.runStupidEndEffector());
   }
 
   // private void configureDefaultCommands(){

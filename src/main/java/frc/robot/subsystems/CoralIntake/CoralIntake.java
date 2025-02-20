@@ -34,7 +34,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CoralIntake extends SubsystemBase {
 
-  private SparkFlex bruhMotor = new SparkFlex(12, MotorType.kBrushless);
+  // private SparkFlex bruhMotor = new SparkFlex(12, MotorType.kBrushless);
   private SparkFlex pivotMotor = new SparkFlex(13, MotorType.kBrushless);
   private SparkFlex rollerMotor = new SparkFlex(14, MotorType.kBrushless);
   private final CoralIntakeIOInputsAutoLogged inputs = new CoralIntakeIOInputsAutoLogged();
@@ -75,7 +75,7 @@ public class CoralIntake extends SubsystemBase {
 
     config.closedLoop
     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-    .p(.1/90)
+    .p(0.1/90)
     .positionWrappingEnabled(true)
     .positionWrappingInputRange(0, 360)
     
@@ -193,12 +193,12 @@ public class CoralIntake extends SubsystemBase {
     return new ParallelCommandGroup(testRunPivotTrapezoidal(()->90), new RunCommand(()-> setRollerVelocity(0.0)));
   }
 
-  public Command runStupidEndEffector(){
-    return run(()->{
-      bruhMotor.setVoltage(9);
-    // setRollerVelocity(speed);
-    rollerMotor.setVoltage(9);
-    });
-  }
+  // public Command runStupidEndEffector(){
+  //   return run(()->{
+  //     bruhMotor.setVoltage(9);
+  //   // setRollerVelocity(speed);
+  //   rollerMotor.setVoltage(9);
+  //   });
+  // }
 
 }
