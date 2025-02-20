@@ -130,7 +130,7 @@ public class Climber extends SubsystemBase {
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(()->60));
+    .andThen(setAngle(()->25));
   }
   
   public Command setAngle(DoubleSupplier angle) {
