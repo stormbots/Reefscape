@@ -10,6 +10,7 @@ import edu.wpi.first.math.estimator.PoseEstimator;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -64,9 +65,18 @@ public class RobotContainer {
     swerveSubsystem.setDefaultCommand(
       swerveSubsystem.driveCommand(()->-driverController.getLeftY()/4.0, ()->-driverController.getLeftX()/4.0, ()->-driverController.getRightX()/4.0)
     );
-    driverController.x().whileTrue(
-    swerveSubsystem.goToPose(new Pose2d())
+
+    driverController.rightTrigger().whileTrue(
+      swerveSubsystem.pathToPose(new Pose2d(1.5, 1.5, new Rotation2d(0.0)), 0)
     );
+    driverController.leftTrigger().whileTrue(
+      swerveSubsystem.pathToPose(new Pose2d(0.0, 0.0, new Rotation2d(0.0)), 1)
+    );
+    driverController.x().whileTrue(
+      swerveSubsystem.pathToPose(new Pose2d(0.0, 0.0, new Rotation2d(0.0)), 1)
+    );
+
+
    /*  driverController.b().whileTrue(
     swerveSubsystem.pathToPose(new Pose2d())
     );*/
