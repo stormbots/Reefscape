@@ -9,7 +9,9 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radian;
+import static edu.wpi.first.units.Units.Radians;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import com.revrobotics.spark.ClosedLoopSlot;
@@ -34,7 +36,10 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
@@ -42,7 +47,7 @@ public class Elevator extends SubsystemBase {
   public boolean isHomed = false;
   public double power;
   public int current;
-  private final double toleranceHeight = 0.5;
+  private final double toleranceHeight = 2;
   private final double toleranceAngle = 5;
   private final double kArmMaxVelocity = 10.0;
   private final double kArmMaxAcceleration = 2.0;
@@ -58,8 +63,8 @@ public class Elevator extends SubsystemBase {
   ElevatorMech2d mechanism = new ElevatorMech2d();
   // ElevatorSimulation sim = new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor);
 
-  public static final Angle ElevatorArmMinSoftLimitMin=Degrees.of(30);
-  public static final Angle ElevatorArmMinSoftLimitMax=Degrees.of(90+30);
+  public static final Angle ElevatorArmMinSoftLimitMin=Degrees.of(-75);
+  public static final Angle ElevatorArmMinSoftLimitMax=Degrees.of(135);
 
   public class ElevatorPose {
     double height;
@@ -79,7 +84,8 @@ public class Elevator extends SubsystemBase {
 
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
-  public final ElevatorPose kFloorPickup =    new ElevatorPose(28.5, -75, -10);
+  //need special procedure to move to floor pickup
+  private final ElevatorPose kFloorPickup =    new ElevatorPose(28.5, -75, -10);
   public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(44.5, -75, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
   public final ElevatorPose kStowedUp =         new ElevatorPose(25, 84, 0);
@@ -94,7 +100,7 @@ public class Elevator extends SubsystemBase {
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  ArmFeedforward rotatorFF = new ArmFeedforward(0, 0, 0.0, 0.0);
+  ArmFeedforward rotatorFF = new ArmFeedforward(0.3, 0.25, 0.0, 0.0);
   ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, (.45-.071)/2, 0.0);
   public Elevator() {
 
@@ -107,14 +113,15 @@ public class Elevator extends SubsystemBase {
     if(absoluteAngle>225){
       absoluteAngle-=360;
     }
+    //should probably do again, sometimes doesnt get sent
     rotationMotor.getEncoder().setPosition(absoluteAngle);
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
 
     // setDefaultCommand(holdPosition());
     setDefaultCommand(run(()->{
-      elevatorMotor.stopMotor();
-      rotationMotor.stopMotor();
+      elevatorMotor.setVoltage(elevatorFF.getKg());
+      rotationMotor.setVoltage(Math.cos(getRelativeArmAngle().in(Radians))*rotatorFF.getKg());
       coralOutMotor.stopMotor();
     }));
   }
@@ -123,7 +130,7 @@ public class Elevator extends SubsystemBase {
     return elevatorMotor.getOutputCurrent() > current;
   }).debounce(0.1);
 
-  public Trigger isAtSafePosition = new Trigger( () ->  getCarraigeHeight().in(Inch) > 20 )
+  public Trigger isAtSafePosition = new Trigger( () ->  getCarriageHeight().in(Inch) > 20 )
   .and( ()-> getArmAngle().in(Degrees) > 0 && getArmAngle().in(Degrees) < 93);
 
 
@@ -156,8 +163,12 @@ public class Elevator extends SubsystemBase {
     return Degrees.of(rotationMotor.getAbsoluteEncoder().getPosition());
   }
 
-  private Distance getCarraigeHeight(){
-    return Inches.of(elevatorMotor.getAbsoluteEncoder().getPosition());
+  private Angle getRelativeArmAngle(){
+    return Degrees.of(rotationMotor.getEncoder().getPosition());
+  }
+
+  private Distance getCarriageHeight(){
+    return Inches.of(elevatorMotor.getEncoder().getPosition());
   }
 
   private void setHeight(double height) {
@@ -168,18 +179,20 @@ public class Elevator extends SubsystemBase {
     setpoint.height = height;
   }
 
-  SlewRateLimiter slewRateAngle = new SlewRateLimiter(2);
+  SlewRateLimiter slewRateAngle = new SlewRateLimiter(75);
   
   private void setAngle(double angle) {
     // angle = MathUtil.clamp(angle, ElevatorArmMinSoftLimitMin.in(Degrees), ElevatorArmMinSoftLimitMax.in(Degrees));
-    // angle = slewRateAngle.calculate(angle);
+    //if setpoint is not set before slewrate, isAtSetpoint trigger will activate instantly
+    setpoint.angle = angle;
+    angle = slewRateAngle.calculate(angle);
+    SmartDashboard.putNumber("elevator/slewRatedAngle", angle);
   
     //var ff = rotatorFF.calculate(getArmAngle().in(Radian), 0);
-    var ff = 0;
+    var ff = Math.cos(getRelativeArmAngle().in(Radians))*rotatorFF.getKg();
     rotationMotor
       .getClosedLoopController()
       .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
-    setpoint.angle = angle;
   }
 
   private void setScorerSpeed(double speed) {
@@ -218,7 +231,7 @@ public class Elevator extends SubsystemBase {
     return runEnd(
       () -> setHeight(height),
       () -> {}// elevatorMotor.set(0)
-    );
+    ).until(atTargetHeight);
   }
 
   public Command manualElevatorPower(double power) {
@@ -236,13 +249,13 @@ public class Elevator extends SubsystemBase {
   public Command moveToAngle(double angle) {
     return startRun(
         () -> {
-          slewRateAngle.reset(getArmAngle().in(Degrees));
+          slewRateAngle.reset(getRelativeArmAngle().in(Degrees));
         },
         () -> {
           setAngle(angle);
         }
       // exit condition on arriving?
-    );
+    ).until(atTargetAngle);
   }
 
   public Command moveToPose(ElevatorPose pose) {
@@ -257,6 +270,40 @@ public class Elevator extends SubsystemBase {
         }
     // exit condition on arriving?
     );
+  }
+
+  //Prevents collision for all relevant positions-except intake :skull
+  public Command moveToPoseSafe(ElevatorPose pose){
+    // double desiredAngleNorm90 = pose.angle-90;
+    // double currentAngleNorm90 = getRelativeArmAngle().in(Degrees)-90;
+    
+    //possible checks for optimization, dont do rn tho
+
+    // //Check if desired is on the same side of y axis as the current
+    // if (Math.signum(desiredAngleNorm90)*Math.signum(currentAngleNorm90)==1.0) {
+    //   //Check if the next angle is closer to 90 than the current, a little iffy for intaking
+    //   if(Math.abs(desiredAngleNorm90)<Math.abs(currentAngleNorm90)){
+
+    //   }
+    // }
+
+    return new SequentialCommandGroup(
+      new InstantCommand(()->slewRateAngle.reset(getRelativeArmAngle().in(Degrees))),
+      moveToAngle(84),
+      moveToHeight(pose.height),
+      moveToAngle(pose.angle)
+    );
+  }
+
+  //Move to prepare to floor pickup, wait for intake to lower(also cuz if we rotate straight to intake we ram into support)
+  public Command moveToIntake(Trigger lowerIntake){
+    return new SequentialCommandGroup(
+      moveToPoseSafe(kPrepareToFloorPickup),
+      new WaitCommand(999999).until(lowerIntake),
+      moveToHeight(kFloorPickup.height)
+    );
+    //In theory, move back up at very end. doesnt work, causes things to break, whatever
+    // .finallyDo((e)->moveToHeight(kPrepareToFloorPickup.height));
   }
 
   SysIdRoutineLog log = new SysIdRoutineLog("elevatorArm");
@@ -293,9 +340,9 @@ public class Elevator extends SubsystemBase {
   public Command holdPosition(){
     return run(
       () -> {
-        setHeight(elevatorMotor.getEncoder().getPosition());
-        setAngle(elevatorMotor.getEncoder().getPosition());
-        setScorerSpeed(elevatorMotor.getEncoder().getPosition());
+        setHeight(getCarriageHeight().in(Inches));
+        setAngle(getRelativeArmAngle().in(Degrees));
+        setScorerSpeed(coralOutMotor.getEncoder().getPosition());
       }
     );
   }
@@ -304,11 +351,23 @@ public class Elevator extends SubsystemBase {
   public Trigger atTargetPosition =
     new Trigger(() -> {
       return 
-      MathUtil.isNear(setpoint.height, elevatorMotor.getEncoder().getPosition(), toleranceHeight)
+      MathUtil.isNear(setpoint.height, getCarriageHeight().in(Inches), toleranceHeight)
       && 
-      MathUtil.isNear(setpoint.angle, rotationMotor.getAbsoluteEncoder().getPosition(), toleranceAngle);
+      MathUtil.isNear(setpoint.angle, getRelativeArmAngle().in(Degrees), toleranceAngle);
     }).debounce(0.02*3)
     ;
+
+  public Trigger atTargetAngle = 
+    new Trigger(()->{
+      return MathUtil.isNear(setpoint.angle, getRelativeArmAngle().in(Degrees), toleranceAngle);
+    })
+  ;
+
+  public Trigger atTargetHeight = 
+    new Trigger(()->{
+      return MathUtil.isNear(setpoint.height, getCarriageHeight().in(Inches), toleranceHeight);
+    })
+  ;
 
   public boolean bounded(double value, double min, double max) {
     return (value >= min && value <= max);
@@ -316,7 +375,8 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic(){
-    SmartDashboard.putNumber("elevator/height", elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("elevator/height", getCarriageHeight().in(Inches));
+    SmartDashboard.putNumber("elevator/setpoint", setpoint.height);
     SmartDashboard.putNumber("elevator/appliedvoltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
     SmartDashboard.putNumber("elevator/current", elevatorMotor.getOutputCurrent());
     

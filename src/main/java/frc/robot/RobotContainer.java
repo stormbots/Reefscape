@@ -56,34 +56,24 @@ public class RobotContainer {
    */
   private void configureBindings() {
 
-    driverController.a().whileTrue(new SequentialCommandGroup(
-      elevator.moveToPose(elevator.kStowedUp)
-      // elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
-      // elevator.moveToPose(elevator.kPrepareToFloorPickup),//.until(intake.isDown) //TODO no intake yet
-      // elevator.scoreAtPose(elevator.kFloorPickup) //.run(intake) .until(haveCoral) //TODO no grapple or intake
-    ));
+    driverController.a().whileTrue(
+      elevator.moveToPoseSafe(elevator.kL3)
+    );
 
-    driverController.b()
-    .whileTrue(new SequentialCommandGroup(
-      elevator.moveToPose(elevator.kStowedUpBruh)
-      // elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
-      // elevator.moveToPose(elevator.kL2),
-      // elevator.scoreAtPose(elevator.kL2)//.until(noCoral) //TODO no grapple
-    ));
-
-    driverController.x()
-    .whileTrue(new SequentialCommandGroup(
-      elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
-      elevator.moveToPose(elevator.kL3),
-      elevator.scoreAtPose(elevator.kL3)//.until(noCoral) //TODO no grapple
-    ));
-
-    // driverController.y()
-    // .whileTrue(new SequentialCommandGroup(
-    //   elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
-    //   elevator.moveToPose(elevator.kL4),
-    //   elevator.scoreAtPose(elevator.kL4)//.until(noCoral) //TODO no grapple
+    // driverController.a().whileTrue(new SequentialCommandGroup(
+    //   elevator.moveToPose(elevator.kStowedUp)
+    //   // elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
+    //   // elevator.moveToPose(elevator.kPrepareToFloorPickup),//.until(intake.isDown) //TODO no intake yet
+    //   // elevator.scoreAtPose(elevator.kFloorPickup) //.run(intake) .until(haveCoral) //TODO no grapple or intake
     // ));
+
+    driverController.b().whileTrue(
+      elevator.moveToPoseSafe(elevator.kStowedUp)
+    );
+
+    Trigger intakeDown = new Trigger(()->true);
+
+    driverController.x().whileTrue(elevator.moveToIntake(intakeDown));
 
 
     // new Trigger(DriverStation::isEnabled)
