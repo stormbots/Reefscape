@@ -32,10 +32,10 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-  public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
+  // public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
 
   Swerve swerveSubsystem = new Swerve();
-  private final Vision Vision = new Vision(swerveSubsystem, navxGyro);
+  // private final Vision Vision = new Vision(swerveSubsystem, navxGyro);
 
   CommandXboxController driverController = new CommandXboxController(0);
 
@@ -63,17 +63,17 @@ public class RobotContainer {
     // cancelling on release.
 
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(()->-driverController.getLeftY()/4.0, ()->-driverController.getLeftX()/4.0, ()->-driverController.getRightX()/4.0)
+      swerveSubsystem.driveCommand(()->-driverController.getLeftY(), ()->-driverController.getLeftX(), ()->-driverController.getRightX())
     );
 
     driverController.rightTrigger().whileTrue(
-      swerveSubsystem.pathToPose(new Pose2d(1.5, 1.5, new Rotation2d(0.0)), 0)
+      swerveSubsystem.pathToCoralRight()
     );
     driverController.leftTrigger().whileTrue(
-      swerveSubsystem.pathToPose(new Pose2d(0.0, 0.0, new Rotation2d(0.0)), 1)
+      swerveSubsystem.pathToCoralLeft()
     );
     driverController.x().whileTrue(
-      swerveSubsystem.pathToPose(new Pose2d(0.0, 0.0, new Rotation2d(0.0)), 1)
+      swerveSubsystem.pathToCoralMid()
     );
 
 
@@ -91,6 +91,7 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Autos.exampleAuto(exampleSubsystem);
+    // return Autos.exampleAuto(exampleSubsystem);
+    return swerveSubsystem.followPath("1Meter");
   }
 }
