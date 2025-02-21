@@ -35,13 +35,13 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-  public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
+  // public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
 
   Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final CoralIntake intake = new CoralIntake();
 
-  private final Vision Vision = new Vision(swerveSubsystem, navxGyro);
+  private final Vision Vision = new Vision(swerveSubsystem, null);
 
   CommandXboxController driverController = new CommandXboxController(0);
 
@@ -67,13 +67,31 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    driverController.start().onTrue(swerveSubsystem.resetGyro());
 
+    driverController.start().onTrue(swerveSubsystem.resetGyro());
     swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(
+      ()->-driverController.getLeftY(),
+      ()->-driverController.getLeftX(),
+      ()->-driverController.getRightX()
+    ));
+    //TODO: Slow mode?
+    driverController.leftBumper().whileTrue(swerveSubsystem.driveCommand(
       ()->-driverController.getLeftY()/4.0, 
       ()->-driverController.getLeftX()/4.0,
       ()->-driverController.getRightX()/4.0
     ));
+
+
+    driverController.rightTrigger().whileTrue(
+      swerveSubsystem.pathToCoralRight()
+    );
+    driverController.leftTrigger().whileTrue(
+      swerveSubsystem.pathToCoralLeft()
+    );
+    driverController.x().whileTrue(
+      swerveSubsystem.pathToReefAlgae()
+    );
+
 
     // driverController.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 100), intake));
     // driverController.b().whileTrue(new RunCommand(()->intake.setAngleSpeed(60, 0), intake));
@@ -110,6 +128,8 @@ public class RobotContainer {
     //   climber.stow()
       
     // );
-    return new InstantCommand();
+    return swerveSubsystem.pathToCoralLeft();
+    // return new InstantCommand();
+    // return swerveSubsystem.followPath("1Meter");
   }
 }

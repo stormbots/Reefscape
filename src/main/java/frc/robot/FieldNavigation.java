@@ -23,11 +23,12 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 /** Add your docs here. */
 public class FieldNavigation {
 
-    double coralX = Inches.of(34/2).in(Meters);
-    double coralY = Inches.of(34/2).in(Meters);
+    static double coralX = Inches.of(34/2).in(Meters);
+    static double coralY = Inches.of(34/2).in(Meters);
 
-    Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY, new Rotation2d(Degrees.of(180))));
-    Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY, new Rotation2d(Degrees.of(180))));
+    static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY, new Rotation2d(Degrees.of(180))));
+    static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY, new Rotation2d(Degrees.of(180))));
+    static Transform2d reefAlgae = new Transform2d(new Pose2d(), new Pose2d(coralX, 0, new Rotation2d(Degrees.of(180))));
 
 
     public static List<Pose2d> tagsReef = new ArrayList<>(){{
@@ -76,23 +77,21 @@ public class FieldNavigation {
 
         return currentPose.nearest(tagsProcessor);
     }
-    public Pose2d getTransformMid(Pose2d targetPose)
+
+    public static Pose2d getCoralLeft(Pose2d currentPose)
     {
-        //This is WIP, forgot to set up a bunch of stuff
-        field.getObject("Coral").setPoses(targetPose.transformBy(coralRight), targetPose.transformBy(coralLeft));
-        return field.getObject("Coral").getPose();
-    }
-    public Pose2d getTransformRight(Pose2d targetPose)
-    {
-        //This is WIP, forgot to set up a bunch of stuff
-        field.getObject("Coral").setPose(targetPose.transformBy(coralRight));
-        return field.getObject("Coral").getPose();
-    }
-    public Pose2d getTransformLeft(Pose2d targetPose)
-    {
-        //This is WIP, forgot to set up a bunch of stuff
-        field.getObject("Coral").setPose(targetPose.transformBy(coralLeft));
-        return field.getObject("Coral").getPose();
+        var nearest = currentPose.nearest(tagsReef);
+        return nearest.transformBy(coralLeft);
     }
 
+    public static Pose2d getCoralRight(Pose2d currentPose)
+    {
+        var nearest = currentPose.nearest(tagsReef);
+        return nearest.transformBy(coralRight);
+    }
+    public static Pose2d getReefAlgae(Pose2d currentPose)
+    {
+        var nearest = currentPose.nearest(tagsReef);
+        return nearest.transformBy(reefAlgae);
+    }
 }

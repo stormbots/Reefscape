@@ -4,46 +4,38 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Pounds;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-import org.dyn4j.collision.narrowphase.LinkPostProcessor;
 import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.PathfindingCommand;
-import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
-import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.path.Waypoint;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldNavigation;
 import swervelib.SwerveDrive;
@@ -54,10 +46,13 @@ public class Swerve extends SubsystemBase {
   public Field2d debugField2d = new Field2d();
   public Field2d odometryField = new Field2d();
   private FieldNavigation fieldNav = new FieldNavigation();
+
   
   double maximumSpeed = 5.033;
 
   SwerveDrive swerveDrive;
+
+  PathConstraints constraintsFast = new PathConstraints(5, 3.5, 5, 3);
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
@@ -69,9 +64,8 @@ public class Swerve extends SubsystemBase {
 
     
     //Need to turn this back on when running path, commented out for now because its angry
-    configurePathplanner();
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
-    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"practiceBot"); //FIXME: Change to skipper and fix module configs
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"skipper");
     try
     {
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(maximumSpeed);
@@ -82,9 +76,12 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    // swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.080663, 1.9711, 0.36785));
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.32));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     
+    swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+    configurePathplanner();
+    // PathfindingCommand.warmupCommand();
   }
 
   @Override
@@ -97,7 +94,7 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
     Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
-
+    Logger.recordOutput("odometry", swerveDrive.getPose());
   }
 
   public void configurePathplanner(){
@@ -251,24 +248,23 @@ public class Swerve extends SubsystemBase {
   }
 
 
-  public Command pathToPose(Pose2d targetPoseIn, int selector){
-    //robot constraints for pathplanner
-    PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-
-    Pose2d nearestReef = fieldNav.getNearestReef(swerveDrive.getPose());
-    debugField2d.getObject("targetReef").setPose(nearestReef);
-    var targetPose = fieldNav.getTransformMid(nearestReef);
-    debugField2d.getObject("targetwTransform").setPose(targetPose);
-    if(selector == 0){
-      targetPose = fieldNav.getTransformRight(nearestReef);
-      debugField2d.getObject("targetwTransform").setPose(targetPose);
-  }
-    else if(selector == 1){
-      targetPose = fieldNav.getTransformRight(nearestReef);
-      debugField2d.getObject("targetwTransform").setPose(targetPose);
+  private Command privatePathToPose(Pose2d pose){
+      return AutoBuilder.pathfindToPose(pose, constraintsFast);
     }
-    return AutoBuilder.pathfindToPose(targetPose, constraints);
+
+  public Command pathToCoralLeft(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())),set);
   }
+  public Command pathToCoralRight(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())),set);
+  }
+  public Command pathToReefAlgae(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getReefAlgae(getPose())),set);
+  }
+  
 
 
   public Command pathToPath(PathPlannerPath targetPath){
@@ -298,5 +294,17 @@ public class Swerve extends SubsystemBase {
   
   public Command resetGyro(){
     return runOnce(swerveDrive::zeroGyro).ignoringDisable(true);
+  }
+
+  public Command followPath(String name){
+    try {
+      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(name));
+    } catch (Exception e) {
+      // TODO: handle exception
+      for(int i=0; i<1000; i++){
+        System.out.println(e);
+      }
+      return new InstantCommand();
+    }
   }
 }
