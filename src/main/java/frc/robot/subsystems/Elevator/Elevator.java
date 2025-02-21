@@ -131,7 +131,7 @@ public class Elevator extends SubsystemBase {
   }).debounce(0.1);
 
   public Trigger isAtSafePosition = new Trigger( () ->  getCarriageHeight().in(Inch) > 20 )
-  .and( ()-> getArmAngle().in(Degrees) > 0 && getArmAngle().in(Degrees) < 93);
+  .and( ()-> getRelativeArmAngle().in(Degrees) > 0 && getRelativeArmAngle().in(Degrees) < 93);
 
 
   public Command homeElevator() {
@@ -188,7 +188,7 @@ public class Elevator extends SubsystemBase {
     angle = slewRateAngle.calculate(angle);
     SmartDashboard.putNumber("elevator/slewRatedAngle", angle);
   
-    //var ff = rotatorFF.calculate(getArmAngle().in(Radian), 0);
+    // var ff = rotatorFF.calculate(getRelativeArmAngle().in(Radian), 0);
     var ff = Math.cos(getRelativeArmAngle().in(Radians))*rotatorFF.getKg();
     rotationMotor
       .getClosedLoopController()
@@ -207,7 +207,7 @@ public class Elevator extends SubsystemBase {
     return startRun(
       ()->{
         //Seed the initial state/setpoint with the current state
-        armSetpoint = new TrapezoidProfile.State(getArmAngle().in(Degrees), rotationMotor.getAbsoluteEncoder().getVelocity());
+        armSetpoint = new TrapezoidProfile.State(getRelativeArmAngle().in(Degrees), rotationMotor.getEncoder().getVelocity());
       }, 
       ()->{
         //Make sure the goal is dynamically updated
@@ -261,7 +261,7 @@ public class Elevator extends SubsystemBase {
   public Command moveToPose(ElevatorPose pose) {
     return startRun(
         () -> {
-          slewRateAngle.reset(getArmAngle().in(Degrees));
+          slewRateAngle.reset(getRelativeArmAngle().in(Degrees));
         },
         () -> {
           setHeight(pose.height);
@@ -320,7 +320,7 @@ public class Elevator extends SubsystemBase {
   public Command moveToPoseWithScorer(ElevatorPose pose) {
     return startRun(
         () -> {
-          slewRateAngle.reset(getArmAngle().in(Degrees));
+          slewRateAngle.reset(getRelativeArmAngle().in(Degrees));
         },
         () -> {
           setHeight(pose.height);
