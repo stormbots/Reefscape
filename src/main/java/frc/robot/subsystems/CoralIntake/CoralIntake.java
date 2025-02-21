@@ -41,7 +41,7 @@ public class CoralIntake extends SubsystemBase {
   // private final CoralIntakeIO io;
   //TODO: Find actual values
   private final TrapezoidProfile pivotProfile = new TrapezoidProfile(
-    new TrapezoidProfile.Constraints(10, 10));
+    new TrapezoidProfile.Constraints(90/0.05, 270));
   private ArmFeedforward pivotFF = new ArmFeedforward(0, 0, 0);
 
   private TrapezoidProfile.State pivotGoal = new TrapezoidProfile.State();
@@ -75,7 +75,7 @@ public class CoralIntake extends SubsystemBase {
 
     config.closedLoop
     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-    .p(0.1/90)
+    .p(0.5/90)
     .positionWrappingEnabled(true)
     .positionWrappingInputRange(0, 360)
     
@@ -99,7 +99,7 @@ public class CoralIntake extends SubsystemBase {
     //TODO: Placeholder
     config.closedLoop
     .outputRange(-0.5,0.5)
-    .p(0.1/10);
+    .p(0);
 
     rollerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
@@ -148,10 +148,10 @@ public class CoralIntake extends SubsystemBase {
     return Degrees.of(getAdjustedAngle());
   }
 
-  public Command testRunPivotTrapezoidal(DoubleSupplier angle){
+  public Command runPivotTrapezoidal(DoubleSupplier angle){
     return startRun(
       ()->{
-        pivotSetpoint = new TrapezoidProfile.State(getAdjustedAngle(), pivotMotor.getEncoder().getVelocity());
+        pivotSetpoint = new TrapezoidProfile.State(getAdjustedAngle(), pivotMotor.getAbsoluteEncoder().getVelocity());
       }, 
       ()->{
         pivotGoal = new TrapezoidProfile.State(angle.getAsDouble(), 0.0);
@@ -185,11 +185,11 @@ public class CoralIntake extends SubsystemBase {
   }
 
   public Command intake() {
-    return new ParallelCommandGroup(testRunPivotTrapezoidal(()->-45), new RunCommand(()-> setRollerVelocity(2.0)));
+    return new ParallelCommandGroup(runPivotTrapezoidal(()->-45), new RunCommand(()-> setRollerVelocity(25.0)));
   }
 
   public Command stow() {
-    return new ParallelCommandGroup(testRunPivotTrapezoidal(()->90), new RunCommand(()-> setRollerVelocity(0.0)));
+    return new ParallelCommandGroup(runPivotTrapezoidal(()->90), new RunCommand(()-> setRollerVelocity(0.0)));
   }
 
   // public Command runStupidEndEffector(){
