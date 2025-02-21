@@ -46,10 +46,15 @@ public class Vision extends SubsystemBase {
   NetworkTableInstance table = NetworkTableInstance.getDefault();
   Optional<PhotonCamera> leftCamera;
   Optional<PhotonCamera> rightCamera;
+  Optional<PhotonCamera> backCamera;
   
-  Transform3d robotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
-  PhotonPoseEstimator cameraPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
-
+  Transform3d leftRobotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
+  Transform3d rightRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
+  Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
+  PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
+  PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
+  
+   
   /** Creates a new Vision. */
   public Vision(Swerve swerve, AHRS navxGyro) {
 
@@ -57,8 +62,9 @@ public class Vision extends SubsystemBase {
     this.navx = navxGyro;
 
     //move camera constructors here
-    leftCamera = Optional.of(new PhotonCamera("Left"));
+    
     try{
+      leftCamera = Optional.of(new PhotonCamera("Left"));
 
     }catch(Error e){
       System.err.print(e);
@@ -70,6 +76,13 @@ public class Vision extends SubsystemBase {
     }catch(Error e){
       System.err.print(e);
       rightCamera = Optional.empty();
+    }
+
+    try{
+      backCamera = Optional.of(new PhotonCamera("Back"));
+    }catch(Error e){
+      System.err.print(e);
+      backCamera = Optional.empty();
     }
 
 
@@ -90,7 +103,7 @@ public class Vision extends SubsystemBase {
     updateOdometry();
     //getDistanceFromCamera();
 
-    SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());
+    //SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());
   
 
   }
@@ -99,10 +112,12 @@ public class Vision extends SubsystemBase {
   public void updateOdometry(){
     //if camera is present
     if(leftCamera.isPresent()){
-      updateCameraSideOdometry(cameraPoseEstimator, leftCamera.get());
+      updateCameraSideOdometry(leftPoseEstimator, leftCamera.get());
+    }
+    if(rightCamera.isPresent()){
+      updateCameraSideOdometry(rightPoseEstimator, rightCamera.get());
     }
   }
-
   /*public void getDistanceFromCamera(){
 
     var results = camera.getLatestResult();
@@ -186,8 +201,8 @@ public class Vision extends SubsystemBase {
   }
 
   public Optional<Rotation2d> getRotationToObject(){
-    if(rightCamera.isPresent()){
-    PhotonPipelineResult results = rightCamera.get().getLatestResult();
+    if(backCamera.isPresent()){
+    PhotonPipelineResult results = backCamera.get().getLatestResult();
 
     if (results.hasTargets()){
       PhotonTrackedTarget target = results.getBestTarget();
@@ -197,14 +212,6 @@ public class Vision extends SubsystemBase {
     return Optional.empty();
     
   }
-
-
-
-
-
-
-  
-
 
 }
 
