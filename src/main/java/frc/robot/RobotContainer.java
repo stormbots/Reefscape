@@ -60,28 +60,27 @@ public class RobotContainer {
       elevator.moveToPoseSafe(elevator.kL3)
     );
 
-    // driverController.a().whileTrue(new SequentialCommandGroup(
-    //   elevator.moveToPose(elevator.kStowedUp)
-    //   // elevator.moveToPose(elevator.kStowedUp).until(elevator.isAtSafePosition),
-    //   // elevator.moveToPose(elevator.kPrepareToFloorPickup),//.until(intake.isDown) //TODO no intake yet
-    //   // elevator.scoreAtPose(elevator.kFloorPickup) //.run(intake) .until(haveCoral) //TODO no grapple or intake
-    // ));
-
+    
     driverController.b().whileTrue(
       elevator.moveToPoseSafe(elevator.kStowedUp)
     );
 
-    Trigger intakeDown = new Trigger(()->true);
+    // Trigger intakeDown = new Trigger(()->true);
 
-    driverController.x().whileTrue(elevator.moveToIntake(intakeDown));
+    // driverController.x().whileTrue(elevator.moveToIntake(intakeDown));
 
 
     // new Trigger(DriverStation::isEnabled)
-    driverController.y()
-    .whileTrue(
-      elevator.setVoltage(()->driverController.getLeftY()*3*-1)
-    )
-    .onFalse(elevator.setVoltage(()->0));
+
+    driverController.x().whileTrue(
+      elevator.moveToPoseSafe(elevator.kPrepareToFloorPickup)
+    );
+
+    driverController.y().whileTrue(
+      elevator.moveToPoseSafe(elevator.kL4)
+    );
+
+
   }
 
   /**

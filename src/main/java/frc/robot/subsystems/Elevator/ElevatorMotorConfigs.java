@@ -17,8 +17,8 @@ public class ElevatorMotorConfigs {
 
   public static SparkBaseConfig getElevatorConfig(){
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
-      .smartCurrentLimit(30)
-      .idleMode(IdleMode.kCoast)
+      .smartCurrentLimit(40)
+      .idleMode(IdleMode.kBrake)
       .inverted(true)
       ;
     elevatorConfig.softLimit
@@ -65,7 +65,7 @@ public class ElevatorMotorConfigs {
 
   public static SparkBaseConfig getRotationConfig(){
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
-      .smartCurrentLimit(40)
+      .smartCurrentLimit(50)
       .idleMode(IdleMode.kBrake)
       .inverted(true)
       ;
@@ -91,7 +91,7 @@ public class ElevatorMotorConfigs {
 
     rotationConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .p(0.8/60.0)
+      .p(0.8/60.0*2)
       .positionWrappingEnabled(false)
       .positionWrappingInputRange(0, 360)
       ;

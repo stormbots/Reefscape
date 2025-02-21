@@ -8,12 +8,11 @@ package frc.robot.subsystems.Elevator;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Radian;
 import static edu.wpi.first.units.Units.Radians;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveRequest.Idle;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -22,7 +21,6 @@ import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
@@ -33,9 +31,11 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -88,7 +88,7 @@ public class Elevator extends SubsystemBase {
   private final ElevatorPose kFloorPickup =    new ElevatorPose(28.5, -75, -10);
   public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(44.5, -75, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
-  public final ElevatorPose kStowedUp =         new ElevatorPose(25, 84, 0);
+  public final ElevatorPose kStowedUp =         new ElevatorPose(44.5, 84, 0);
   public final ElevatorPose kStowedUpBruh =         new ElevatorPose(45, 84, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, 90, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
@@ -101,13 +101,18 @@ public class Elevator extends SubsystemBase {
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
   ArmFeedforward rotatorFF = new ArmFeedforward(0.3, 0.25, 0.0, 0.0);
-  ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, (.45-.071)/2, 0.0);
+  ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, (.45 -.071)/2, 0.0);
   public Elevator() {
+
+    var startingheight = getCarriageHeight().in(Inches);
 
     //Set up motor configs
     elevatorMotor.configure(ElevatorMotorConfigs.getElevatorConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     coralOutMotor.configure(ElevatorMotorConfigs.getScorerConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rotationMotor.configure(ElevatorMotorConfigs.getRotationConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    Timer.delay(0.02);
+    elevatorMotor.getEncoder().setPosition(startingheight);
 
     double absoluteAngle = rotationMotor.getAbsoluteEncoder().getPosition();
     if(absoluteAngle>225){
@@ -130,12 +135,12 @@ public class Elevator extends SubsystemBase {
     return elevatorMotor.getOutputCurrent() > current;
   }).debounce(0.1);
 
-  public Trigger isAtSafePosition = new Trigger( () ->  getCarriageHeight().in(Inch) > 20 )
+  public Trigger isAtSafePosition = new Trigger( () ->  getCarriageHeight().in(Inch) > kStowedUp.height-1 )
   .and( ()-> getRelativeArmAngle().in(Degrees) > 0 && getRelativeArmAngle().in(Degrees) < 93);
 
 
   public Command homeElevator() {
-    // step 0: Make sure scorer s insafeposition
+    // step 0: Make sure scorer is in a safe position
 
     return run(() -> {
           // logic here
@@ -227,7 +232,7 @@ public class Elevator extends SubsystemBase {
       }
     );
   }
-  public Command moveToHeight(double height) {
+  private Command moveToHeight(double height) {
     return runEnd(
       () -> setHeight(height),
       () -> {}// elevatorMotor.set(0)
@@ -246,19 +251,20 @@ public class Elevator extends SubsystemBase {
     );
   }
   
-  public Command moveToAngle(double angle) {
-    return startRun(
-        () -> {
-          slewRateAngle.reset(getRelativeArmAngle().in(Degrees));
-        },
-        () -> {
-          setAngle(angle);
-        }
-      // exit condition on arriving?
-    ).until(atTargetAngle);
-  }
+  // public Command moveToAngle(double angle) {
+  //   return startRun(
+  //       () -> {
+  //         slewRateAngle.reset(getRelativeArmAngle().in(Degrees));
+  //       },
+  //       () -> {
+  //         setAngle(angle);
+  //       }
+  //     // exit condition on arriving?
+  //   ).until(atTargetAngle);
+  // }
 
-  public Command moveToPose(ElevatorPose pose) {
+  
+  private Command moveToPose(ElevatorPose pose) {
     return startRun(
         () -> {
           slewRateAngle.reset(getRelativeArmAngle().in(Degrees));
@@ -272,28 +278,26 @@ public class Elevator extends SubsystemBase {
     );
   }
 
-  //Prevents collision for all relevant positions-except intake :skull
-  public Command moveToPoseSafe(ElevatorPose pose){
-    // double desiredAngleNorm90 = pose.angle-90;
-    // double currentAngleNorm90 = getRelativeArmAngle().in(Degrees)-90;
-    
-    //possible checks for optimization, dont do rn tho
-
-    // //Check if desired is on the same side of y axis as the current
-    // if (Math.signum(desiredAngleNorm90)*Math.signum(currentAngleNorm90)==1.0) {
-    //   //Check if the next angle is closer to 90 than the current, a little iffy for intaking
-    //   if(Math.abs(desiredAngleNorm90)<Math.abs(currentAngleNorm90)){
-
-    //   }
-    // }
-
+  public Command moveToPoseSafe(ElevatorPose pose) {
     return new SequentialCommandGroup(
-      new InstantCommand(()->slewRateAngle.reset(getRelativeArmAngle().in(Degrees))),
-      moveToAngle(84),
-      moveToHeight(pose.height),
-      moveToAngle(pose.angle)
+      moveToPose(kStowedUp).until(isAtSafePosition),
+      moveToPose(pose)
     );
   }
+  public Command scoreAtPoseSafe(ElevatorPose pose) {
+    return moveToPoseSafe(pose)
+    .andThen(moveToPoseWithScorer(pose));
+  }
+
+
+  public Command goToIntake(Trigger isDown){
+    return new SequentialCommandGroup(
+      moveToPoseSafe(kPrepareToFloorPickup),
+      Commands.idle(this).until(isDown),
+      moveToPose(kFloorPickup)
+    );
+  }
+
 
   //Move to prepare to floor pickup, wait for intake to lower(also cuz if we rotate straight to intake we ram into support)
   public Command moveToIntake(Trigger lowerIntake){
@@ -329,12 +333,6 @@ public class Elevator extends SubsystemBase {
         }
     // exit condition on arriving?
     );
-  }
-
-  public Command scoreAtPose(ElevatorPose pose) {
-    return moveToPose(pose)
-        .until(atTargetPosition /* .and(chassis.atproperreefposition) */)
-        .andThen(moveToPoseWithScorer(pose));
   }
 
   public Command holdPosition(){
