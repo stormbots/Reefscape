@@ -10,8 +10,10 @@ import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
@@ -59,13 +61,12 @@ public class Climber extends SubsystemBase {
 
     //Do some final tidying up. 
     io.setRelativeEncoderPosition(io.getPosition());
-    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, io.getPosition(), 3)).debounce(0.1);
+    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 3)).debounce(0.1);
     rateLimit.reset(getPosition());
 
     visualizer = new ClimberVisualizer("climber");
 
     //TODO: Remove automated motion until tested
-    // setDefaultCommand(cl);
     SmartDashboard.putData("subsystems/climber",this);
 
     setDefaultCommand(holdPosition());
@@ -85,7 +86,7 @@ public class Climber extends SubsystemBase {
     config.inverted(false);
     config.closedLoop
         .outputRange(-0.5, 0.5)
-        .p(0.2 / 30.0)
+        .p(0.7 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, 360);
@@ -116,6 +117,8 @@ public class Climber extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Climber", inputs);
     visualizer.update(inputs.climberAbsoluteAngle);
+    SmartDashboard.putNumber("climber/ClimberAngle", getPosition());
+    SmartDashboard.putNumber("climber/Setpoint", setpoint);
   }
 
   public Command prepareToClimb() {
@@ -130,14 +133,17 @@ public class Climber extends SubsystemBase {
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(()->25));
+    .andThen(setAngle(()->0))
+    .andThen(setAngle(()->-30))
+    .andThen(setAngle(()->5));
   }
   
   public Command setAngle(DoubleSupplier angle) {
     return startRun(
       ()-> rateLimit.reset(getPosition()),
-      () -> setPosition(angle.getAsDouble())
-      );
+      () -> setPosition(MathUtil.clamp(angle.getAsDouble(), -90, 45))
+      ).until(isOnTarget)
+      ;
   }
 
   public Trigger isOnTarget;// Must be initialized in constructor after IO
