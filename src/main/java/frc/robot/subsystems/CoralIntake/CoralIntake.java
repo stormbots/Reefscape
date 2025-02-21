@@ -181,8 +181,7 @@ public class CoralIntake extends SubsystemBase {
 
   public void setAngleSpeed(double angle, double speed){
     setPivotAngle(angle);
-    // setRollerVelocity(speed);
-    rollerMotor.setVoltage(6);
+    setRollerVelocity(speed);
   }
 
   public Command intake() {
