@@ -13,6 +13,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -21,6 +23,7 @@ import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.CoralIntake.CoralIntake;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based i]
@@ -36,6 +39,7 @@ public class RobotContainer {
 
   Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
+  public final CoralIntake intake = new CoralIntake();
 
   private final Vision Vision = new Vision(swerveSubsystem, navxGyro);
 
@@ -65,16 +69,23 @@ public class RobotContainer {
     // cancelling on release.
     driverController.start().onTrue(swerveSubsystem.resetGyro());
 
-
-    driverController.b().whileTrue(climber.climb());
-    driverController.a().whileTrue(climber.prepareToClimb());
-
     swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(
       ()->-driverController.getLeftY()/4.0, 
       ()->-driverController.getLeftX()/4.0,
       ()->-driverController.getRightX()/4.0
     ));
 
+    // driverController.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 100), intake));
+    // driverController.b().whileTrue(new RunCommand(()->intake.setAngleSpeed(60, 0), intake));
+    
+    // driverController.b().whileTrue(climber.climb());
+    // driverController.a().whileTrue(climber.prepareToClimb());
+    
+    // driverController.b().whileFalse(intake.stow());
+    // driverController.b().whileTrue(intake.intake());
+
+
+    
   }
 
   // private void configureDefaultCommands(){
@@ -89,15 +100,16 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
-    return new SequentialCommandGroup(
-      climber.prepareToClimb(),
-      new WaitCommand(1),
-      climber.climb(),
-      new WaitCommand(3),
-      climber.setAngle(()->45),
-      // new WaitCommand(1),
-      climber.stow()
+    // return new SequentialCommandGroup(
+    //   climber.prepareToClimb(),
+    //   new WaitCommand(1),
+    //   climber.climb(),
+    //   new WaitCommand(3),
+    //   climber.setAngle(()->45),
+    //   // new WaitCommand(1),
+    //   climber.stow()
       
-    );
+    // );
+    return new InstantCommand();
   }
 }
