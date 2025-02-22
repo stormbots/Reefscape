@@ -5,6 +5,9 @@
 package frc.robot.subsystems.AlgaeGrabber;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class AlgaeGrabber extends SubsystemBase {
   public final AlgaeGrabberIO io;
