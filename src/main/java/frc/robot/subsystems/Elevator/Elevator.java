@@ -5,11 +5,13 @@
 
 package frc.robot.subsystems.Elevator;
 
+import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radians;
 
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import com.revrobotics.spark.ClosedLoopSlot;
@@ -41,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Robot;
 
 public class Elevator extends SubsystemBase {
   public boolean isHomed = false;
@@ -60,7 +63,7 @@ public class Elevator extends SubsystemBase {
   SparkFlex coralOutMotor = new SparkFlex(12, MotorType.kBrushless);
 
   ElevatorMech2d mechanism = new ElevatorMech2d();
-  // ElevatorSimulation sim = new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor);
+  Optional<ElevatorSimulation> sim = Robot.isSimulation()?Optional.of(new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor)):Optional.empty();
 
   public static final Angle ElevatorArmMinSoftLimitMin=Degrees.of(-75);
   public static final Angle ElevatorArmMinSoftLimitMax=Degrees.of(135);
@@ -390,16 +393,17 @@ public class Elevator extends SubsystemBase {
     
     mechanism.update(
       //TODO: Make this intake a CoralInputs object and read from that
-      elevatorMotor.getEncoder().getPosition(),
-      rotationMotor.getAbsoluteEncoder().getPosition(),
+      getCarriageHeight().in(Inches),
+      getRelativeArmAngle().in(Degree),
       coralOutMotor.getEncoder().getVelocity()
     );
   }
 
   @Override
   public void simulationPeriodic() {
-      // sim.update();
-      // SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees))
+    if(sim.isEmpty())return;
+    sim.get().update();;
+    // SmartDashboard.putNumber("elevaor/angle/sim angle", sim.getAngle().in(Degrees))
   }
 
 
