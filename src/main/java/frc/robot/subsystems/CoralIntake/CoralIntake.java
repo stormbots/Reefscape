@@ -7,7 +7,9 @@ package frc.robot.subsystems.CoralIntake;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -21,6 +23,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
@@ -31,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Robot;
 
 public class CoralIntake extends SubsystemBase {
 
@@ -47,8 +51,7 @@ public class CoralIntake extends SubsystemBase {
   private TrapezoidProfile.State pivotGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State pivotSetpoint = new TrapezoidProfile.State();
 
-
-  // CoralIntakeSimulation sim = new CoralIntakeSimulation(pivotMotor,rollerMotor);
+  Optional<CoralIntakeSimulation> sim = Robot.isSimulation()?Optional.of(new CoralIntakeSimulation(pivotMotor,rollerMotor)):Optional.empty();
   CoralIntakeMech2d mech = new CoralIntakeMech2d();
 
   /** Creates a new CoralIntake. */
@@ -121,7 +124,8 @@ public class CoralIntake extends SubsystemBase {
 
   @Override
   public void simulationPeriodic() {
-    // sim.update();
+    if(sim.isEmpty())return;
+    sim.get().update();
   }
 
   ////////////////////////////////////
@@ -199,4 +203,7 @@ public class CoralIntake extends SubsystemBase {
   public Trigger stowed = new Trigger(()->getAdjustedAngle()>70);
   public Trigger coralLoaded = new Trigger(()->false); //TODO: Check LaserCan
 
+  public Trigger isOnTarget = new Trigger(()->{
+    return MathUtil.isNear(pivotGoal.position, getAngle().in(Degrees), 5);
+  });
 }

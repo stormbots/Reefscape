@@ -6,12 +6,14 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
+import frc.robot.subsystems.Elevator.Elevator;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based i]
@@ -25,6 +27,7 @@ public class RobotContainer {
   public final Climber climber = new Climber();
   public final CoralIntake intake = new CoralIntake();
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
+
 
   private final Vision Vision = new Vision(swerveSubsystem, null);
 
@@ -148,9 +151,20 @@ public class RobotContainer {
     // return new InstantCommand();
     // return swerveSubsystem.followPath("1Meter");
     return Commands.sequence(
-      algaeGrabber.prepareToShoot().withTimeout(5),
-      algaeGrabber.scoreProcessor()  
 
+    );
+  }
+  public Command getResetRobotToStartingPose() {
+    return Commands.sequence(
+      new WaitCommand(1),
+      intake.setAngle(()->100).until(intake.isOnTarget),
+      new WaitCommand(1),
+      climber.setAngle(()->10),
+      //insert elevator command here
+      new WaitCommand(1),
+      climber.stow(),
+      new WaitCommand(1),
+      intake.stow()
     );
   }
 }
