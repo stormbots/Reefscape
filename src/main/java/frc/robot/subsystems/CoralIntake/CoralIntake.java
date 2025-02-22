@@ -11,18 +11,17 @@ import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
-import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -31,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class CoralIntake extends SubsystemBase {
 
@@ -193,5 +193,10 @@ public class CoralIntake extends SubsystemBase {
   public Command stow() {
     return setAngleSpeed(()->90, ()->0);
   }
+
+  public Trigger readyToClimb = new Trigger(()->true); //TODO: Do we have conditions for this?
+  public Trigger readyToLoad = new Trigger(()->getAdjustedAngle()<30);
+  public Trigger stowed = new Trigger(()->getAdjustedAngle()>70);
+  public Trigger coralLoaded = new Trigger(()->false); //TODO: Check LaserCan
 
 }
