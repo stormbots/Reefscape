@@ -39,7 +39,7 @@ public class CoralIntake extends SubsystemBase {
   // private SparkFlex bruhMotor = new SparkFlex(12, MotorType.kBrushless);
   private SparkFlex pivotMotor = new SparkFlex(13, MotorType.kBrushless);
   private SparkFlex rollerMotor = new SparkFlex(14, MotorType.kBrushless);
-  private final CoralIntakeIOInputsAutoLogged inputs = new CoralIntakeIOInputsAutoLogged();
+  // private final CoralIntakeIOInputsAutoLogged inputs = new CoralIntakeIOInputsAutoLogged();
   // private final CoralIntakeIO io;
   //TODO: Find actual values
   private final TrapezoidProfile pivotProfile = new TrapezoidProfile(
