@@ -4,24 +4,12 @@
 
 package frc.robot;
 
-import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
-
-import edu.wpi.first.math.estimator.PoseEstimator;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
+import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
 
@@ -36,6 +24,7 @@ public class RobotContainer {
   Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final CoralIntake intake = new CoralIntake();
+  private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
 
   private final Vision Vision = new Vision(swerveSubsystem, null);
 
@@ -104,6 +93,12 @@ public class RobotContainer {
     //TODO: ELEVATOR TO Reef ALGAE
 
 
+    // Expected algae control stuff
+    operator.x().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+
+    operator.y().whileTrue(algaeGrabber.scoreProcessor());
+    operator.a().whileTrue(algaeGrabber.prepareToShoot());
+    // driverController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
   }
 
   /**
@@ -125,7 +120,12 @@ public class RobotContainer {
       
     // );
     // return swerveSubsystem.pathToCoralLeft();
-    return new InstantCommand();
+    // return new InstantCommand();
     // return swerveSubsystem.followPath("1Meter");
+    return Commands.sequence(
+      algaeGrabber.prepareToShoot().withTimeout(5),
+      algaeGrabber.scoreProcessor()  
+
+    );
   }
 }
