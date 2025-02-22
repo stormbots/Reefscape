@@ -56,7 +56,11 @@ public class Elevator extends SubsystemBase {
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
+
+  /** System Goal State */
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
+  /** This is the interrim setpoint used by the trapezoidal profile */
+  ElevatorPose setpointIntermediate = new ElevatorPose(0, 0, 0);
 
   SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
   SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
@@ -204,6 +208,16 @@ public class Elevator extends SubsystemBase {
   }
   
 
+  //TODO: The phrasing and management of this is all awful;
+  // This has "setpoint" being used as an intermediary, whereas the rest of the system uses it 
+  // as the "goal" state.
+  // They're also being set independently and checked independently, which *will* result in bugs and jank
+  // We will need to fix this before Salem. 
+  Trigger isProfileMotionComplete = new Trigger(()->{
+    return MathUtil.isNear(armSetpoint.position, armGoal.position, toleranceAngle) 
+    && MathUtil.isNear(armSetpoint.velocity, armGoal.velocity, 20 /*degrees per second*/);
+  });
+
   public Command testMoveElevatorArmWithTrap(DoubleSupplier position){
     return startRun(
       ()->{
@@ -225,7 +239,9 @@ public class Elevator extends SubsystemBase {
           ff, ArbFFUnits.kVoltage
         );
       }
-    );
+    )
+    .until(isProfileMotionComplete)
+    ;
   }
 
   private Command moveToHeight(double height) {
