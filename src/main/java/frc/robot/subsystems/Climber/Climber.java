@@ -51,29 +51,6 @@ public class Climber extends SubsystemBase {
       // Create a blank stub for replay
     }
 
-  // 0 deg, 50.711
-  // 88 deg, 153.705
-  // lower softlimit 300 deg (abs) around inside bot
-  // upper softlimit/stow 43 (abs) deg
-  // motor invert true, absolute encoder fine
-
-    io.configure(getClimberMotorConfig(), ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
-
-    //Do some final tidying up. 
-    io.setRelativeEncoderPosition(io.getPosition());
-    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 3)).debounce(0.1);
-    rateLimit.reset(getPosition());
-
-    visualizer = new ClimberVisualizer("climber");
-
-    //TODO: Remove automated motion until tested
-    SmartDashboard.putData("subsystems/climber",this);
-
-    setDefaultCommand(holdPosition());
-  }
-
-
-  private SparkFlexConfig getClimberMotorConfig(){
     var config = new SparkFlexConfig();
     config = new SparkFlexConfig();
     //unused and uncalibrated value config.encoder.positionConversionFactor((360 / (153.705 - 50.711 / 88.0)));
@@ -103,7 +80,25 @@ public class Climber extends SubsystemBase {
         .reverseSoftLimit(-60)
         .reverseSoftLimitEnabled(false);
 
-    return config;
+  // 0 deg, 50.711
+  // 88 deg, 153.705
+  // lower softlimit 300 deg (abs) around inside bot
+  // upper softlimit/stow 43 (abs) deg
+  // motor invert true, absolute encoder fine
+
+    io.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+
+    //Do some final tidying up. 
+    io.setRelativeEncoderPosition(io.getPosition());
+    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 3)).debounce(0.1);
+    rateLimit.reset(getPosition());
+
+    visualizer = new ClimberVisualizer("climber");
+
+    //TODO: Remove automated motion until tested
+    SmartDashboard.putData("subsystems/climber",this);
+
+    setDefaultCommand(holdPosition());
   }
 
 
