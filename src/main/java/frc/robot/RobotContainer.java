@@ -83,6 +83,27 @@ public class RobotContainer {
   /*********************************
   * OPERATOR BINDINGS
   **********************************/
+  
+  //Axis 1 (-) = climb
+  //Axis 1 (+) = climber in
+  //Axis 0 (-) = climber stow
+  //disable climber till last 30s?
+  //Axis 0 (+) = processor
+  //button 5 (LB) = algae intake
+  //Axis 2 (LT) = net (dosen't say whether shoot or place)
+  //Button 3 (X) = L1
+  //Button 4 (Y) = L2
+  //Button 1 (A) = L3
+  //Button 2 (B) = L4
+  //Button 6 (RB) = intake
+  //Axis 3 (RT) = score coral
+  //Button 7 (share) = rezero (vague, button changed from home as home is not usable)
+  //Button 8 (options) = manual mode (bad idea)
+  //Button 9 (SL) = eject algae
+  //Button 10 (SR) = eject coral
+
+
+
   private void configureOperatorBindings() {
 
     //TODO: ELEVATOR TO L1 (???)
@@ -94,10 +115,14 @@ public class RobotContainer {
 
 
     // Expected algae control stuff
-    operator.x().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+    operator.rightBumper().whileTrue(intake.intake());
+    operator.rightBumper().whileFalse(intake.stow());
 
-    operator.y().whileTrue(algaeGrabber.scoreProcessor());
-    operator.a().whileTrue(algaeGrabber.prepareToShoot());
+    operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+    
+
+    operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
+    // operator.a().whileTrue(algaeGrabber.prepareToShoot());
     // driverController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
   }
 
