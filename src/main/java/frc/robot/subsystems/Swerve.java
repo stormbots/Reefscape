@@ -249,8 +249,8 @@ public class Swerve extends SubsystemBase {
 
 
   private Command privatePathToPose(Pose2d pose){
-      return AutoBuilder.pathfindToPose(pose, constraintsFast);
-    }
+    return AutoBuilder.pathfindToPose(pose, constraintsFast);
+  }
 
   public Command pathToCoralLeft(){
     Set<Subsystem> set = Set.of(this);

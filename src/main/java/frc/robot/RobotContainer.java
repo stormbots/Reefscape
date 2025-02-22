@@ -33,62 +33,50 @@ import frc.robot.subsystems.CoralIntake.CoralIntake;
  */
 public class RobotContainer {
 
-  // The robot's subsystems and commands are defined here...
-  private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-  // public AHRS navxGyro = new AHRS(NavXComType.kMXP_SPI);
-
   Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final CoralIntake intake = new CoralIntake();
 
   private final Vision Vision = new Vision(swerveSubsystem, null);
 
-  CommandXboxController driverController = new CommandXboxController(0);
+  CommandXboxController driver = new CommandXboxController(0);
+  CommandXboxController operator = new CommandXboxController(1);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
-    configureBindings();
-    
+    configureDriverBindings();
+    configureOperatorBindings();
+
+    swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(
+      ()->-driver.getLeftY(),
+      ()->-driver.getLeftX(),
+      ()->-driver.getRightX()
+    ));
+
   }
 
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    // new Trigger(exampleSubsystem::exampleCondition).onTrue(new ExampleCommand(exampleSubsystem));
+  /*********************************
+  * DRIVER BINDINGS
+  **********************************/
+  private void configureDriverBindings() {
 
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // cancelling on release.
-
-    driverController.start().onTrue(swerveSubsystem.resetGyro());
-    swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(
-      ()->-driverController.getLeftY(),
-      ()->-driverController.getLeftX(),
-      ()->-driverController.getRightX()
-    ));
+    driver.start().onTrue(swerveSubsystem.resetGyro());
     //TODO: Slow mode?
-    driverController.leftBumper().whileTrue(swerveSubsystem.driveCommand(
-      ()->-driverController.getLeftY()/4.0, 
-      ()->-driverController.getLeftX()/4.0,
-      ()->-driverController.getRightX()/4.0
+    driver.leftBumper().whileTrue(swerveSubsystem.driveCommand(
+      ()->-driver.getLeftY()/4.0, 
+      ()->-driver.getLeftX()/4.0,
+      ()->-driver.getRightX()/4.0
     ));
 
 
-    driverController.rightTrigger().whileTrue(
+    driver.rightTrigger().whileTrue(
       swerveSubsystem.pathToCoralRight()
     );
-    driverController.leftTrigger().whileTrue(
+    driver.leftTrigger().whileTrue(
       swerveSubsystem.pathToCoralLeft()
     );
-    driverController.x().whileTrue(
+    driver.x().whileTrue(
       swerveSubsystem.pathToReefAlgae()
     );
 
@@ -101,14 +89,22 @@ public class RobotContainer {
     
     // driverController.b().whileFalse(intake.stow());
     // driverController.b().whileTrue(intake.intake());
-
-
-    
   }
 
-  // private void configureDefaultCommands(){
-  //   climber.setDefaultCommand(climber.setAngle(climber.getPosition()));
-  // }
+  /*********************************
+  * OPERATOR BINDINGS
+  **********************************/
+  private void configureOperatorBindings() {
+
+    //TODO: ELEVATOR TO L1 (???)
+    //TODO: ELEVATOR TO L2
+    //TODO: ELEVATOR TO L3
+    //TODO: ELEVATOR TO L4
+
+    //TODO: ELEVATOR TO Reef ALGAE
+
+
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
@@ -128,8 +124,8 @@ public class RobotContainer {
     //   climber.stow()
       
     // );
-    return swerveSubsystem.pathToCoralLeft();
-    // return new InstantCommand();
+    // return swerveSubsystem.pathToCoralLeft();
+    return new InstantCommand();
     // return swerveSubsystem.followPath("1Meter");
   }
 }

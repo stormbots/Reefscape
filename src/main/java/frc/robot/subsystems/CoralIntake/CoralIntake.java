@@ -58,7 +58,7 @@ public class CoralIntake extends SubsystemBase {
     configPivotMotors();
     configRollerMotors();
 
-    //setDefaultCommand(testRunPivotTrapezoidal(90.0));
+    // setDefaultCommand(stow());
   }
 
   private void configPivotMotors(){
@@ -107,12 +107,11 @@ public class CoralIntake extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
     // io.updateInputs(inputs);
     // Logger.processInputs("Coral Intake", inputs);
     mech.update(
       getAngle(),
-      InchesPerSecond.of(rollerMotor.getEncoder().getVelocity())
+      getRollerVelocity()
       // ,sim.getSimAngle()
     );
 
@@ -148,7 +147,7 @@ public class CoralIntake extends SubsystemBase {
     return Degrees.of(getAdjustedAngle());
   }
 
-  public Command runPivotTrapezoidal(DoubleSupplier angle){
+  public Command setAngle(DoubleSupplier angle){
     return startRun(
       ()->{
         pivotSetpoint = new TrapezoidProfile.State(getAdjustedAngle(), pivotMotor.getAbsoluteEncoder().getVelocity());
@@ -171,33 +170,28 @@ public class CoralIntake extends SubsystemBase {
     );
   }
 
-  public void setRollerVelocity(double velocity){
+  private void setRollerVelocity(double velocity){
     rollerMotor.getClosedLoopController().setReference(velocity, ControlType.kVelocity);
   }
 
-  public void setPivotAngle(double angle){
+  /** Should not be used outside special cases */
+  private void setPivotAnglePID(double angle){
     pivotMotor.getClosedLoopController().setReference(angle, ControlType.kPosition);
   }
 
-  public void setAngleSpeed(double angle, double speed){
-    setPivotAngle(angle);
-    setRollerVelocity(speed);
+  public Command setAngleSpeed(DoubleSupplier angle, DoubleSupplier velocity ){
+    return new ParallelCommandGroup(
+      setAngle(angle),
+      new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
+    );
   }
 
   public Command intake() {
-    return new ParallelCommandGroup(runPivotTrapezoidal(()->-45), new RunCommand(()-> setRollerVelocity(25.0)));
+    return setAngleSpeed(()->-45, ()->25);
   }
 
   public Command stow() {
-    return new ParallelCommandGroup(runPivotTrapezoidal(()->90), new RunCommand(()-> setRollerVelocity(0.0)));
+    return setAngleSpeed(()->90, ()->0);
   }
-
-  // public Command runStupidEndEffector(){
-  //   return run(()->{
-  //     bruhMotor.setVoltage(9);
-  //   // setRollerVelocity(speed);
-  //   rollerMotor.setVoltage(9);
-  //   });
-  // }
 
 }
