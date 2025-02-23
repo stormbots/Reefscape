@@ -175,7 +175,8 @@ public class RobotContainer {
     operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
 
     operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
-    
+
+    operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));
 
     operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());

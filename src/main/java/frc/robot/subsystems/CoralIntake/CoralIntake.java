@@ -20,6 +20,12 @@ import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
+
+import au.grapplerobotics.ConfigurationFailedException;
+import au.grapplerobotics.LaserCan;
+import au.grapplerobotics.interfaces.LaserCanInterface.RangingMode;
+import au.grapplerobotics.interfaces.LaserCanInterface.TimingBudget;
+
 import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.MathUtil;
@@ -28,6 +34,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -46,6 +53,7 @@ public class CoralIntake extends SubsystemBase {
   private final TrapezoidProfile pivotProfile = new TrapezoidProfile(
     new TrapezoidProfile.Constraints(90/0.05, 270));
   private ArmFeedforward pivotFF = new ArmFeedforward(0, 0, 0);
+  public LaserCan laserCan = new LaserCan(24);
 
   private TrapezoidProfile.State pivotGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State pivotSetpoint = new TrapezoidProfile.State();
@@ -86,6 +94,13 @@ public class CoralIntake extends SubsystemBase {
 
     
     pivotMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    try {
+      laserCan.setRangingMode(RangingMode.SHORT);
+      laserCan.setTimingBudget(TimingBudget.TIMING_BUDGET_20MS);
+    } catch (ConfigurationFailedException e){
+
+    }
   }
 
   private void configRollerMotors(){
