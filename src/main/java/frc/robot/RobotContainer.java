@@ -13,6 +13,7 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AglaeGrabberIOReal;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
@@ -39,6 +40,8 @@ public class RobotContainer {
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
+
+  private final Vision Vision = new Vision(swerveSubsystem, null);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
@@ -211,5 +214,18 @@ public class RobotContainer {
     //   algaeGrabber.prepareToShoot().withTimeout(5),
     //   algaeGrabber.scoreProcessor()  
     // );
+  }
+  public Command getResetRobotToStartingPose() {
+    return Commands.sequence(
+      new WaitCommand(1),
+      intake.setAngle(()->100).until(intake.isOnTarget),
+      new WaitCommand(1),
+      climber.setAngle(()->10),
+      //insert elevator command here
+      new WaitCommand(1),
+      climber.stow(),
+      new WaitCommand(1),
+      intake.stow(elevator.isClear)
+    );
   }
 }

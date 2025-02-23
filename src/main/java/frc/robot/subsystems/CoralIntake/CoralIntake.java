@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.InchesPerSecond;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -209,4 +210,7 @@ public class CoralIntake extends SubsystemBase {
   public Trigger coralLoaded = new Trigger(()->false); //TODO: Check LaserCan
  
 
+  public Trigger isOnTarget = new Trigger(()->{
+    return MathUtil.isNear(pivotGoal.position, getAngle().in(Degrees), 5);
+  });
 }
