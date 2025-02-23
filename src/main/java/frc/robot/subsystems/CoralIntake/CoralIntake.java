@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -29,9 +30,11 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Robot;
 
@@ -102,7 +105,8 @@ public class CoralIntake extends SubsystemBase {
     //TODO: Placeholder
     config.closedLoop
     .outputRange(-0.5,0.5)
-    .p(0);
+    .velocityFF(1/5784*conversionfactor)
+    .p(0.5/25);
 
     rollerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
@@ -186,7 +190,8 @@ public class CoralIntake extends SubsystemBase {
   public Command setAngleSpeed(DoubleSupplier angle, DoubleSupplier velocity ){
     return new ParallelCommandGroup(
       setAngle(angle),
-      new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
+      // new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
+      new RunCommand(()->rollerMotor.setVoltage(6))
     );
   }
 
@@ -194,8 +199,8 @@ public class CoralIntake extends SubsystemBase {
     return setAngleSpeed(()->-45, ()->25);
   }
 
-  public Command stow() {
-    return setAngleSpeed(()->55, ()->0);
+  public Command stow(BooleanSupplier elevatorClear) {
+    return new WaitCommand(99999).until(elevatorClear).andThen(setAngleSpeed(()->55, ()->0));
   }
 
   public Trigger readyToClimb = new Trigger(()->true); //TODO: Do we have conditions for this?

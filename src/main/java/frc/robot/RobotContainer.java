@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AglaeGrabberIOReal;
@@ -37,7 +38,7 @@ public class RobotContainer {
 
   boolean slowmode = false;
 
-  private final Vision Vision = new Vision(swerveSubsystem, null);
+  // private final Vision Vision = new Vision(swerveSubsystem, null);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
@@ -157,24 +158,26 @@ public class RobotContainer {
     operator.axisLessThan(1, 0).whileTrue(new ParallelCommandGroup(
       climber.prepareToClimb(),
       elevator.moveToPoseSafe(elevator.kClimbing),
-      intake.stow())
+      intake.stow(()->true))
     );
 
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
 
-    operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
+    //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
 
     operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
     operator.rightBumper().whileTrue(intake.intake());
-    operator.rightBumper().whileFalse(intake.stow());
+    operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
 
     // Expected algae control stuff
     operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
 
     operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
+
+    // operator.rightTrigger(threshold)
     
 
     operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());

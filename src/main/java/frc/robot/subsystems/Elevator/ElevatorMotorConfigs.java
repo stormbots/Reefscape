@@ -44,9 +44,9 @@ public class ElevatorMotorConfigs {
 
   public static SparkBaseConfig getScorerConfig(){
     SparkBaseConfig coralOutConfig = new SparkMaxConfig()
-      .smartCurrentLimit(16)
+      .smartCurrentLimit(30)
       .idleMode(IdleMode.kCoast)
-      .inverted(false); //Positive is in, Negative is out
+      .inverted(true); //Positive is in, Negative is out
 
     var coralOutConversionFactor = 3.371;
     coralOutConfig.encoder
@@ -78,7 +78,7 @@ public class ElevatorMotorConfigs {
       ;
 
     //90 degrees is 18.8 rotations 
-    double rotateCoversionFactor = 1/25.0*(18.0/64.0) * 360 *180/135.0;
+    double rotateCoversionFactor = 1/25.0*(18.0/64.0) * 360;
     rotationConfig.encoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)

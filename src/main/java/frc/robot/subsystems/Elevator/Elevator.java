@@ -39,6 +39,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -87,15 +89,15 @@ public class Elevator extends SubsystemBase {
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
   //need special procedure to move to floor pickup
-  private final ElevatorPose kFloorPickup =    new ElevatorPose(24.6, -67.0, -10);
-  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43.4, -67.0, 0);
+  private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66.3, -10);
+  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66.3, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
-  public final ElevatorPose kStowedUp =         new ElevatorPose(44.5, 84, 0);
-  public final ElevatorPose kClimbing =       new ElevatorPose(13, 131, 0);
+  public final ElevatorPose kStowedUp =         new ElevatorPose(26, 84, 0);
+  public final ElevatorPose kClimbing =       new ElevatorPose(16, 128, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
-  public final ElevatorPose kL2 =             new ElevatorPose(30, 135, 10);
-  public final ElevatorPose kL3 =             new ElevatorPose(36, 135, 10);
-  public final ElevatorPose kL4 =             new ElevatorPose(60, 145, 10);
+  public final ElevatorPose kL2 =             new ElevatorPose(21, 145.5, 10);
+  public final ElevatorPose kL3 =             new ElevatorPose(35, 145.5, 10);
+  public final ElevatorPose kL4 =             new ElevatorPose(58.4, 135, 10);
 
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
@@ -112,7 +114,8 @@ public class Elevator extends SubsystemBase {
     coralOutMotor.configure(ElevatorMotorConfigs.getScorerConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rotationMotor.configure(ElevatorMotorConfigs.getRotationConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    Timer.delay(0.02);
+    Timer.delay(0.1); //Wait until motors are happy and providing us correct data
+
     elevatorMotor.getEncoder().setPosition(startingheight);
 
     //should probably do again, sometimes doesnt get sent
@@ -182,7 +185,7 @@ public class Elevator extends SubsystemBase {
     setpoint.height = height;
   }
 
-  SlewRateLimiter slewRateAngle = new SlewRateLimiter(45);
+  SlewRateLimiter slewRateAngle = new SlewRateLimiter(60);
   
   private void setAngle(double angle) {
     angle = MathUtil.clamp(angle, ElevatorArmMinSoftLimitMin.in(Degrees), ElevatorArmMinSoftLimitMax.in(Degrees));
@@ -313,7 +316,10 @@ public class Elevator extends SubsystemBase {
     return new SequentialCommandGroup(
       moveToPoseSafe(kPrepareToFloorPickup).until(()->isAtPosition((kPrepareToFloorPickup))),
       Commands.idle(this).until(lowerIntake),
-      moveToHeight(kFloorPickup.height)
+      new ParallelCommandGroup(
+        moveToHeight(kFloorPickup.height),
+        new RunCommand(()->coralOutMotor.setVoltage(6))
+      )
     );
     //In theory, move back up at very end. doesnt work, causes things to break, whatever
     // .finallyDo((e)->moveToHeight(kPrepareToFloorPickup.height));
@@ -389,7 +395,8 @@ public class Elevator extends SubsystemBase {
     // SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
 
     SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
-    SmartDashboard.putNumber("elevator/rotation/angle", getAngle().in(Degree));
+    SmartDashboard.putNumber("elevator/rotation/relativeAngle", getAngle().in(Degree));
+    SmartDashboard.putNumber("elevator/rotation/absoluteAngel", getAngleAbsolute().in(Degree));
     SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
     SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
     
