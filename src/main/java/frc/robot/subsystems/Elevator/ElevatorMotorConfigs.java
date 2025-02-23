@@ -78,7 +78,7 @@ public class ElevatorMotorConfigs {
       ;
 
     //90 degrees is 18.8 rotations 
-    double rotateCoversionFactor = 1/25.0*(18.0/64.0) * 360;
+    double rotateCoversionFactor = 1/25.0*(18.0/64.0) * 360 *180/135.0;
     rotationConfig.encoder
         .velocityConversionFactor(rotateCoversionFactor / 60.0)
         .positionConversionFactor(rotateCoversionFactor)

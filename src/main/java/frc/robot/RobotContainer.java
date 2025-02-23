@@ -155,21 +155,26 @@ public class RobotContainer {
     // driver.rightTrigger().onTrue(intake.setAngle(()-> 90));
 
     operator.axisLessThan(1, 0).whileTrue(new ParallelCommandGroup(
-      climber.prepareToClimb(), elevator.moveToPoseSafe(elevator.kClimbing), intake.stow()));
+      climber.prepareToClimb(),
+      elevator.moveToPoseSafe(elevator.kClimbing),
+      intake.stow())
+    );
 
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
 
+    operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
+    operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
+    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
 
     operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
     operator.rightBumper().whileTrue(intake.intake());
     operator.rightBumper().whileFalse(intake.stow());
 
     // Expected algae control stuff
-    operator.rightBumper().whileTrue(intake.intake());
-    operator.rightBumper().whileFalse(intake.stow());
-
     operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+
+    operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
     
 
     operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());

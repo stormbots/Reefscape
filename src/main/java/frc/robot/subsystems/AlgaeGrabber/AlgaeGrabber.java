@@ -31,6 +31,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -163,7 +164,8 @@ public class AlgaeGrabber extends SubsystemBase {
 
     shooterConf.closedLoopRampRate(1);
     shooterConf.openLoopRampRate(1);
-    //MUST BE BETWEEN [-135,45] WHEN INITIALIZED, syncs encoders
+    //MUST BE BETWEEN [-135,45] WHEN INITIALIZED, syncs encoders'
+    Timer.delay(0.03);
     armMotor.getEncoder().setPosition(getAbsoluteAngleDegrees());
 
     setDefaultCommand(defaultCommand());
