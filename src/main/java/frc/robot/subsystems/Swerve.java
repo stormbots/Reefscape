@@ -76,7 +76,7 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.32));
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.0));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));

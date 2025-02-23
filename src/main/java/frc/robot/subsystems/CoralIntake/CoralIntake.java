@@ -190,8 +190,8 @@ public class CoralIntake extends SubsystemBase {
   public Command setAngleSpeed(DoubleSupplier angle, DoubleSupplier velocity ){
     return new ParallelCommandGroup(
       setAngle(angle),
-      // new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
-      new RunCommand(()->rollerMotor.setVoltage(6))
+      new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
+      // new RunCommand(()->rollerMotor.setVoltage(6))// TEMP TO MAKE ROBOT GO
     );
   }
 

@@ -276,7 +276,7 @@ public class Elevator extends SubsystemBase {
   }
 
   
-  private Command moveToPose(ElevatorPose pose) {
+  public Command moveToPoseUnchecked(ElevatorPose pose) {
     return startRun(
         () -> {
           slewRateAngle.reset(getAngle().in(Degrees));
@@ -292,8 +292,8 @@ public class Elevator extends SubsystemBase {
 
   public Command moveToPoseSafe(ElevatorPose pose) {
     return new SequentialCommandGroup(
-      moveToPose(kStowedUp).until(isAtSafePosition),
-      moveToPose(pose)
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
+      moveToPoseUnchecked(pose)
     );
   }
   public Command scoreAtPoseSafe(ElevatorPose pose) {
@@ -306,7 +306,7 @@ public class Elevator extends SubsystemBase {
     return new SequentialCommandGroup(
       moveToPoseSafe(kPrepareToFloorPickup).until(isAtTargetPosition),
       Commands.idle(this).until(isDown),
-      moveToPose(kFloorPickup)
+      moveToPoseUnchecked(kFloorPickup)
     );
   }
 

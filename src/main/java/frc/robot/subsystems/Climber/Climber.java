@@ -42,6 +42,9 @@ public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
+    SmartDashboard.putNumber("climber/prepareAngle", -67);
+    SmartDashboard.putNumber("climber/reseatAngle", -45);
+    SmartDashboard.putNumber("climber/climbAngle", 7);
     if (RobotBase.isReal()) {
       this.io = new ClimberIOReal();
     }else if(RobotBase.isSimulation()){
@@ -63,7 +66,7 @@ public class Climber extends SubsystemBase {
 
     config.inverted(false);
     config.closedLoop
-        .outputRange(-0.5, 0.5)
+        // .outputRange(-0.5, 0.5)
         .p(0.7 / 30.0)
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
@@ -91,7 +94,7 @@ public class Climber extends SubsystemBase {
 
     //Do some final tidying up. 
     io.setRelativeEncoderPosition(io.getPosition());
-    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 3)).debounce(0.1);
+    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 5)).debounce(0.1);
     rateLimit.reset(getPosition());
 
     visualizer = new ClimberVisualizer("climber");
@@ -115,11 +118,12 @@ public class Climber extends SubsystemBase {
     visualizer.update(inputs.climberAbsoluteAngle);
     SmartDashboard.putNumber("climber/ClimberAngle", getPosition());
     SmartDashboard.putNumber("climber/Setpoint", setpoint);
+
   }
 
   public Command prepareToClimb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kCoast))
-    .andThen(setAngle(()->-60))
+    .andThen(setAngle(()->SmartDashboard.getNumber("climber/prepareAngle", 0)))
     .andThen(run(()->{io.stop();}));
   }
 
@@ -131,8 +135,8 @@ public class Climber extends SubsystemBase {
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
     .andThen(setAngle(()->0))
-    .andThen(setAngle(()->-30))
-    .andThen(setAngle(()->5));
+    .andThen(setAngle(()->SmartDashboard.getNumber("climber/reseatAngle", 0)))
+    .andThen(setAngle(()->SmartDashboard.getNumber("climber/climbAngle", 0)));
   }
   
   public Command setAngle(DoubleSupplier angle) {

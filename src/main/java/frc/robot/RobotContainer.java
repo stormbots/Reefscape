@@ -157,8 +157,8 @@ public class RobotContainer {
 
     operator.axisLessThan(1, 0).whileTrue(new ParallelCommandGroup(
       climber.prepareToClimb(),
-      elevator.moveToPoseSafe(elevator.kClimbing),
-      intake.stow(()->true))
+      elevator.moveToPoseUnchecked(elevator.kClimbing),
+      intake.setAngle(()->85))
     );
 
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
@@ -175,7 +175,8 @@ public class RobotContainer {
     // Expected algae control stuff
     operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
 
-    operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
+    // operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
+    operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
 
     // operator.rightTrigger(threshold)
     
