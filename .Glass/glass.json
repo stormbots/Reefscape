@@ -25,6 +25,27 @@
         },
         "mechanism": {
           "elevator": {
+            "ElevatorRoot": {
+              "Elevator": {
+                "RotatorBase": {
+                  "Rotator": {
+                    "open": true
+                  },
+                  "open": true
+                },
+                "open": true
+              },
+              "open": true
+            },
+            "open": true
+          },
+          "intake": {
+            "CoralIntake": {
+              "CoralIntakePivot": {
+                "open": true
+              },
+              "open": true
+            },
             "open": true
           },
           "open": true
@@ -34,6 +55,7 @@
     },
     "types": {
       "/AdvantageKit/RealOutputs/Alerts": "Alerts",
+      "/AdvantageKit/RealOutputs/CoralIntake/mechanism": "Mechanism2d",
       "/AdvantageKit/RealOutputs/Encoders": "Alerts",
       "/AdvantageKit/RealOutputs/IMU": "Alerts",
       "/AdvantageKit/RealOutputs/JSON": "Alerts",
@@ -52,8 +74,16 @@
       "/SmartDashboard/mechanism/algaegrabber": "Mechanism2d",
       "/SmartDashboard/mechanism/climber": "Mechanism2d",
       "/SmartDashboard/mechanism/elevator": "Mechanism2d",
+      "/SmartDashboard/mechanism/intake": "Mechanism2d",
       "/SmartDashboard/odometryField": "Field2d",
       "/SmartDashboard/subsystems/climber": "Subsystem"
+    },
+    "windows": {
+      "/SmartDashboard/mechanism/intake": {
+        "window": {
+          "visible": true
+        }
+      }
     }
   },
   "NetworkTables Info": {

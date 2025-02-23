@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -61,7 +62,7 @@ public class Climber extends SubsystemBase {
 
     //Do some final tidying up. 
     io.setRelativeEncoderPosition(io.getPosition());
-    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 3)).debounce(0.1);
+    isOnTarget = new Trigger(()->MathUtil.isNear(setpoint, getPosition(), 5)).debounce(0.1);
     rateLimit.reset(getPosition());
 
     visualizer = new ClimberVisualizer("climber");
@@ -123,12 +124,13 @@ public class Climber extends SubsystemBase {
 
   public Command prepareToClimb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kCoast))
-    .andThen(setAngle(()->-60));
+    .andThen(setAngle(()->-60))
+    .andThen(run(()->{io.stop();}));
   }
 
   public Command stow() {
     return new InstantCommand(()->setIdleMode(IdleMode.kCoast))
-    .andThen(setAngle(()->110));
+    .andThen(setAngle(()->45));
   }
 
   public Command climb() {

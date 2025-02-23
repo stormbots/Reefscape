@@ -22,6 +22,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
@@ -194,12 +195,13 @@ public class CoralIntake extends SubsystemBase {
   }
 
   public Command stow() {
-    return setAngleSpeed(()->90, ()->0);
+    return setAngleSpeed(()->55, ()->0);
   }
 
   public Trigger readyToClimb = new Trigger(()->true); //TODO: Do we have conditions for this?
   public Trigger readyToLoad = new Trigger(()->getAdjustedAngle()<30);
   public Trigger stowed = new Trigger(()->getAdjustedAngle()>70);
   public Trigger coralLoaded = new Trigger(()->false); //TODO: Check LaserCan
+ 
 
 }
