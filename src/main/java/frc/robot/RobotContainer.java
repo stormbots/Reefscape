@@ -181,11 +181,11 @@ public class RobotContainer {
     operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
 
     // operator.rightTrigger(threshold)
-    
+    // operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));
+
 
     operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());
-    // driverController.b().whileTrue(algaeGrabber.scoreInNetEzMode());
   }
 
   /**

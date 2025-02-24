@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Millimeter;
 import static edu.wpi.first.units.Units.Radians;
 
 import java.util.Optional;
@@ -24,11 +25,16 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import au.grapplerobotics.ConfigurationFailedException;
+import au.grapplerobotics.LaserCan;
+import au.grapplerobotics.interfaces.LaserCanInterface.RangingMode;
+import au.grapplerobotics.interfaces.LaserCanInterface.TimingBudget;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -60,6 +66,8 @@ public class Elevator extends SubsystemBase {
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
 
+  private final Distance kNoCoralDistance = Millimeter.of(50);
+
   /** System Goal State */
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
   /** This is the interrim setpoint used by the trapezoidal profile */
@@ -69,11 +77,15 @@ public class Elevator extends SubsystemBase {
   SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
   SparkFlex coralOutMotor = new SparkFlex(12, MotorType.kBrushless);
 
+  LaserCan laserCan = new LaserCan(22);
+
   ElevatorMech2d mechanism = new ElevatorMech2d();
   Optional<ElevatorSimulation> sim = Robot.isSimulation()?Optional.of(new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor)):Optional.empty();
 
   public static final Angle ElevatorArmMinSoftLimitMin=Degrees.of(-75);
   public static final Angle ElevatorArmMinSoftLimitMax=Degrees.of(180);
+
+  
 
   public class ElevatorPose {
     double height;
@@ -130,9 +142,35 @@ public class Elevator extends SubsystemBase {
       rotationMotor.setVoltage(rotatorFF.calculate(getAngle().in(Degree), 0));
       coralOutMotor.stopMotor();
     }));
+
+    try {
+      laserCan.setRangingMode(RangingMode.SHORT);
+      laserCan.setTimingBudget(TimingBudget.TIMING_BUDGET_20MS);
+      SmartDashboard.getBoolean("elevator/laserConfig'd", true);
+    } catch (ConfigurationFailedException e){
+      SmartDashboard.getBoolean("elevator/laserConfig'd", false);
+    }
   }
-  
-  public Trigger haveCoral = new Trigger( () -> {
+
+  public Optional<Distance> getSensorReading(){
+    var reading = laserCan.getMeasurement();
+    if (reading == null){
+      return Optional.empty();
+    }
+    return Optional.of(Units.Millimeters.of(reading.distance_mm));
+  }
+
+  public Distance getSensorDistance(){
+    var measurement = getSensorReading();
+    var distance = measurement.orElseGet(()->kNoCoralDistance);
+    return distance;
+  }
+
+  public Trigger isCoralInScorer = new Trigger( () -> {
+    return getSensorDistance().lt(kNoCoralDistance);
+  }).debounce(0.03);
+
+  public Trigger isCoralScorerStalled = new Trigger( () -> {
     return coralOutMotor.getOutputCurrent() > ROLLERSTALLCURRENT;
   }).debounce(0.1);
 
@@ -242,6 +280,10 @@ public class Elevator extends SubsystemBase {
     )
     .until(isProfileMotionComplete)
     ;
+  }
+
+  public Command runCoralScorer(double speed){
+    return run(()->setScorerSpeed(speed));
   }
 
   private Command moveToHeight(double height) {

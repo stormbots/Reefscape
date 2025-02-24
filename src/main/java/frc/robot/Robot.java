@@ -68,7 +68,7 @@ public class Robot extends LoggedRobot {
     }
 
     Logger.start();
-    // au.grapplerobotics.CanBridge.runTCP();
+    au.grapplerobotics.CanBridge.runTCP();
 
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
