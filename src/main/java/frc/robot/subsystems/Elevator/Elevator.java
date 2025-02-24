@@ -24,6 +24,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.stormbots.LaserCanWrapper;
 
 import au.grapplerobotics.ConfigurationFailedException;
 import au.grapplerobotics.LaserCan;
@@ -66,7 +67,6 @@ public class Elevator extends SubsystemBase {
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
 
-  private final Distance kNoCoralDistance = Millimeter.of(50);
 
   /** System Goal State */
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
@@ -77,7 +77,12 @@ public class Elevator extends SubsystemBase {
   SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
   SparkFlex coralOutMotor = new SparkFlex(12, MotorType.kBrushless);
 
-  LaserCan laserCan = new LaserCan(22);
+  private final Distance kNoCoralDistance = Millimeter.of(50);
+  LaserCanWrapper laserCan = new LaserCanWrapper(22)
+    .configureShortRange()
+    .setThreshhold(kNoCoralDistance)
+    ;
+
 
   ElevatorMech2d mechanism = new ElevatorMech2d();
   Optional<ElevatorSimulation> sim = Robot.isSimulation()?Optional.of(new ElevatorSimulation(elevatorMotor, rotationMotor, coralOutMotor)):Optional.empty();
@@ -143,32 +148,9 @@ public class Elevator extends SubsystemBase {
       coralOutMotor.stopMotor();
     }));
 
-    try {
-      laserCan.setRangingMode(RangingMode.SHORT);
-      laserCan.setTimingBudget(TimingBudget.TIMING_BUDGET_20MS);
-      SmartDashboard.getBoolean("elevator/laserConfig'd", true);
-    } catch (ConfigurationFailedException e){
-      SmartDashboard.getBoolean("elevator/laserConfig'd", false);
-    }
   }
 
-  public Optional<Distance> getSensorReading(){
-    var reading = laserCan.getMeasurement();
-    if (reading == null){
-      return Optional.empty();
-    }
-    return Optional.of(Units.Millimeters.of(reading.distance_mm));
-  }
-
-  public Distance getSensorDistance(){
-    var measurement = getSensorReading();
-    var distance = measurement.orElseGet(()->kNoCoralDistance);
-    return distance;
-  }
-
-  public Trigger isCoralInScorer = new Trigger( () -> {
-    return getSensorDistance().lt(kNoCoralDistance);
-  }).debounce(0.03);
+  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped.debounce(0.03);
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return coralOutMotor.getOutputCurrent() > ROLLERSTALLCURRENT;

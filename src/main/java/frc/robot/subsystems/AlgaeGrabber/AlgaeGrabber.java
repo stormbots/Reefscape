@@ -7,6 +7,7 @@ package frc.robot.subsystems.AlgaeGrabber;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 
@@ -22,14 +23,18 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.stormbots.LaserCanWrapper;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import au.grapplerobotics.LaserCan;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -51,7 +56,9 @@ public class AlgaeGrabber extends SubsystemBase {
   SparkFlex intakeMotor = new SparkFlex(17, MotorType.kBrushless);
 
   private SlewRateLimiter armAngleSlew = new SlewRateLimiter(90);
-
+  LaserCanWrapper laserCan = new LaserCanWrapper(23)//TODO: Needs correct id
+    .configureShortRange()
+    .setThreshhold(Inches.of(6));
   public static final double absconversionfactor=360/2.0; //account for gearing on the abs encoder
 
   public static final double ROLLERHOLDRPM = 200;
@@ -282,6 +289,9 @@ public class AlgaeGrabber extends SubsystemBase {
     }).withName("DefaultCommand");
   }
 
+
+  Trigger isBreakbeamTripped = laserCan.isBreakBeamTripped.debounce((0.03));
+
   public final double HAVEGRABBEDALGAEAMPS = 50;
   private boolean haveAlgae = false;
   Trigger intakeStalled = new Trigger(()->intakeMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
@@ -429,4 +439,5 @@ public class AlgaeGrabber extends SubsystemBase {
   public Command stop(){
     return run(()->armMotor.stopMotor());
   }
+
 }

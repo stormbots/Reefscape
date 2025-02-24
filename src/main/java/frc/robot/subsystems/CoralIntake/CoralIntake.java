@@ -5,6 +5,7 @@
 package frc.robot.subsystems.CoralIntake;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 
 import java.util.Optional;
@@ -22,6 +23,7 @@ import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
+import com.stormbots.LaserCanWrapper;
 
 import au.grapplerobotics.ConfigurationFailedException;
 import au.grapplerobotics.LaserCan;
@@ -57,7 +59,10 @@ public class CoralIntake extends SubsystemBase {
   private final TrapezoidProfile pivotProfile = new TrapezoidProfile(
     new TrapezoidProfile.Constraints(90/0.05, 270));
   private ArmFeedforward pivotFF = new ArmFeedforward(0, 0, 0);
-  public LaserCan laserCan = new LaserCan(24);
+  public LaserCanWrapper laserCan = new LaserCanWrapper(24)
+    .configureShortRange()
+    .setThreshhold(Inches.of(2))
+    ;
 
   private TrapezoidProfile.State pivotGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State pivotSetpoint = new TrapezoidProfile.State();
@@ -99,12 +104,6 @@ public class CoralIntake extends SubsystemBase {
     
     pivotMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    try {
-      laserCan.setRangingMode(RangingMode.SHORT);
-      laserCan.setTimingBudget(TimingBudget.TIMING_BUDGET_20MS);
-    } catch (ConfigurationFailedException e){
-
-    }
   }
 
   private void configRollerMotors(){
@@ -223,7 +222,7 @@ public class CoralIntake extends SubsystemBase {
   public Trigger readyToClimb = new Trigger(()->true); //TODO: Do we have conditions for this?
   public Trigger readyToLoad = new Trigger(()->getAdjustedAngle()<30);
   public Trigger stowed = new Trigger(()->getAdjustedAngle()>70);
-  public Trigger coralLoaded = new Trigger(()->false); //TODO: Check LaserCan
+  public Trigger coralLoaded = laserCan.isBreakBeamTripped.debounce(0.03);
  
 
   public Trigger isOnTarget = new Trigger(()->{
