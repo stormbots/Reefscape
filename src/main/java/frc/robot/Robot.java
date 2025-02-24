@@ -132,7 +132,7 @@ public class Robot extends LoggedRobot {
   public void testInit() {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
-    // unfoldSequence = robotContainer.getResetRobotToStartingPose();
+    unfoldSequence = robotContainer.getUnfoldRobot();
     if(unfoldSequence != null){
       unfoldSequence.schedule();
     }

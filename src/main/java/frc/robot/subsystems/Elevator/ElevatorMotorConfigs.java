@@ -34,7 +34,7 @@ public class ElevatorMotorConfigs {
         ;
     elevatorConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .p(0.1/12.0*2*2);
+      .p(0.1/12.0*2*2*1.5);
 
     return elevatorConfig;
   }

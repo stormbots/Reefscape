@@ -228,4 +228,12 @@ public class RobotContainer {
       intake.stow(elevator.isClear)
     );
   }
+  public Command getUnfoldRobot() {
+    return Commands.sequence(
+      elevator.moveToHeightUnfoldHighPrecision(1.43),
+      climber.setAngle(()->37),
+      elevator.moveToHeightUnfoldHighPrecision(12.35),
+      climber.stow()
+    );
+  }
 }

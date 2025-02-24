@@ -52,6 +52,7 @@ public class Elevator extends SubsystemBase {
   public boolean isHomed = false;
   public int ROLLERSTALLCURRENT;
   private final double toleranceHeight = 1;
+  private final double toleranceHeightUnfolding = 0.5;
   private final double toleranceAngle = 5;
   private final double kArmMaxVelocity = 10.0;
   private final double kArmMaxAcceleration = 2.0;
@@ -248,6 +249,18 @@ public class Elevator extends SubsystemBase {
       () -> setHeight(height),
       () -> {}// elevatorMotor.set(0)
     ).until(isAtTargetHeight);
+  }
+
+  public Command moveToHeightUnfoldHighPrecision(double height){
+    return run(()->{
+        var ff = elevatorFF.getKg();
+        elevatorMotor
+            .getClosedLoopController()
+            .setReference(height, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
+        setpoint.height = height;
+      })
+      .until(()->MathUtil.isNear(setpoint.height, getCarriageHeight().in(Inches), toleranceHeightUnfolding))
+      ;  
   }
 
   public Command manualElevatorPower(double power) {
