@@ -43,8 +43,8 @@ public class Climber extends SubsystemBase {
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
     SmartDashboard.putNumber("climber/prepareAngle", -67);
-    SmartDashboard.putNumber("climber/reseatAngle", -45);
-    SmartDashboard.putNumber("climber/climbAngle", 7);
+    SmartDashboard.putNumber("climber/reseatAngle", -35);
+    SmartDashboard.putNumber("climber/climbAngle", -13.3);
     if (RobotBase.isReal()) {
       this.io = new ClimberIOReal();
     }else if(RobotBase.isSimulation()){

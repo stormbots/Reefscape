@@ -41,8 +41,6 @@ public class RobotContainer {
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
 
-  private final Vision Vision = new Vision(swerveSubsystem, null);
-
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
@@ -161,8 +159,9 @@ public class RobotContainer {
     operator.axisLessThan(1, 0).whileTrue(new ParallelCommandGroup(
       climber.prepareToClimb(),
       elevator.moveToPoseUnchecked(elevator.kClimbing),
-      intake.setAngle(()->85))
-    );
+      intake.setAngle(()->65),
+      algaeGrabber.stop()
+    ));
 
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
 

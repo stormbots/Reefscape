@@ -132,7 +132,7 @@ public class AlgaeGrabber extends SubsystemBase {
     rollerConf.closedLoop
     // .p(1/500.0)
     .velocityFF(1/5760.0)
-    .p(0.1*4*2*2/9, ClosedLoopSlot.kSlot1)
+    .p(0.1*4*2*2*2/9, ClosedLoopSlot.kSlot1)
     .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
 
@@ -158,7 +158,7 @@ public class AlgaeGrabber extends SubsystemBase {
     shooterConf.closedLoop
     // .p(1/500.0)
     .velocityFF(1/5760.0*0.95)
-    .p(0.1*4*2*2/3, ClosedLoopSlot.kSlot1)
+    .p(0.1*4*2*2*2/3, ClosedLoopSlot.kSlot1)
     .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
     shooterMotor.configure(shooterConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
@@ -169,7 +169,8 @@ public class AlgaeGrabber extends SubsystemBase {
     armMotor.getEncoder().setPosition(getAbsoluteAngleDegrees());
 
     setDefaultCommand(defaultCommand());
-    SmartDashboard.putNumber("algae/ShootingAngle", -20);
+    SmartDashboard.putNumber("algae/ShootingAngle", -10);
+    SmartDashboard.putNumber("algae/ShooterVoltage", 0.8);
     //Automatically reset the slew rate if the bot is disabled
     new Trigger(DriverStation::isEnabled)
         .onTrue(new InstantCommand(()->armAngleSlew.reset(getAbsoluteAngleDegrees())));
@@ -272,7 +273,7 @@ public class AlgaeGrabber extends SubsystemBase {
   public Command defaultCommand() {
     return run( () -> {
         setShooterRPM(0);
-        // setArmAngle(-60);//temporary, so if we pick up algae we dont pop it on the climber
+        setArmAngle(-77);//temporary, so if we pick up algae we dont pop it on the climber
         if (haveAlgae) {
             setIntakeRPM(ROLLERHOLDRPM);
         } else {
@@ -281,10 +282,10 @@ public class AlgaeGrabber extends SubsystemBase {
     }).withName("DefaultCommand");
   }
 
-  public final double HAVEGRABBEDALGAEAMPS = 35;
+  public final double HAVEGRABBEDALGAEAMPS = 50;
   private boolean haveAlgae = false;
   Trigger intakeStalled = new Trigger(()->intakeMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
-    .and(()->intakeMotor.getEncoder().getVelocity()<100)    
+    // .and(()->intakeMotor.getEncoder().getVelocity()<200)    
     .debounce(0.1);
 
   public Command intakeAlgaeFromFloor() {
@@ -293,7 +294,7 @@ public class AlgaeGrabber extends SubsystemBase {
       setIntakeRPM(ROLLERINTAKERPM);
       setShooterRPM(SHOOTERINTAKERPM);
     })
-    .until(intakeStalled)
+    .until(intakeStalled).withTimeout(3)
     .andThen(new WaitCommand(0.25))
     .andThen(new InstantCommand(()->{
       intakeMotor.getEncoder().setPosition(0);
@@ -316,7 +317,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public Command prepareToShoot(DoubleSupplier rpm) {
     return run(() -> {
-      // setArmAngle(-90 + 70);
+      // setArmAngle(-70);
       setArmAngle(SmartDashboard.getNumber("algae/ShootingAngle", -20));
       setShooterRPM(rpm.getAsDouble());
       setIntakeRPM(ROLLERHOLDRPM);
@@ -324,7 +325,7 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   public Command scoreProcessor() {
-    return scoreAlgae(() -> -30, () -> 5000)
+    return scoreAlgae(() -> -30, () -> 8000)
     .withName("ScoreProcessor");
   }
 
@@ -332,7 +333,7 @@ public class AlgaeGrabber extends SubsystemBase {
     return run(() -> {
         setShooterRPM(targetRPM);
         // setIntakeRPM(targetRPM*3);//Radius Compensation
-        intakeMotor.setVoltage(12);
+        intakeMotor.setVoltage(SmartDashboard.getNumber("algae/ShooterVoltage", 0.8));
     })
     .finallyDo( (interrupted) -> {
         if (interrupted == false) {
@@ -425,4 +426,7 @@ public class AlgaeGrabber extends SubsystemBase {
     sim::getAngle
   );
 
+  public Command stop(){
+    return run(()->armMotor.stopMotor());
+  }
 }
