@@ -33,8 +33,8 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
-  public final CoralIntake intake = new CoralIntake();
   public final Elevator elevator = new Elevator();
+  public final CoralIntake intake = new CoralIntake(elevator.isClear);
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
 
   boolean slowmode = false;
@@ -171,8 +171,14 @@ public class RobotContainer {
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
 
     operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
-    operator.rightBumper().whileTrue(intake.intake());
+    operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
     operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
+
+    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500));//Outake
+
+    operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
+    operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
+
 
     // Expected algae control stuff
     operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
