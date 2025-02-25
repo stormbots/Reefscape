@@ -30,7 +30,7 @@ import frc.robot.subsystems.Elevator.Elevator;
 public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
-  Swerve swerveSubsystem = new Swerve();
+  public final Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final CoralIntake intake = new CoralIntake();
   public final Elevator elevator = new Elevator();
@@ -39,6 +39,7 @@ public class RobotContainer {
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
+  public final Autos autos = new Autos(swerveSubsystem, elevator, climber, intake, algaeGrabber);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
@@ -188,11 +189,12 @@ public class RobotContainer {
   }
 
   /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
+   * @return the A sequence that runs in Test mode for testing and only testing
+   * Because autos go in Autos now.
    */
-  public Command getAutonomousCommand() {
+  public Command getProgrammingTestSequence() {
+    return new InstantCommand();
+
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
     // return new SequentialCommandGroup(
@@ -206,8 +208,7 @@ public class RobotContainer {
       
     // );
     // return swerveSubsystem.pathToCoralLeft();
-    return centerAuto();
-    // return new InstantCommand();
+    // return basicCenterAuto();
     // return swerveSubsystem.followPath("1Meter");
     // return Commands.sequence(
     //   algaeGrabber.prepareToShoot().withTimeout(5),
@@ -215,15 +216,8 @@ public class RobotContainer {
     // );
   }
   
-  public Command getUnfoldRobot() {
-    return Commands.sequence(
-      elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
-      intake.setAngle(()-> 60.0).withTimeout(2),
-      climber.setAngle(()->30.2)
-    );
-  }
   //Refolding Process
-  public Command getFoldRobot() {
+  public Command goToDefenseMode() {
     return Commands.sequence(
       climber.setAngle(()->30.2),
       elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7, 0)).until(elevator.isAtTargetAngle),
@@ -233,24 +227,9 @@ public class RobotContainer {
   }
 
 
-  ///////////////////////////////////////////////////////////
-  /// AUTOS BELOW THIS LINE SORRY IT'S GROSS I HATE IT TOO -DAN
-  /// //////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
+  /// PUT AUTOS IN THE AUTOS FILE DON"T PUT THEM HERE WE CAN DO BETTER ///
+  /// ////////////////////////////////////////////////////////////////////
 
-  public Command centerAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    //Initial Position for Auto on Blue
-    swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
-    //Initial Position for Auto on Red
-    if(alliance == Alliance.Red){
-      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
-    }
-    return Commands.sequence(
-    swerveSubsystem.pathToCoralLeft(),
-    // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-    elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
-    elevator.runCoralScorer(2500).withTimeout(1)
-    );
-  }
 
 }

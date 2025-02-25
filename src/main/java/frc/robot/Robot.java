@@ -95,12 +95,14 @@ public class Robot extends LoggedRobot {
   public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    robotContainer.autos.periodic();
+  }
 
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    autonomousCommand = robotContainer.getAutonomousCommand();
+    autonomousCommand = robotContainer.autos.getAutonomousCommand();
 
     // schedule the autonomous command (example)
     if (autonomousCommand != null) {
@@ -130,12 +132,15 @@ public class Robot extends LoggedRobot {
   @Override
   public void testInit() {
     // Cancels all running commands at the start of test mode.
-  
+
+    //Schedule our own
+    robotContainer.getProgrammingTestSequence().schedule();
   }
 
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
+
   }
 
   /** This function is called once when the robot is first started up. */
