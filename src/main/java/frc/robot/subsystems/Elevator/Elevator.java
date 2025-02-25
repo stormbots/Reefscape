@@ -432,7 +432,7 @@ public class Elevator extends SubsystemBase {
     // SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
 
     SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
-    SmartDashboard.putNumber("elevator/rotation/relativeAngle", getAngle().in(Degree));
+    SmartDashboard.putNumber("elevator/rotation/angle", getAngle().in(Degree));
     SmartDashboard.putNumber("elevator/rotation/absoluteAngel", getAngleAbsolute().in(Degree));
     SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
     SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());

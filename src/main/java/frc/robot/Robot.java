@@ -20,7 +20,6 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
  */
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
-  private Command unfoldSequence;
 
   private final RobotContainer robotContainer;
 
@@ -131,12 +130,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void testInit() {
     // Cancels all running commands at the start of test mode.
-    CommandScheduler.getInstance().cancelAll();
-    unfoldSequence = robotContainer.getUnfoldRobot();
-    if(unfoldSequence != null){
-      unfoldSequence.schedule();
-    }
-
+  
   }
 
   /** This function is called periodically during test mode. */

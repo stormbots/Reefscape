@@ -4,19 +4,12 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Vision;
-import frc.robot.subsystems.AlgaeGrabber.AglaeGrabberIOReal;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
@@ -214,25 +207,21 @@ public class RobotContainer {
     //   algaeGrabber.scoreProcessor()  
     // );
   }
-  public Command getResetRobotToStartingPose() {
-    return Commands.sequence(
-      new WaitCommand(1),
-      intake.setAngle(()->100).until(intake.isOnTarget),
-      new WaitCommand(1),
-      climber.setAngle(()->10),
-      //insert elevator command here
-      new WaitCommand(1),
-      climber.stow(),
-      new WaitCommand(1),
-      intake.stow(elevator.isClear)
-    );
-  }
+  
   public Command getUnfoldRobot() {
     return Commands.sequence(
-      elevator.moveToHeightUnfoldHighPrecision(1.43),
-      climber.setAngle(()->37),
-      elevator.moveToHeightUnfoldHighPrecision(12.35),
-      climber.stow()
+      elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
+      intake.setAngle(()-> 60.0).withTimeout(2),
+      climber.setAngle(()->30.2)
+    );
+  }
+  //Refolding Process
+  public Command getFoldRobot() {
+    return Commands.sequence(
+      climber.setAngle(()->30.2),
+      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7, 0)).until(elevator.isAtTargetAngle),
+      intake.setAngle(()-> 65.0).withTimeout(2),
+      elevator.moveToHeightUnfoldHighPrecision(3.78)
     );
   }
 }
