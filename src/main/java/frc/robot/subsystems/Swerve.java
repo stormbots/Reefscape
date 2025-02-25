@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.Radians;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -78,8 +82,7 @@ public class Swerve extends SubsystemBase {
 
     swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.0));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
-    
-    swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+        
     configurePathplanner();
     // PathfindingCommand.warmupCommand();
   }

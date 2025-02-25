@@ -4,9 +4,15 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
@@ -224,4 +230,24 @@ public class RobotContainer {
       elevator.moveToHeightUnfoldHighPrecision(3.78)
     );
   }
+
+
+  ///////////////////////////////////////////////////////////
+  /// AUTOS BELOW THIS LINE SORRY IT'S GROSS I HATE IT TOO -DAN
+  /// //////////////////////////////////////////////////////////
+
+  public Command centerAuto(){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    //Initial Position for Auto on Blue
+    swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
+    //Initial Position for Auto on Red
+    if(alliance == Alliance.Red){
+      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
+    }
+    return Commands.sequence(
+    swerveSubsystem.pathToCoralLeft(),
+    elevator.scoreAtPoseSafe(elevator.kL4)
+    );
+  }
+
 }
