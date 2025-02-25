@@ -206,7 +206,8 @@ public class RobotContainer {
       
     // );
     // return swerveSubsystem.pathToCoralLeft();
-    return new InstantCommand();
+    return centerAuto();
+    // return new InstantCommand();
     // return swerveSubsystem.followPath("1Meter");
     // return Commands.sequence(
     //   algaeGrabber.prepareToShoot().withTimeout(5),
@@ -246,7 +247,9 @@ public class RobotContainer {
     }
     return Commands.sequence(
     swerveSubsystem.pathToCoralLeft(),
-    elevator.scoreAtPoseSafe(elevator.kL4)
+    // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+    elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
+    elevator.runCoralScorer(2500).withTimeout(1)
     );
   }
 
