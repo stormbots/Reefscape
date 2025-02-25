@@ -4,37 +4,40 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Pounds;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.FieldNavigation;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 
@@ -42,23 +45,27 @@ public class Swerve extends SubsystemBase {
 
   public Field2d debugField2d = new Field2d();
   public Field2d odometryField = new Field2d();
+  private FieldNavigation fieldNav = new FieldNavigation();
+
   
-  double maximumSpeed = 5.4;
+  double maximumSpeed = 5.033;
 
   SwerveDrive swerveDrive;
+
+  PathConstraints constraintsFast = new PathConstraints(5, 3.5, 5, 3);
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
 
     SmartDashboard.putData("SwerveDebugField",debugField2d);
-    debugField2d.getObject("targetPoseOne").setPose(new Pose2d(3.5, 3.1, new Rotation2d(0.0)));
-    debugField2d.getObject("targetPoseTwo").setPose(new Pose2d(4.0, 5.25, new Rotation2d(0.5)));
-    debugField2d.getObject("targetPoseThree").setPose(new Pose2d(6.3, 4.1, new Rotation2d(0.5)));
+
+
+    
+
     
     //Need to turn this back on when running path, commented out for now because its angry
-    //configurePathplanner();
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
-    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"tabiSwerve");
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"skipper");
     try
     {
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(maximumSpeed);
@@ -69,47 +76,61 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.080663, 1.9711, 0.36785));
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.0));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
+    
+    swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+    configurePathplanner();
+    // PathfindingCommand.warmupCommand();
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     swerveDrive.updateOdometry();
+    debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
-    SmartDashboard.putData("odometryField", odometryField);
 
+    SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
+    SmartDashboard.putData("odometryField", odometryField);
+    Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
+    Logger.recordOutput("odometry", swerveDrive.getPose());
   }
 
   public void configurePathplanner(){
-    RobotConfig robotConfig;
+    RobotConfig robotConfig = null;
 
-    double kModuleXOffset = Meters.convertFrom(23.5, Inches)/2.0;
-    double kModuleYOffset = Meters.convertFrom(23.5, Inches)/2.0;
+    // double kModuleXOffset = Meters.convertFrom(23.5, Inches)/2.0;
+    // double kModuleYOffset = Meters.convertFrom(23.5, Inches)/2.0;
 
 
-    Translation2d[] moduleOffsets = new Translation2d[]{
-      new Translation2d(kModuleXOffset, kModuleYOffset),
-      new Translation2d(kModuleXOffset, -kModuleYOffset),
-      new Translation2d(-kModuleXOffset, kModuleYOffset),
-      new Translation2d(-kModuleXOffset, -kModuleYOffset)
-    };
+    // Translation2d[] moduleOffsets = new Translation2d[]{
+    //   new Translation2d(kModuleXOffset, kModuleYOffset),
+    //   new Translation2d(kModuleXOffset, -kModuleYOffset),
+    //   new Translation2d(-kModuleXOffset, kModuleYOffset),
+    //   new Translation2d(-kModuleXOffset, -kModuleYOffset)
+    // };
 
-    ModuleConfig moduleConfig = new ModuleConfig(
-      3, 
-      5.1, 
-      1.3, 
-      DCMotor.getNeoVortex(1).withReduction(5.076923076923077), 
-      40, 
-      1);
+    // ModuleConfig moduleConfig = new ModuleConfig(
+    //   Meters.convertFrom(1.5, Inches), 
+    //   5.1, 
+    //   1.3, 
+    //   DCMotor.getNeoVortex(1).withReduction(5.076923076923077), 
+    //   40, 
+    //   1);
 
-    robotConfig = new RobotConfig(
-      Pounds.of(30), 
-      KilogramSquareMeters.of(15), 
-      moduleConfig, 
-      moduleOffsets
-    );
+    // robotConfig = new RobotConfig(
+    //   Pounds.of(30), 
+    //   KilogramSquareMeters.of(15), 
+    //   moduleConfig, 
+    //   moduleOffsets
+    // );
+
+    try {
+      robotConfig = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      // TODO: handle exception
+    }
 
     BooleanSupplier shouldFlipPath = () -> {
       // Boolean supplier that controls when the path will be mirrored for the red alliance
@@ -226,19 +247,32 @@ public class Swerve extends SubsystemBase {
     });
   }
 
-  public Command pathToPose(Pose2d targetPoseIgnore){
-    var pose = getPose();
-    List<Pose2d> list = new ArrayList<>();{{
-      // add(new Pose2d(1,2,new Rotation2d())); //how to add to a fixed object
-    }};
 
-    list.add(debugField2d.getObject("targetPoseOne").getPose());
-    list.add(debugField2d.getObject("targetPoseTwo").getPose());
-    list.add(debugField2d.getObject("targetPoseThree").getPose());
-    
-    var targetPose = pose.nearest(list);
+  private Command privatePathToPose(Pose2d pose){
+    return AutoBuilder.pathfindToPose(pose, constraintsFast);
+  }
+
+  public Command pathToCoralLeft(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())),set);
+  }
+  public Command pathToCoralRight(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())),set);
+  }
+  public Command pathToReefAlgae(){
+    Set<Subsystem> set = Set.of(this);
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getReefAlgae(getPose())),set);
+  }
+  
+
+
+  public Command pathToPath(PathPlannerPath targetPath){
+    //robot constraints for pathPlanner
     PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-    return AutoBuilder.pathfindToPose(targetPose, constraints, Units.MetersPerSecond.of(0.5));
+
+    //Go to target Path and follow it
+    return AutoBuilder.pathfindThenFollowPath(targetPath, constraints);
   }
 
   public Pose2d getPose(){
@@ -262,7 +296,15 @@ public class Swerve extends SubsystemBase {
     return runOnce(swerveDrive::zeroGyro).ignoringDisable(true);
   }
 
-  //public Command driveToPose(){
-   // 
-  //}
+  public Command followPath(String name){
+    try {
+      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(name));
+    } catch (Exception e) {
+      // TODO: handle exception
+      for(int i=0; i<1000; i++){
+        System.out.println(e);
+      }
+      return new InstantCommand();
+    }
+  }
 }
