@@ -1,6 +1,5 @@
 {
-  "recommendations": [
-    "mhutchie.git-graph",
-    null
-  ]
+    "recommendations": [
+        "mhutchie.git-graph"
+    ]
 }

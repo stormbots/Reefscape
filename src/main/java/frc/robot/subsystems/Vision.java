@@ -87,9 +87,6 @@ public class Vision extends SubsystemBase {
 
 
 
-    //FIXME: I don't think we need or use direct gyro access like this
-    this.navx = (AHRS)swerve.swerveDrive.getGyro().getIMU();
-    
 
   }
 

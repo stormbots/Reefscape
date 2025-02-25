@@ -2,7 +2,6 @@ plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2025.2.1"
     id "com.peterabeles.gversion" version "1.10"
-    id "com.diffplug.spotless" version "6.12.0"
 }
 
 java {
@@ -138,7 +137,7 @@ gversion {
     classPackage = "frc.robot"
     className    = "BuildConstants"
     dateFormat   = "yyyy-MM-dd hh:mm:ss z"
-    timeZone     = ZoneId.systemDefault()
+    timeZone     = ZoneId.systemDefault();
     indent       = "  "
 }
 
@@ -174,15 +173,3 @@ task(eventDeploy) {
     }
 }
 createVersionFile.dependsOn(eventDeploy)
-
-// Spotless formatting
-project.compileJava.dependsOn(spotlessApply)
-spotless {
-    json {
-        target fileTree(".") {
-            include "**/*.json"
-            exclude "**/build/**", "**/build-*/**"
-        }
-        gson().indentWithSpaces(2)
-    }
-}
