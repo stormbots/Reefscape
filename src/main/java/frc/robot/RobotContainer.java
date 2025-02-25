@@ -180,11 +180,13 @@ public class RobotContainer {
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
     operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
 
+    operator.leftStick().whileTrue(algaeGrabber.eject());
+
     // operator.rightTrigger(threshold)
     // operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));
 
 
-    operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
+    // operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());
   }
 
