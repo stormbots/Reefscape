@@ -17,7 +17,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class LaserCanWrapper implements Sendable{
-  static LaserCan laserCan;
+  public LaserCan laserCan;
   private Distance breakBeamThreshold = Distance.ofBaseUnits(99, Inch);
   private boolean online = false;
   
@@ -65,12 +65,16 @@ public class LaserCanWrapper implements Sendable{
     if (reading == null){
       return Optional.empty();
     }
+    if (reading.status!=laserCan.LASERCAN_STATUS_VALID_MEASUREMENT){
+      return Optional.empty();
+    }
     return Optional.of(Units.Millimeters.of(reading.distance_mm));
   }
 
   public Trigger isBreakBeamTripped = new Trigger( () -> {
-    if(getDistanceOptional().isEmpty()) return false;
-    return getDistanceOptional().get().lt(breakBeamThreshold);
+    Optional<Distance> distance = getDistanceOptional();
+    if(distance.isEmpty()) return false;
+    return distance.get().lt(breakBeamThreshold);
   });
 
   @Override

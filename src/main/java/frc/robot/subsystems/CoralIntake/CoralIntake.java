@@ -38,11 +38,14 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -72,13 +75,13 @@ public class CoralIntake extends SubsystemBase {
   CoralIntakeMech2d mech = new CoralIntakeMech2d();
 
   /** Creates a new CoralIntake. */
-  public CoralIntake() {
+  public CoralIntake(Trigger elevatorIsClear) {
     //TODO: Change this
     // io = new CoralIntakeIOReal();
     configPivotMotors();
     configRollerMotors();
 
-    // setDefaultCommand(stow());
+    setDefaultCommand(stow(elevatorIsClear));
   }
 
   private void configPivotMotors(){
@@ -112,16 +115,17 @@ public class CoralIntake extends SubsystemBase {
     config.inverted(true);
     config.smartCurrentLimit(40);
     
-    var rollerwheeldiameter=2;
-    var conversionfactor = Math.PI*rollerwheeldiameter; //convert rotations to inches
+    // var rollerwheeldiameter=2; //TODO no clue
+    var conversionfactor =1;// Math.PI*rollerwheeldiameter; //convert rotations to inches
     config.encoder
     .positionConversionFactor(conversionfactor)
-    .velocityConversionFactor(conversionfactor/60.0); //inches-> InchesPerSecond
+    .velocityConversionFactor(conversionfactor); //inches-> InchesPerSecond
     //TODO: Placeholder
     config.closedLoop
     .outputRange(-0.5,0.5)
-    .velocityFF(1/5784*conversionfactor)
-    .p(0.5/25);
+    .velocityFF(1/5784.0*conversionfactor)
+    // .p(0.5/25);
+    .p(0);
 
     rollerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
@@ -206,17 +210,30 @@ public class CoralIntake extends SubsystemBase {
     return new ParallelCommandGroup(
       setAngle(angle),
       //TODO fix pids D:
-      // new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
-      new RunCommand(()->rollerMotor.setVoltage(6))// TEMP TO MAKE ROBOT GO
+      new RunCommand(()-> setRollerVelocity(velocity.getAsDouble()))
+      // new RunCommand(()->rollerMotor.setVoltage(6))// TEMP TO MAKE ROBOT GO
     );
   }
 
-  public Command intake() {
-    return setAngleSpeed(()->-45, ()->25);
+  public Command intake(Trigger hasCoral) {
+    Timer timer = new Timer();
+    return new SequentialCommandGroup(
+      new InstantCommand(()->timer.reset()), //weird bug fix
+      setAngleSpeed(()->-45, ()->2500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
+    );
+    // return setAngleSpeed(()->-45, ()->25).until(hasCoral);
   }
 
   public Command stow(BooleanSupplier elevatorClear) {
-    return new WaitCommand(99999).until(elevatorClear).andThen(setAngleSpeed(()->55, ()->0));
+    // return new WaitCommand(99999).until(elevatorClear).andThen(setAngleSpeed(()->55, ()->0));
+    Command stow = new SequentialCommandGroup(
+      new InstantCommand(()->rollerMotor.set(0)),
+      new WaitCommand(99999).until(elevatorClear),
+      setAngleSpeed(()->55, ()->0)//.onlyWhile(elevatorClear)
+    ).repeatedly();
+
+    stow.addRequirements(this);
+    return stow;
   }
 
   public Trigger readyToClimb = new Trigger(()->true); //TODO: Do we have conditions for this?
