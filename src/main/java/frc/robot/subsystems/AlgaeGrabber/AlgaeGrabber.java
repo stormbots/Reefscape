@@ -41,6 +41,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -63,7 +64,8 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public static final double ROLLERHOLDRPM = 200;
   public static final double ROLLERINTAKERPM = 3500;
-  public static final double SHOOTERINTAKERPM = -1200;
+  public static final double SHOOTERINTAKERPM = -600;
+  //VVV Ignored this constant for now VVV
   public static final double ROLLEREJECTPOWER = -0.5;
 
   private static final double ANGLETOLERANCE = 5;
@@ -87,6 +89,7 @@ public class AlgaeGrabber extends SubsystemBase {
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State();
 
+  private boolean hasSynced = false;
 
   /** Creates a new AlgaeGrabber. */
   public AlgaeGrabber() {
@@ -100,7 +103,7 @@ public class AlgaeGrabber extends SubsystemBase {
       ;
 
     armConf.absoluteEncoder
-        .positionConversionFactor(absconversionfactor)//This is on a 2:1 gear step (Brian-2:1 on sprocket)
+        .positionConversionFactor(absconversionfactor)//This is on a 2:1 gear step
         .velocityConversionFactor(absconversionfactor / 60.0)
         .inverted(false);
     var conversionfactor=360.0/(45*2.0);//45:1 planetary reduction, 2:1 sprocket
@@ -152,8 +155,8 @@ public class AlgaeGrabber extends SubsystemBase {
     var shooterConf = new SparkFlexConfig();
     shooterConf
     .inverted(false)
-    .smartCurrentLimit(60)
-    .idleMode(IdleMode.kCoast)
+    .smartCurrentLimit(80)
+    .idleMode(IdleMode.kBrake)
     ;
 
     shooterConf.encoder
@@ -171,7 +174,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
     shooterConf.closedLoopRampRate(0.05);
     shooterConf.openLoopRampRate(0.05);
-    //MUST BE BETWEEN [-135,45] WHEN INITIALIZED, syncs encoders'
+    //MUST BE BETWEEN [-135,45] WHEN INITIALIZED, syncs encoders
     Timer.delay(0.1);
     armMotor.getEncoder().setPosition(getAbsoluteAngleDegrees());
 
@@ -180,7 +183,13 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/ShooterVoltage", 0.8);
     //Automatically reset the slew rate if the bot is disabled
     new Trigger(DriverStation::isEnabled)
-        .onTrue(new InstantCommand(()->armAngleSlew.reset(getAbsoluteAngleDegrees())));
+        .onTrue(new InstantCommand(()->armAngleSlew.reset(getAbsoluteAngleDegrees())))
+        //Syncs on first enable, redundancy, sometimes doesn't sync on startup
+        .and(()->!hasSynced)
+        .onTrue(new InstantCommand(()->{
+          armMotor.getEncoder().setPosition(getAbsoluteAngleDegrees());
+          hasSynced = true;
+        }));
   }
 
   //////////////////////////////////
@@ -280,11 +289,13 @@ public class AlgaeGrabber extends SubsystemBase {
   public Command defaultCommand() {
     return run( () -> {
         setShooterRPM(0);
-        setArmAngle(-77);//temporary, so if we pick up algae we dont pop it on the climber
+        // setArmAngle(-77);//temporary, so if we pick up algae we dont pop it on the climber
         if (haveAlgae) {
-            setIntakeRPM(ROLLERHOLDRPM);
+          setIntakeRPM(ROLLERHOLDRPM);
+          setArmAngle(-65);
         } else {
-            setIntakeRPM(0);
+          setIntakeRPM(0);
+          setArmAngle(-77);
         }
     }).withName("DefaultCommand");
   }
@@ -295,16 +306,17 @@ public class AlgaeGrabber extends SubsystemBase {
   public final double HAVEGRABBEDALGAEAMPS = 50;
   private boolean haveAlgae = false;
   Trigger intakeStalled = new Trigger(()->intakeMotor.getOutputCurrent() > HAVEGRABBEDALGAEAMPS)
-    // .and(()->intakeMotor.getEncoder().getVelocity()<200)    
+    .and(()->intakeMotor.getEncoder().getVelocity()<250)    
     .debounce(0.1);
 
   public Command intakeAlgaeFromFloor() {
     return run(() -> {
       setArmAngle(-25);
       setIntakeRPM(ROLLERINTAKERPM);
-      setShooterRPM(SHOOTERINTAKERPM);
+      // setShooterRPM(SHOOTERINTAKERPM);
+      shooterMotor.setVoltage(-1.0);
     })
-    .until(intakeStalled).withTimeout(3)
+    .until(intakeStalled)
     .andThen(new WaitCommand(0.25))
     .andThen(new InstantCommand(()->{
       intakeMotor.getEncoder().setPosition(0);
@@ -319,6 +331,19 @@ public class AlgaeGrabber extends SubsystemBase {
             haveAlgae = true;
         }
     }).withName("IntakeFromFloor");
+  }
+
+  public Command eject(){
+    return run(
+      ()->{
+        // setShooterRPM(3000);
+        // setIntakeRPM(3000);
+        intakeMotor.setVoltage(9);
+        shooterMotor.setVoltage(9);
+        setArmAngle(-77);
+    })
+    //could do checking conditions with lasercan, ignored for now.
+    .finallyDo(()->haveAlgae=false);
   }
 
   public Command prepareToShoot() {
@@ -343,7 +368,7 @@ public class AlgaeGrabber extends SubsystemBase {
     return run(() -> {
         setShooterRPM(targetRPM);
         // setIntakeRPM(targetRPM*3);//Radius Compensation
-        intakeMotor.setVoltage(SmartDashboard.getNumber("algae/ShooterVoltage", 0.8));
+        intakeMotor.setVoltage(SmartDashboard.getNumber("algae/IntakeVoltage", 0.8));
     })
     .finallyDo( (interrupted) -> {
         if (interrupted == false) {
@@ -419,6 +444,7 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/shooter velocity",shooterMotor.getEncoder().getVelocity());
     SmartDashboard.putNumber("algae/intake velocity",intakeMotor.getEncoder().getVelocity());
     SmartDashboard.putNumber("algae/shooter position",shooterMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("algae/SHOOTER current",shooterMotor.getOutputCurrent());
     SmartDashboard.putNumber("algae/intake position",intakeMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("algae/intake current",intakeMotor.getOutputCurrent());
   }

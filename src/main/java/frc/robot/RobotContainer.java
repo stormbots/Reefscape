@@ -32,8 +32,8 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   public final Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
-  public final CoralIntake intake = new CoralIntake();
   public final Elevator elevator = new Elevator();
+  public final CoralIntake intake = new CoralIntake(elevator.isClear);
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
 
   boolean slowmode = false;
@@ -171,8 +171,14 @@ public class RobotContainer {
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
 
     operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
-    operator.rightBumper().whileTrue(intake.intake());
+    operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
     operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
+
+    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500));//Outake
+
+    operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
+    operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
+
 
     // Expected algae control stuff
     operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
@@ -180,11 +186,13 @@ public class RobotContainer {
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
     operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
 
+    operator.leftStick().whileTrue(algaeGrabber.eject());
+
     // operator.rightTrigger(threshold)
     // operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));
 
 
-    operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
+    // operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());
   }
 

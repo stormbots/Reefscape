@@ -22,7 +22,7 @@ public class ElevatorMotorConfigs {
       .inverted(true)
       ;
     elevatorConfig.softLimit
-    .forwardSoftLimit(64)//????
+    .forwardSoftLimit(64)
     .forwardSoftLimitEnabled(true)
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
@@ -48,9 +48,9 @@ public class ElevatorMotorConfigs {
       .idleMode(IdleMode.kCoast)
       .inverted(true); //Positive is in, Negative is out
 
-    var coralOutConversionFactor = 3.371;
+    var coralOutConversionFactor = 1; //3.371;
     coralOutConfig.encoder
-      .velocityConversionFactor(coralOutConversionFactor / 60.0)
+      .velocityConversionFactor(coralOutConversionFactor)
       .positionConversionFactor(coralOutConversionFactor)
       ;
 
