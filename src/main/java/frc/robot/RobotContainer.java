@@ -176,7 +176,9 @@ public class RobotContainer {
     operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
     operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
 
-    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500));//Outake
+    Command moveTo90 = elevator.moveToAngleTrap(()->90);
+    moveTo90.addRequirements(elevator);
+    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
 
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
@@ -192,6 +194,9 @@ public class RobotContainer {
     operator.leftTrigger().whileTrue(algaeGrabber.ejectFromFloor());
 
     operator.leftStick().whileTrue(algaeGrabber.eject());
+
+    //TEST, will not work as does not require elevator subsystem due to intracacieswadkn
+    // operator.leftStick().whileTrue(elevator.pidScorerBack());
 
     // operator.rightTrigger(threshold)
     // operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));

@@ -48,6 +48,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
@@ -108,8 +109,8 @@ public class Elevator extends SubsystemBase {
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
   //need special procedure to move to floor pickup
-  private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66.3, -10);
-  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66.3, 0);
+  private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66, -10);
+  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
   public final ElevatorPose kStowedUp =         new ElevatorPose(26, 84, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(16, 128, 0);
@@ -154,7 +155,7 @@ public class Elevator extends SubsystemBase {
 
   }
 
-  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped.debounce(0.03);
+  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped.debounce(0.02);
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return coralOutMotor.getOutputCurrent() > ROLLERSTALLCURRENT;
@@ -350,7 +351,11 @@ public class Elevator extends SubsystemBase {
   public Command moveToPoseSafe(ElevatorPose pose) {
     return new SequentialCommandGroup(
       moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
-      moveToPoseUnchecked(pose)
+      // moveToPoseUnchecked(pose)
+      new ParallelDeadlineGroup(
+        moveToPoseUnchecked(pose),
+        pidScorerBack()
+      )
     );
   }
   public Command scoreAtPoseSafe(ElevatorPose pose) {
@@ -376,10 +381,21 @@ public class Elevator extends SubsystemBase {
       new ParallelCommandGroup(
         moveToHeight(kFloorPickup.height),
         new RunCommand(()->coralOutMotor.setVoltage(6))
+        .until(isCoralInScorer)
+        // .andThen(new WaitCommand(0.1))
+        .finallyDo((e)->{
+          coralOutMotor.setVoltage(-2);
+          coralOutMotor.getEncoder().setPosition(0);
+        })
       )
     );
     //In theory, move back up at very end. doesnt work, causes things to break, whatever
     // .finallyDo((e)->moveToHeight(kPrepareToFloorPickup.height));
+  }
+
+  public Command pidScorerBack(){
+    return new InstantCommand(()->{})//coralOutMotor.getEncoder().setPosition(0))
+    .andThen(new RunCommand(()->coralOutMotor.getClosedLoopController().setReference(-2, ControlType.kPosition, ClosedLoopSlot.kSlot1)));
   }
 
   SysIdRoutineLog log = new SysIdRoutineLog("elevatorArm");
@@ -459,29 +475,29 @@ public class Elevator extends SubsystemBase {
   @Override
   public void periodic(){
     SmartDashboard.putNumber("elevator/height", getCarriageHeight().in(Inches));
-    SmartDashboard.putNumber("elevator/setpoint", setpoint.height);
-    SmartDashboard.putNumber("elevator/appliedvoltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
-    SmartDashboard.putNumber("elevator/current", elevatorMotor.getOutputCurrent());
+    // SmartDashboard.putNumber("elevator/setpoint", setpoint.height);
+    // SmartDashboard.putNumber("elevator/appliedvoltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    // SmartDashboard.putNumber("elevator/current", elevatorMotor.getOutputCurrent());
     
     
-    // SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
-    // SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
+    // // SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
+    // // SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
 
-    SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
+    // SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
     SmartDashboard.putNumber("elevator/rotation/angle", getAngle().in(Degree));
     SmartDashboard.putNumber("elevator/rotation/absoluteAngel", getAngleAbsolute().in(Degree));
-    SmartDashboard.putNumber("elevator/rotation/velocity", rotationMotor.getEncoder().getVelocity());
-    SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
-    SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
+    // SmartDashboard.putNumber("elevator/rotation/velocity", rotationMotor.getEncoder().getVelocity());
+    // SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    // SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
 
-    SmartDashboard.putNumber("elevator/rotation/plot/setpointNrml", setpoint.angle);
-    SmartDashboard.putNumber("elevator/rotation/plot/setpointTrap", armSetpoint.position);
+    // SmartDashboard.putNumber("elevator/rotation/plot/setpointNrml", setpoint.angle);
+    // SmartDashboard.putNumber("elevator/rotation/plot/setpointTrap", armSetpoint.position);
     
-    SmartDashboard.putNumber("elevator/lasercanDistance", laserCan.getDistanceOptional().orElse(Inches.of(99999)).in(Inches));
-    SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
-    SmartDashboard.putBoolean("elevator/isClear", isClear.getAsBoolean());
+    // SmartDashboard.putNumber("elevator/lasercanDistance", laserCan.getDistanceOptional().orElse(Inches.of(99999)).in(Inches));
+    // SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
+    // SmartDashboard.putBoolean("elevator/isClear", isClear.getAsBoolean());
 
-    SmartDashboard.putData("elevator/lasercan", laserCan);
+    // SmartDashboard.putData("elevator/lasercan", laserCan);
     // SmartDashboard.putData("elevator/lasercan", laserCan.sen);
     
     mechanism.update(

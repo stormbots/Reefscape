@@ -292,7 +292,8 @@ public class AlgaeGrabber extends SubsystemBase {
         // setArmAngle(-77);//temporary, so if we pick up algae we dont pop it on the climber
         if (haveAlgae) {
           setIntakeRPM(ROLLERHOLDRPM);
-          setArmAngle(-65);
+          // setArmAngle(-65);
+          setArmAngle(-77);
         } else {
           setIntakeRPM(0);
           setArmAngle(-77);

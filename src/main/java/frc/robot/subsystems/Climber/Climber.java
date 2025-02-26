@@ -116,8 +116,8 @@ public class Climber extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Climber", inputs);
     visualizer.update(inputs.climberAbsoluteAngle);
-    SmartDashboard.putNumber("climber/ClimberAngle", getPosition());
-    SmartDashboard.putNumber("climber/Setpoint", setpoint);
+    // SmartDashboard.putNumber("climber/ClimberAngle", getPosition());
+    // SmartDashboard.putNumber("climber/Setpoint", setpoint);
 
   }
 

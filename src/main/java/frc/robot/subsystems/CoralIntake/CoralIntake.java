@@ -141,8 +141,8 @@ public class CoralIntake extends SubsystemBase {
       // ,sim.getSimAngle()
     );
 
-    Logger.recordOutput("rollerSpeed", getRollerVelocity().in(InchesPerSecond));
-    Logger.recordOutput("pivotAngle", getAngle().in(Units.Degrees));
+    // Logger.recordOutput("rollerSpeed", getRollerVelocity().in(InchesPerSecond));
+    // Logger.recordOutput("pivotAngle", getAngle().in(Units.Degrees));
   }
 
   @Override
