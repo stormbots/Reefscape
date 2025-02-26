@@ -43,6 +43,8 @@ public class RobotContainer {
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
+  CommandXboxController bruh = new CommandXboxController(2);
+
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -186,6 +188,9 @@ public class RobotContainer {
 
     operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());
+
+    bruh.a().whileTrue(getUnfoldRobot());
+    bruh.b().whileTrue(goToDefenseMode());
   }
 
   /**
@@ -232,4 +237,11 @@ public class RobotContainer {
   /// ////////////////////////////////////////////////////////////////////
 
 
+  public Command getUnfoldRobot() {
+    return Commands.sequence(
+      elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
+      intake.setAngle(()-> 60.0).withTimeout(2),
+      climber.setAngle(()->30.2)
+    );
+  }
 }

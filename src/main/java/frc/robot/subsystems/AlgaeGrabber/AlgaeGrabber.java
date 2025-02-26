@@ -329,13 +329,14 @@ public class AlgaeGrabber extends SubsystemBase {
     return run(() -> {
       // setArmAngle(-70);
       setArmAngle(SmartDashboard.getNumber("algae/ShootingAngle", -20));
+      setArmAngle(-20);
       setShooterRPM(rpm.getAsDouble());
       setIntakeRPM(ROLLERHOLDRPM);
     }).withName("PrepareToShoot");
   }
 
   public Command scoreProcessor() {
-    return scoreAlgae(() -> -30, () -> 8000)
+    return scoreAlgae(() -> -30, () -> 6000)
     .withName("ScoreProcessor");
   }
 
@@ -344,6 +345,7 @@ public class AlgaeGrabber extends SubsystemBase {
         setShooterRPM(targetRPM);
         // setIntakeRPM(targetRPM*3);//Radius Compensation
         intakeMotor.setVoltage(SmartDashboard.getNumber("algae/ShooterVoltage", 0.8));
+        intakeMotor.setVoltage(0.8);
     })
     .finallyDo( (interrupted) -> {
         if (interrupted == false) {

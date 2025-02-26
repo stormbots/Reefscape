@@ -43,7 +43,7 @@ public class Climber extends SubsystemBase {
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
     SmartDashboard.putNumber("climber/prepareAngle", -67);
-    SmartDashboard.putNumber("climber/reseatAngle", -35);
+    SmartDashboard.putNumber("climber/reseatAngle", -7);
     SmartDashboard.putNumber("climber/climbAngle", -13.3);
     if (RobotBase.isReal()) {
       this.io = new ClimberIOReal();
@@ -123,7 +123,8 @@ public class Climber extends SubsystemBase {
 
   public Command prepareToClimb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kCoast))
-    .andThen(setAngle(()->SmartDashboard.getNumber("climber/prepareAngle", 0)))
+    // .andThen(setAngle(()->SmartDashboard.getNumber("climber/prepareAngle", -67)))
+    .andThen(setAngle(()->-67))
     .andThen(run(()->{io.stop();}));
   }
 
@@ -134,9 +135,11 @@ public class Climber extends SubsystemBase {
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(()->0))
-    .andThen(setAngle(()->SmartDashboard.getNumber("climber/reseatAngle", 0)))
-    .andThen(setAngle(()->SmartDashboard.getNumber("climber/climbAngle", 0)));
+    .andThen(setAngle(()->-7));
+    // .andThen(setAngle(()->SmartDashboard.getNumber("climber/reseatAngle", -7)));
+    // .andThen(setAngle(()->-35))
+    // .andThen(setAngle(()->SmartDashboard.getNumber("climber/climbAngle", 0)));
+    // .andThen(setAngle(()->-20));
   }
   
   public Command setAngle(DoubleSupplier angle) {
