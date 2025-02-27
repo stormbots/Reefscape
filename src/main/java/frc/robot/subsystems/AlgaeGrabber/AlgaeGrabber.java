@@ -5,6 +5,8 @@
 package frc.robot.subsystems.AlgaeGrabber;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import org.ejml.dense.row.decomposition.BaseDecomposition_DDRB_to_DDRM;
 import org.littletonrobotics.junction.Logger;
 import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Inches;
@@ -40,6 +42,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -316,21 +319,71 @@ public class AlgaeGrabber extends SubsystemBase {
       // setShooterRPM(SHOOTERINTAKERPM);
       shooterMotor.setVoltage(-1.0);
     })
-    .until(intakeStalled)
-    .andThen(new WaitCommand(0.25))
-    .andThen(new InstantCommand(()->{
-      intakeMotor.getEncoder().setPosition(0);
-      shooterMotor.getEncoder().setPosition(0);
-    }))
-    .andThen(new RunCommand(()->{
+    // .until(intakeStalled)
+    .until(isBreakbeamTripped)
+    .withTimeout(2.5);
+    }
+
+  
+  public Command newIntakeFromGround(){
+    return run(() ->{
+      setArmAngle(-25);
+      setIntakeRPM(ROLLERINTAKERPM);
+    })
+    .until(isBreakbeamTripped);    
+  };
+
+  public Command stow(){ //TODO set to default
+    //if havealgae
+      //then turn ofmotors, go to hold  angle
+    //if no algae
+      // angle down
+      //run motors to loadfrom stuck inside  bot
+    //go to resting angle, motors off or hold position
+    var stowangleEmpty = -90;
+    var stowangleAlgae = -80;
+
+    var ontrue = run(()->{
+      setArmAngle(stowangleAlgae);
+      setIntakeRPM(0);
+    });
+
+    var onfalse = run(()->{
+      setIntakeRPM(ROLLERINTAKERPM);
+      setArmAngle(stowangleEmpty);
+    })
+    .until(isBreakbeamTripped)
+    .withTimeout(2)
+
+    .finallyDo(()->{
+      var angle=stowangleEmpty;
+      if(isBreakbeamTripped.getAsBoolean()) angle = stowangleAlgae;
+      setArmAngle(angle);
+      setIntakeRPM(0);
+    })
+    ;
+
+    return new ConditionalCommand(
+      ontrue,
+      onfalse,
+      isBreakbeamTripped
+      );
+  }
+
+  private Command clearShooterForShooting(){
+    //assume have algae
+    //run intake motors back for set time
+    //check current/speed on shooter?
+    //grapple? Probably not viable or consistent
+    //run back X rotations
+
+    //preparetoshoot
+
+    //Brian solution was this: 
+    return (new RunCommand(()->{
       intakeMotor.getClosedLoopController().setReference(-0.7, ControlType.kPosition, ClosedLoopSlot.kSlot1);
       shooterMotor.getClosedLoopController().setReference(-0.23, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-    }).withTimeout(1.5))
-    .finallyDo((interrupted) -> {
-        if (interrupted == false) {
-            haveAlgae = true;
-        }
-    }).withName("IntakeFromFloor");
+    }).withTimeout(1.5));
   }
 
   public Command eject(){
