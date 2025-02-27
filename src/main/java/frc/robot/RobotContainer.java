@@ -168,6 +168,9 @@ public class RobotContainer {
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
+    operator.back().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
+    operator.start().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
+    operator.x().whileTrue(elevator.moveToStationPickup());
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));

@@ -107,7 +107,7 @@ public class Elevator extends SubsystemBase {
   }
 
 
-  public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
+  public final ElevatorPose kStationPickup =  new ElevatorPose(13.7, 57, 2500);
   //need special procedure to move to floor pickup
   private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66, -10);
   public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66, 0);
@@ -116,7 +116,7 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kClimbing =       new ElevatorPose(16, 128, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
   public final ElevatorPose kL2 =             new ElevatorPose(21, 145.5, 10);
-  public final ElevatorPose kL3 =             new ElevatorPose(35, 145.5, 10);
+  public final ElevatorPose kL3 =             new ElevatorPose(37, 145.5, 10);
   public final ElevatorPose kL4 =             new ElevatorPose(58.4, 135, 10);
   public final ElevatorPose kL2Coral =             new ElevatorPose(23.8, 142, -2500);
   public final ElevatorPose kL3Coral =             new ElevatorPose(39.5, 142, -2500);
@@ -155,7 +155,7 @@ public class Elevator extends SubsystemBase {
 
   }
 
-  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped.debounce(0.02);
+  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return coralOutMotor.getOutputCurrent() > ROLLERSTALLCURRENT;
@@ -384,13 +384,24 @@ public class Elevator extends SubsystemBase {
         .until(isCoralInScorer)
         // .andThen(new WaitCommand(0.1))
         .finallyDo((e)->{
-          coralOutMotor.setVoltage(-2);
+          // coralOutMotor.setVoltage(-2);
           coralOutMotor.getEncoder().setPosition(0);
         })
       )
     );
     //In theory, move back up at very end. doesnt work, causes things to break, whatever
     // .finallyDo((e)->moveToHeight(kPrepareToFloorPickup.height));
+  }
+
+  public Command moveToStationPickup(){
+    return new SequentialCommandGroup(
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
+      moveToPoseWithScorer(kStationPickup)
+    ).until(isCoralInScorer)
+    .finallyDo((e)->{
+      // coralOutMotor.setVoltage(-2);
+      coralOutMotor.getEncoder().setPosition(0);
+    });
   }
 
   public Command pidScorerBack(){

@@ -293,10 +293,10 @@ public class AlgaeGrabber extends SubsystemBase {
         if (haveAlgae) {
           setIntakeRPM(ROLLERHOLDRPM);
           // setArmAngle(-65);
-          setArmAngle(-81);
+          setArmAngle(-85);
         } else {
           setIntakeRPM(0);
-          setArmAngle(-81);
+          setArmAngle(-85);
         }
     }).withName("DefaultCommand");
   }
@@ -312,7 +312,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public Command intakeAlgaeFromFloor() {
     return run(() -> {
-      setArmAngle(-25);
+      setArmAngle(-32);
       setIntakeRPM(ROLLERINTAKERPM);
       // setShooterRPM(SHOOTERINTAKERPM);
       shooterMotor.setVoltage(-1.0);
