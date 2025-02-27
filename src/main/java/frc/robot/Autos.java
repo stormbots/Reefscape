@@ -5,10 +5,10 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
@@ -67,6 +66,8 @@ public class Autos {
         autoChooser.setDefaultOption("Select Auto",()->new InstantCommand());
         //INSERT TESTED AUTOS HERE; Drivers wil use these.
         autoChooser.addOption("Basic Center Auto", this::basicCenterAuto);
+        autoChooser.addOption("Basic Right Auto", this::basicRightAuto);
+        autoChooser.addOption("Basic Left Auto", this::basicLeftAuto);
 
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
@@ -162,12 +163,49 @@ public class Autos {
       swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
     }
     return Commands.sequence(
-        // getUnfoldRobot(),
-        swerveSubsystem.pathToCoralLeft(),
+        getUnfoldRobot(),
+        swerveSubsystem.followPath("basicCenterAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
-        elevator.runCoralScorer(2500).withTimeout(1)
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
     );
   }
+  public Command basicLeftAuto(){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    if(alliance == Alliance.Blue){
+        swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
+    }else{
+      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
+    }
+    return Commands.sequence(
+        getUnfoldRobot(),
+        swerveSubsystem.followPath("basicLeftAuto"),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
+    );
+  }
+  public Command basicRightAuto(){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    if(alliance == Alliance.Blue){
+        swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
+    }else{
+      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
+    }
+    return Commands.sequence(
+        getUnfoldRobot(),
+        swerveSubsystem.followPath("basicRightAuto"),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
+    );
+  }
+  
+
+
+  
 
 }

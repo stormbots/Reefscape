@@ -58,6 +58,7 @@ public class Swerve extends SubsystemBase {
   SwerveDrive swerveDrive;
 
   PathConstraints constraintsFast = new PathConstraints(5, 3.5, 5, 3);
+  PathConstraints constraintsSlow = new PathConstraints(2.5, 1.75, 5, 1.5);
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
@@ -236,15 +237,11 @@ public class Swerve extends SubsystemBase {
 
       // delta.getTranslation().getNorm(); //distance to target pose
 
-       var gain = pose.interpolate(targetPose, 0.5);
 
       var distancex_m = delta.getMeasureX().in(Units.Meter); // the distance in the x axis
       var distancey_m = delta.getMeasureY().in(Units.Meter); //distnace in y
       var rotation_d = delta.getRotation().getDegrees();
 
-      var outx = distancex_m * gain.getX();
-      var outy = distancey_m * gain.getY();
-      var outRotation = (rotation_d/360.0)*(gain.getRotation().getDegrees()/360);
 
 
       debugField2d.getRobotObject().setPose(pose);
@@ -253,9 +250,9 @@ public class Swerve extends SubsystemBase {
       debugField2d.getObject("targetPoses").setPoses(list);
 
       //move -> robot relative
-      swerveDrive.drive(new Translation2d(outx * swerveDrive.getMaximumChassisVelocity(),
-                                          outy * swerveDrive.getMaximumChassisVelocity()),
-                        outRotation * swerveDrive.getMaximumChassisAngularVelocity(),
+      swerveDrive.drive(new Translation2d(distancex_m * swerveDrive.getMaximumChassisVelocity(),
+                                          distancey_m * swerveDrive.getMaximumChassisVelocity()),
+                        (rotation_d/360.0) * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
                         false);
 
@@ -264,7 +261,12 @@ public class Swerve extends SubsystemBase {
 
 
   private Command privatePathToPose(Pose2d pose){
-    return AutoBuilder.pathfindToPose(pose, constraintsFast);
+    return AutoBuilder.pathfindToPose(pose, constraintsSlow);
+  }
+
+  public Command followPath(PathPlannerPath path)
+  {
+    return AutoBuilder.followPath(path);
   }
 
   public Command pathToCoralLeft(){
