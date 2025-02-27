@@ -5,8 +5,10 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
 
 import java.lang.StackWalker.Option;
 import java.util.Optional;
@@ -40,7 +42,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Vision extends SubsystemBase {
 
   Swerve swerve ; 
-  AHRS navx;
   AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
 
   NetworkTableInstance table = NetworkTableInstance.getDefault();
@@ -48,7 +49,7 @@ public class Vision extends SubsystemBase {
   Optional<PhotonCamera> rightCamera;
   Optional<PhotonCamera> backCamera;
   
-  Transform3d leftRobotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
+  Transform3d leftRobotToCam = new Transform3d(new Translation3d(Inch.of(-11.5).in(Meters), Inch.of(13.5).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
   Transform3d rightRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
   Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
   PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
@@ -56,15 +57,13 @@ public class Vision extends SubsystemBase {
   
    
   /** Creates a new Vision. */
-  public Vision(Swerve swerve, AHRS navxGyro) {
-
+  public Vision(Swerve swerve) {
     this.swerve = swerve;
-    this.navx = navxGyro;
 
     //move camera constructors here
     
     try{
-      leftCamera = Optional.of(new PhotonCamera("Left"));
+      leftCamera = Optional.of(new PhotonCamera("Back_Left"));
 
     }catch(Error e){
       System.err.print(e);
@@ -86,17 +85,17 @@ public class Vision extends SubsystemBase {
     }
 
 
-
-
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    SmartDashboard.putBoolean("vision/leftCamera", leftCamera.isPresent());
+    SmartDashboard.putBoolean("vision/rightCamera", rightCamera.isPresent());
+    SmartDashboard.putBoolean("vision/backCamera", backCamera.isPresent());
+
     if(leftCamera.isPresent()){
       PhotonPipelineResult results = leftCamera.get().getLatestResult();
-    
-
       SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
     }
 
@@ -118,25 +117,30 @@ public class Vision extends SubsystemBase {
       updateCameraSideOdometry(rightPoseEstimator, rightCamera.get());
     }
   }
-  /*public void getDistanceFromCamera(){
+  // public void getDistanceFromCamera(){
 
-    var results = camera.getLatestResult();
-    if(results.hasTargets()){
-      var pitch = results.getBestTarget().getPitch();   
-      SmartDashboard.putNumber("Distance", 
-    PhotonUtils.calculateDistanceToTargetMeters(Meters.convertFrom(7.5, Inches), 
-    Meters.convertFrom(56, Inches), Radians.convertFrom(30, Degrees), 
-    -Radians.convertFrom(pitch, Degrees)));   
+  //   if(leftCamera.isPresent()){
+  //   var results = leftCamera.get().getAllUnreadResults();
+  //   // if(results.hasTargets()){
+  //     // var pitch = results.getBestTarget().getPitch();   
+  //     // SmartDashboard.putNumber("Distance", 0);
+  //   //   PhotonUtils.calculateDistanceToTargetMeters(
+  //   //     Meters.convertFrom(7.5, Inches), 
+  //   //     Meters.convertFrom(56, Inches),
+  //   //     Radians.convertFrom(30, Degrees), 
+  //   //     -Radians.convertFrom(pitch, Degrees))
+  //   // );   
+  //   }
 
-    }
-  }*/
+  //   }
+  // }
 
   private void updateCameraSideOdometry(PhotonPoseEstimator photonPoseEstimator, PhotonCamera camera){
 
     var latesResults = camera.getAllUnreadResults();
     for(PhotonPipelineResult result : latesResults){
       Optional<EstimatedRobotPose> estimatedPose = photonPoseEstimator.update(result);
-      SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
+      // SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
       if(estimatedPose.isPresent()){  
         double latency;
 
@@ -148,7 +152,7 @@ public class Vision extends SubsystemBase {
         }
         Matrix<N3, N1> stddev = getStdDeviation(estimatedPose.get());
 
-        SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
+        // SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
         //update pose
 
         swerve.swerveDrive.addVisionMeasurement(estimatedPose.get().estimatedPose.toPose2d(), result.getTimestampSeconds());
@@ -198,6 +202,11 @@ public class Vision extends SubsystemBase {
 
     return estStdDeviation;
 
+  }
+
+  public double getRotationDouble(){
+    var value = getRotationToObject().orElse(new Rotation2d()).rotateBy(swerve.getHeading()).getRotations();
+    return value;
   }
 
   public Optional<Rotation2d> getRotationToObject(){

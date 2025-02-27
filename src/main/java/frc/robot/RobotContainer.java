@@ -4,15 +4,13 @@
 
 package frc.robot;
 
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Vision;
-import frc.robot.subsystems.AlgaeGrabber.AglaeGrabberIOReal;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
@@ -36,6 +34,7 @@ public class RobotContainer {
   public final CoralIntake intake = new CoralIntake();
   public final Elevator elevator = new Elevator();
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
+  private final Vision vision = new Vision(swerveSubsystem);
 
   boolean slowmode = false;
 
@@ -71,6 +70,12 @@ public class RobotContainer {
       ()->-driver.getRightX()/4.0
     ));
 
+    driver.a().whileTrue(
+      swerveSubsystem.driveCommand(
+        ()->-driver.getLeftY(), 
+        ()->-driver.getLeftX(),
+        ()->-driver.getRightX()+vision.getRotationDouble()*1
+        ));
 
     // driver.rightTrigger().whileTrue(
     //   swerveSubsystem.pathToCoralRight()
