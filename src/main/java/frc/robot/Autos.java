@@ -70,6 +70,9 @@ public class Autos {
 
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
+        autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
+        autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
+        autoChooser.addOption("LongSpline", ()->swerve.followPath("LongSpline"));
 
         autoChooser.addOption("v EXAMPLES v",()->new InstantCommand());
         autoChooser.addOption("2024 Example Amp", this::ampTwoNote);

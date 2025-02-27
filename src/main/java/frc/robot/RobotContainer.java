@@ -183,6 +183,7 @@ public class RobotContainer {
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
+    //is actuaklky shoot
     operator.rightStick().whileTrue(algaeGrabber.scoreProcessor());
 
 
@@ -193,6 +194,7 @@ public class RobotContainer {
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
     operator.leftTrigger().whileTrue(algaeGrabber.ejectFromFloor());
 
+    //is also algae score
     operator.leftStick().whileTrue(algaeGrabber.eject());
 
     //TEST, will not work as does not require elevator subsystem due to intracacieswadkn

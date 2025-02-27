@@ -41,6 +41,7 @@ import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
@@ -80,11 +81,20 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.0));
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
-        
+    
+    swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
     configurePathplanner();
     // PathfindingCommand.warmupCommand();
+
+    new Trigger(DriverStation::isTeleopEnabled).onTrue(new InstantCommand(()->
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35))
+    ));
+
+    new Trigger(DriverStation::isAutonomousEnabled).onTrue(new InstantCommand(()->
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0))
+    ));
   }
 
   @Override
@@ -97,7 +107,9 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
     Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
-    Logger.recordOutput("odometry", swerveDrive.getPose());
+    SmartDashboard.putNumber("swerve/x", swerveDrive.getPose().getX());
+    SmartDashboard.putNumber("swerve/y", swerveDrive.getPose().getY());
+
   }
 
   public void configurePathplanner(){
