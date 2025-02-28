@@ -10,12 +10,19 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
@@ -35,6 +42,7 @@ public class RobotContainer {
   public final Elevator elevator = new Elevator();
   public final CoralIntake intake = new CoralIntake(elevator.isClear);
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
+  private final Vision vision = new Vision(swerveSubsystem);
 
   boolean slowmode = false;
 
@@ -76,6 +84,12 @@ public class RobotContainer {
     driver.leftTrigger().whileTrue(
       swerveSubsystem.pidToPoseCommand(()->FieldNavigation.getCoralLeft(swerveSubsystem.getPose()))
     );
+    driver.a().whileTrue(
+      swerveSubsystem.driveCommandAllianceManaged(
+        ()->-driver.getLeftY(), 
+        ()->-driver.getLeftX(),
+        ()->-driver.getRightX()+vision.getRotationDouble()*1
+        ));
 
     driver.rightTrigger().whileTrue(
       swerveSubsystem.pidToPoseCommand(()->FieldNavigation.getCoralRight(swerveSubsystem.getPose()))
