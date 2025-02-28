@@ -113,7 +113,7 @@ public class CoralIntake extends SubsystemBase {
     var config = new SparkFlexConfig();
 
     config.inverted(true);
-    config.smartCurrentLimit(40);
+    config.smartCurrentLimit(50);//60 will def cause slip, 40 is not enough
     
     // var rollerwheeldiameter=2; //TODO no clue
     var conversionfactor =1;// Math.PI*rollerwheeldiameter; //convert rotations to inches
@@ -219,7 +219,7 @@ public class CoralIntake extends SubsystemBase {
     Timer timer = new Timer();
     return new SequentialCommandGroup(
       new InstantCommand(()->timer.reset()), //weird bug fix
-      setAngleSpeed(()->-45, ()->2500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
+      setAngleSpeed(()->-43.7, ()->4500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
     );
     // return setAngleSpeed(()->-45, ()->25).until(hasCoral);
   }

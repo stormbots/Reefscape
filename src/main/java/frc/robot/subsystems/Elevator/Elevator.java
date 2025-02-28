@@ -354,7 +354,7 @@ public class Elevator extends SubsystemBase {
       // moveToPoseUnchecked(pose)
       new ParallelDeadlineGroup(
         moveToPoseUnchecked(pose),
-        pidScorerBack()
+        realignCoralScorer()
       )
     );
   }
@@ -407,6 +407,14 @@ public class Elevator extends SubsystemBase {
   public Command pidScorerBack(){
     return new InstantCommand(()->{})//coralOutMotor.getEncoder().setPosition(0))
     .andThen(new RunCommand(()->coralOutMotor.getClosedLoopController().setReference(-2, ControlType.kPosition, ClosedLoopSlot.kSlot1)));
+  }
+
+  public Command realignCoralScorer(){
+    return Commands.sequence(
+      new RunCommand(()->setScorerSpeed(-1200)).onlyWhile(isCoralInScorer),
+      new InstantCommand(()->coralOutMotor.getEncoder().setPosition(0)),
+      new RunCommand(()->coralOutMotor.getClosedLoopController().setReference(2, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+    );
   }
 
   SysIdRoutineLog log = new SysIdRoutineLog("elevatorArm");
