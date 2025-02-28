@@ -23,8 +23,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 /** Add your docs here. */
 public class FieldNavigation {
 
-    static double coralX = Inches.of(34/2).in(Meters);
-    static double coralY = Inches.of(34/2).in(Meters);
+    static double coralX = Inches.of(34/2.0).in(Meters);
+    static double coralY = Inches.of(13/2.0).in(Meters);
 
     static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY, new Rotation2d(Degrees.of(180))));
     static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY, new Rotation2d(Degrees.of(180))));

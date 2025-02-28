@@ -219,7 +219,7 @@ public class CoralIntake extends SubsystemBase {
     Timer timer = new Timer();
     return new SequentialCommandGroup(
       new InstantCommand(()->timer.reset()), //weird bug fix
-      setAngleSpeed(()->-43.7, ()->4500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
+      setAngleSpeed(()->-46, ()->4500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
     );
     // return setAngleSpeed(()->-45, ()->25).until(hasCoral);
   }

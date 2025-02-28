@@ -52,7 +52,7 @@ public class RobotContainer {
     configureDriverBindings();
     configureOperatorBindings();
 
-    swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(
+    swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommandAllianceManaged(
       ()->-driver.getLeftY(),
       ()->-driver.getLeftX(),
       ()->-driver.getRightX()
@@ -67,13 +67,19 @@ public class RobotContainer {
 
     driver.start().onTrue(swerveSubsystem.resetGyro());
     //TODO: Slow mode?
-    driver.povDown().toggleOnTrue(swerveSubsystem.driveCommand(
+    driver.povDown().toggleOnTrue(swerveSubsystem.driveCommandAllianceManaged(
       ()->-driver.getLeftY()/4.0, 
       ()->-driver.getLeftX()/4.0,
       ()->-driver.getRightX()/4.0
     ));
 
+    driver.leftTrigger().whileTrue(
+      swerveSubsystem.pidToPoseCommand(()->FieldNavigation.getCoralLeft(swerveSubsystem.getPose()))
+    );
 
+    driver.rightTrigger().whileTrue(
+      swerveSubsystem.pidToPoseCommand(()->FieldNavigation.getCoralRight(swerveSubsystem.getPose()))
+    );
     // driver.rightTrigger().whileTrue(
     //   swerveSubsystem.pathToCoralRight()
     // );

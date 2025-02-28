@@ -13,9 +13,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.fasterxml.jackson.databind.deser.SettableBeanProperty.Delegating;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
@@ -28,6 +30,7 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Units;
@@ -87,6 +90,8 @@ public class Swerve extends SubsystemBase {
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+
+    swerveDrive.setMotorIdleMode(true); //just to be safe
     configurePathplanner();
     // PathfindingCommand.warmupCommand();
 
@@ -109,6 +114,7 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
     Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
+    // Logger.recordOutput("swerve/pose", swerveDrive.getPose());
     SmartDashboard.putNumber("swerve/x", swerveDrive.getPose().getX());
     SmartDashboard.putNumber("swerve/y", swerveDrive.getPose().getY());
 
@@ -178,8 +184,39 @@ public class Swerve extends SubsystemBase {
   
   }
 
+  public Command driveCommandAllianceManaged(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
+    BooleanSupplier isRed = () -> {
+      // Boolean supplier that controls when the path will be mirrored for the red alliance
+      // This will flip the path being followed to the red side of the field.
+      // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
 
-  public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
+      var alliance = DriverStation.getAlliance();
+      if (alliance.isPresent()) {
+        return alliance.get() == DriverStation.Alliance.Red;
+      }
+      return false;
+    };
+
+    return run(() -> {
+      // Make the robot move
+      if(isRed.getAsBoolean()){
+        swerveDrive.drive(new Translation2d(-translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                            -translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                          angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
+                          true,
+                          false);
+      }
+      else{
+        swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                          angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
+                          true,
+                          false);
+      }
+    });
+  }
+
+  private Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
     return run(() -> {
       // Make the robot move
       swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
@@ -260,6 +297,34 @@ public class Swerve extends SubsystemBase {
     });
   }
 
+  //does not reset based off field
+  private void pidToPose(Pose2d pose){
+    final double transltionP = 3.0;
+    final double thetaP = 2.0*4
+    ;
+
+    Transform2d delta = pose.minus(swerveDrive.getPose());
+
+    swerveDrive.setChassisSpeeds(new ChassisSpeeds(
+      delta.getX()*transltionP, 
+      delta.getY()*transltionP, 
+      delta.getRotation().getRadians()*thetaP
+    ));
+  }
+
+  public Command pidToPoseCommand(Supplier<Pose2d> poseSupplier){
+    return run(()->pidToPose(poseSupplier.get()));
+  }
+
+  private void pidToPoseOdometryManaged(Pose2d pose){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    if(alliance == Alliance.Red){
+      //Flips across y=x, not across vertical acis
+      pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+    }
+
+    pidToPose(pose);
+  }
 
   private Command privatePathToPose(Pose2d pose){
     return AutoBuilder.pathfindToPose(pose, constraintsSlow);

@@ -7,6 +7,8 @@ package frc.robot.subsystems.Elevator;
 
 import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Millimeter;
@@ -38,6 +40,7 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -74,6 +77,8 @@ public class Elevator extends SubsystemBase {
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
   /** This is the interrim setpoint used by the trapezoidal profile */
   ElevatorPose setpointIntermediate = new ElevatorPose(0, 0, 0);
+
+  boolean hasArmSynced = false;
 
   SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
   SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
@@ -144,6 +149,11 @@ public class Elevator extends SubsystemBase {
     //should probably do again, sometimes doesnt get sent
     rotationMotor.getEncoder().setPosition(getAngleAbsolute().in(Degrees));
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
+    new Trigger(DriverStation::isEnabled).and(()->!hasArmSynced)
+    .onTrue(new InstantCommand(()->{
+      rotationMotor.getEncoder().setPosition(getAngleAbsolute().in(Degrees));
+      hasArmSynced=true;
+    }));
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
 
     // setDefaultCommand(holdPosition());
@@ -197,6 +207,10 @@ public class Elevator extends SubsystemBase {
 
   public Angle getAngle(){
     return Degrees.of(rotationMotor.getEncoder().getPosition());
+  }
+
+  public AngularVelocity getAngularVelocity(){
+    return DegreesPerSecond.of(rotationMotor.getEncoder().getVelocity());
   }
 
   public Distance getCarriageHeight(){
@@ -348,12 +362,28 @@ public class Elevator extends SubsystemBase {
     ));
   }
 
+  //Elevator cannot move while arm is at peak speed, too much torque.
+  public Command moveToPoseUnchecked(ElevatorPose pose, BooleanSupplier canMoveElevator) {
+    return new InstantCommand(() -> {
+      slewRateAngle.reset(getAngle().in(Degrees));
+    })
+    .andThen(new ParallelCommandGroup(
+      moveToAngleTrap(()->pose.angle), //THIS ONE requires elevator subsystem
+      new RunCommand(()->{
+        if(canMoveElevator.getAsBoolean()){
+          setHeight(pose.height);
+        }
+        setScorerSpeed(0);
+      })
+    ));
+  }
+
   public Command moveToPoseSafe(ElevatorPose pose) {
     return new SequentialCommandGroup(
       moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
       // moveToPoseUnchecked(pose)
       new ParallelDeadlineGroup(
-        moveToPoseUnchecked(pose),
+        moveToPoseUnchecked(pose, ()->getAngularVelocity().in(DegreesPerSecond)<90),
         realignCoralScorer()
       )
     );
@@ -513,7 +543,7 @@ public class Elevator extends SubsystemBase {
     // SmartDashboard.putNumber("elevator/rotation/plot/setpointTrap", armSetpoint.position);
     
     // SmartDashboard.putNumber("elevator/lasercanDistance", laserCan.getDistanceOptional().orElse(Inches.of(99999)).in(Inches));
-    // SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
+    SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
     // SmartDashboard.putBoolean("elevator/isClear", isClear.getAsBoolean());
 
     // SmartDashboard.putData("elevator/lasercan", laserCan);

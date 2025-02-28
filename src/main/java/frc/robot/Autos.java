@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
@@ -159,12 +160,14 @@ public class Autos {
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
     return Commands.sequence(
+      new ParallelCommandGroup(
         getUnfoldRobot(),
-        swerveSubsystem.followPath("basicCenterAuto"),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
-        elevator.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
+        swerveSubsystem.followPath("basicCenterAuto")
+      ),
+      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      elevator.runCoralScorer(2500).withTimeout(1),
+      elevator.moveToAngleTrap(()->90)
     );
   }
   public Command basicLeftAuto(){
@@ -174,7 +177,7 @@ public class Autos {
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicLeftAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         elevator.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90)
     );
@@ -186,7 +189,7 @@ public class Autos {
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicRightAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL4).until(elevator.isAtTargetPosition),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         elevator.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90)
     );
