@@ -157,11 +157,7 @@ public class Autos {
     
   public Command basicCenterAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    if(alliance == Alliance.Blue){
-        swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
-    }else{
-      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
-    }
+    swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
     return Commands.sequence(
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicCenterAuto"),
@@ -173,11 +169,7 @@ public class Autos {
   }
   public Command basicLeftAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    if(alliance == Alliance.Blue){
-        swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
-    }else{
-      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
-    }
+    swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()));
     return Commands.sequence(
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicLeftAuto"),
@@ -189,11 +181,7 @@ public class Autos {
   }
   public Command basicRightAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    if(alliance == Alliance.Blue){
-        swerveSubsystem.resetOdometry(new Pose2d(10.0, 4.05, new Rotation2d(0.0)));
-    }else{
-      swerveSubsystem.resetOdometry(new Pose2d(7.6, 4.05, new Rotation2d(Degrees.of(180))));
-    }
+    swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()));
     return Commands.sequence(
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicRightAuto"),

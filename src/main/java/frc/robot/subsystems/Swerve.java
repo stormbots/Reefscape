@@ -32,6 +32,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -90,11 +91,11 @@ public class Swerve extends SubsystemBase {
     // PathfindingCommand.warmupCommand();
 
     new Trigger(DriverStation::isTeleopEnabled).onTrue(new InstantCommand(()->
-      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35))
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0))
     ));
 
     new Trigger(DriverStation::isAutonomousEnabled).onTrue(new InstantCommand(()->
-      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0))
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35))
     ));
   }
 
@@ -166,8 +167,8 @@ public class Swerve extends SubsystemBase {
       this::getChassisSpeeds,
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(0.0, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
       shouldFlipPath, 
@@ -296,8 +297,18 @@ public class Swerve extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  public void resetOdometry(Pose2d initialHolonomicPose){
+  private void resetOdometry(Pose2d initialHolonomicPose){
     swerveDrive.resetOdometry(initialHolonomicPose);
+  }
+
+  public void resetOdometryAllianceManaged(Pose2d initialHolonomicPose){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    if(alliance == Alliance.Red){
+      //Flips across y=x, not across vertical acis
+      initialHolonomicPose  = new Pose2d(17.55-initialHolonomicPose.getX(),8.05-initialHolonomicPose.getY(), initialHolonomicPose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+    }
+    
+    resetOdometry(initialHolonomicPose);
   }
 
   public ChassisSpeeds getChassisSpeeds(){
