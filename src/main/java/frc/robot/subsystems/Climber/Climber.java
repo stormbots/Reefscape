@@ -38,7 +38,7 @@ public class Climber extends SubsystemBase {
   private double setpoint=100;
 
   private final ClimberVisualizer visualizer;
-  SlewRateLimiter rateLimit = new SlewRateLimiter(15);
+  SlewRateLimiter rateLimit = new SlewRateLimiter(30);
   /** Creates a new Climber. */
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);

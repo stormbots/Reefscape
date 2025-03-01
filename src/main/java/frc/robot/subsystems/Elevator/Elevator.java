@@ -553,7 +553,7 @@ public class Elevator extends SubsystemBase {
     // SmartDashboard.putNumber("elevator/rotation/plot/setpointTrap", armSetpoint.position);
     
     // SmartDashboard.putNumber("elevator/lasercanDistance", laserCan.getDistanceOptional().orElse(Inches.of(99999)).in(Inches));
-    SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
+    // SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
     // SmartDashboard.putBoolean("elevator/isClear", isClear.getAsBoolean());
 
     // SmartDashboard.putData("elevator/lasercan", laserCan);

@@ -71,7 +71,8 @@ public class Vision extends SubsystemBase {
     }
 
     try{
-      rightCamera = Optional.of(new PhotonCamera("Back_Right"));
+      // rightCamera = Optional.of(new PhotonCamera("Back_Right"));
+      rightCamera = Optional.empty();
     }catch(Error e){
       System.err.print(e);
       rightCamera = Optional.empty();
@@ -94,10 +95,10 @@ public class Vision extends SubsystemBase {
     SmartDashboard.putBoolean("vision/rightCamera", rightCamera.isPresent());
     SmartDashboard.putBoolean("vision/backCamera", backCamera.isPresent());
 
-    if(leftCamera.isPresent()){
-      PhotonPipelineResult results = leftCamera.get().getLatestResult();
-      SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
-    }
+    // if(leftCamera.isPresent()){
+    //   PhotonPipelineResult results = leftCamera.get().getLatestResult();
+    //   SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
+    // }
 
     updateOdometry();
     //getDistanceFromCamera();

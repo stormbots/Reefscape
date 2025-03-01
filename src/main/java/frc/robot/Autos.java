@@ -72,8 +72,10 @@ public class Autos {
         autoChooser.addOption("drive first right auto", this::driveFirstRightAuto);
 
         autoChooser.addOption("Basic Center Auto", this::basicCenterAuto);
-        autoChooser.addOption("Basic Right Auto", this::basicRightAuto);
-        autoChooser.addOption("Basic Left Auto", this::basicLeftAuto);
+        // autoChooser.addOption("Basic Right Auto", this::basicRightAuto);
+        autoChooser.addOption("Less Basic Right Auto", this::lessBasicRightAuto);
+        // autoChooser.addOption("Basic Left Auto", this::basicLeftAuto);
+        autoChooser.addOption("Less Basic Left Auto", this::lessBasicLeftAuto);
         autoChooser.addOption("Drive forward for 5 seconds :'(", this::driveForwardAuto);
 
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
@@ -191,6 +193,20 @@ public class Autos {
     );
   }
 
+  public Command lessBasicLeftAuto(){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    return Commands.sequence(
+    new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
+        getUnfoldRobot().withTimeout(7),
+        swerveSubsystem.followPath("basicLeftAuto"),
+        swerveSubsystem.pathToCoralRight().withTimeout(3),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
+    );
+  }
+
   public Command driveFirstLeftAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     return Commands.sequence(
@@ -213,6 +229,20 @@ public class Autos {
         swerveSubsystem.followPath("basicRightAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
+    );
+  }
+
+  public Command lessBasicRightAuto(){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    return Commands.sequence(
+        new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
+        getUnfoldRobot(),
+        swerveSubsystem.followPath("basicRightAuto"),
+        swerveSubsystem.pathToCoralLeft().withTimeout(3),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
         elevator.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90)
     );
