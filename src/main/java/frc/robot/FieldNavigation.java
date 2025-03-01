@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.Meters;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -23,12 +24,13 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 /** Add your docs here. */
 public class FieldNavigation {
 
+    static double coralYOffset = Inches.of(2.0).in(Meters);
     static double coralX = Inches.of(34/2.0).in(Meters);
     static double coralY = Inches.of(13/2.0).in(Meters);
 
-    static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY, new Rotation2d(Degrees.of(180))));
-    static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY, new Rotation2d(Degrees.of(180))));
-    static Transform2d reefAlgae = new Transform2d(new Pose2d(), new Pose2d(coralX, 0, new Rotation2d(Degrees.of(180))));
+    static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY+coralYOffset, new Rotation2d(Degrees.of(180-180))));
+    static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY+coralYOffset, new Rotation2d(Degrees.of(180-180))));
+    static Transform2d reefAlgae = new Transform2d(new Pose2d(), new Pose2d(coralX, 0, new Rotation2d(Degrees.of(180-180))));
 
 
     public static List<Pose2d> tagsReef = new ArrayList<>(){{
@@ -79,11 +81,13 @@ public class FieldNavigation {
         return currentPose.nearest(tagsProcessor);
     }
 
+    //FROM PERSPECTIVE OF APRIL TAG, if we look from outside it is right
     public static Pose2d getCoralLeft(Pose2d currentPose){
         var nearest = currentPose.nearest(tagsReef);
         return nearest.transformBy(coralLeft);
     }
 
+    //SEE ABOVE
     public static Pose2d getCoralRight(Pose2d currentPose){
         var nearest = currentPose.nearest(tagsReef);
         return nearest.transformBy(coralRight);

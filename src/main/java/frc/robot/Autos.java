@@ -21,6 +21,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
@@ -66,15 +68,19 @@ public class Autos {
         SmartDashboard.putData("AutoSelector/chooser",autoChooser);
         autoChooser.setDefaultOption("Select Auto",()->new InstantCommand());
         //INSERT TESTED AUTOS HERE; Drivers wil use these.
+        autoChooser.addOption("drive first left auto", this::driveFirstLeftAuto);
+        autoChooser.addOption("drive first right auto", this::driveFirstRightAuto);
+
         autoChooser.addOption("Basic Center Auto", this::basicCenterAuto);
         autoChooser.addOption("Basic Right Auto", this::basicRightAuto);
         autoChooser.addOption("Basic Left Auto", this::basicLeftAuto);
+        autoChooser.addOption("Drive forward for 5 seconds :'(", this::driveForwardAuto);
 
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
-        autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
-        autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
-        autoChooser.addOption("LongSpline", ()->swerve.followPath("LongSpline"));
+        // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
+        // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
+        // autoChooser.addOption("LongSpline", ()->swerve.followPath("LongSpline"));
 
         autoChooser.addOption("v EXAMPLES v",()->new InstantCommand());
         autoChooser.addOption("2024 Example Amp", this::ampTwoNote);
@@ -151,50 +157,82 @@ public class Autos {
     public Command getUnfoldRobot() {
         return Commands.sequence(
           elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
-          intake.setAngle(()-> 60.0).withTimeout(2),
-          climber.setAngle(()->30.2)
+          new ParallelCommandGroup(
+            intake.setAngle(()-> 60.0).withTimeout(2),
+            climber.setAngle(()->30.2)
+          )
         );
       }
     
   public Command basicCenterAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
+    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
     return Commands.sequence(
-      new ParallelCommandGroup(
-        getUnfoldRobot(),
-        swerveSubsystem.followPath("basicCenterAuto")
-      ),
+      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
+      getUnfoldRobot().withTimeout(7),
+      swerveSubsystem.followPath("basicCenterAuto"),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
+      new WaitCommand(0.5),
       elevator.runCoralScorer(2500).withTimeout(1),
       elevator.moveToAngleTrap(()->90)
     );
   }
   public Command basicLeftAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()));
     return Commands.sequence(
-        getUnfoldRobot(),
+    new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
+        getUnfoldRobot().withTimeout(7),
         swerveSubsystem.followPath("basicLeftAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
         elevator.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90)
     );
   }
+
+  public Command driveFirstLeftAuto(){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    return Commands.sequence(
+    new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
+        swerveSubsystem.followPath("basicLeftAuto"),
+        getUnfoldRobot().withTimeout(7),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
+        new WaitCommand(0.5),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
+    );
+  }
+
   public Command basicRightAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()));
     return Commands.sequence(
+        new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicRightAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90)
+    );
+  }
+
+  public Command driveFirstRightAuto(){
+    return Commands.sequence(
+        new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
+        swerveSubsystem.followPath("basicRightAuto"),
+        getUnfoldRobot(),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
         elevator.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90)
     );
   }
   
+  public Command driveForwardAuto(){
+    return swerveSubsystem.driveCommandRobotRelative(()->-0.5, ()->0.0, ()->0.0).withTimeout(2);
+  }
 
 
   

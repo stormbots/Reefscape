@@ -68,7 +68,7 @@ public class Elevator extends SubsystemBase {
   private final double toleranceHeightUnfolding = 0.5;
   private final double toleranceAngle = 5;
   private final double kArmMaxVelocity = 180.0;
-  private final double kArmMaxAcceleration = 270.0;
+  private final double kArmMaxAcceleration = 200.0;
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
@@ -112,7 +112,7 @@ public class Elevator extends SubsystemBase {
   }
 
 
-  public final ElevatorPose kStationPickup =  new ElevatorPose(13.7, 57, 2500);
+  public final ElevatorPose kStationPickup =  new ElevatorPose(13.2, 57, 2500);
   //need special procedure to move to floor pickup
   private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66, -10);
   public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66, 0);
@@ -123,8 +123,8 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kL2 =             new ElevatorPose(21, 145.5, 10);
   public final ElevatorPose kL3 =             new ElevatorPose(37, 145.5, 10);
   public final ElevatorPose kL4 =             new ElevatorPose(59.4, 135, 10);
-  public final ElevatorPose kL2Coral =             new ElevatorPose(23.8, 142, -2500);
-  public final ElevatorPose kL3Coral =             new ElevatorPose(39.5, 142, -2500);
+  public final ElevatorPose kL2Algae =             new ElevatorPose(23.8, 142, -2500);
+  public final ElevatorPose kL3Algae =             new ElevatorPose(39.5, 142, -2500);
 
 
 
@@ -383,14 +383,23 @@ public class Elevator extends SubsystemBase {
       moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
       // moveToPoseUnchecked(pose)
       new ParallelDeadlineGroup(
-        moveToPoseUnchecked(pose, ()->getAngularVelocity().in(DegreesPerSecond)<90),
-        realignCoralScorer()
+        moveToPoseUnchecked(pose, ()->getAngularVelocity().in(DegreesPerSecond)<45)
+        // realignCoralScorer()
       )
     );
   }
   public Command scoreAtPoseSafe(ElevatorPose pose) {
-    return moveToPoseSafe(pose)
-    .andThen(moveToPoseWithScorer(pose));
+    // return moveToPoseSafe(pose)
+    // .andThen(moveToPoseWithScorer(pose));
+
+    return new SequentialCommandGroup(
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
+      // moveToPoseUnchecked(pose)
+      new ParallelDeadlineGroup(
+        moveToPoseWithScorer(pose)
+        // realignCoralScorer()
+      )
+    );
   }
 
 
@@ -512,7 +521,8 @@ public class Elevator extends SubsystemBase {
   )
   .or(()->getCarriageHeight().in(Inches) > kPrepareToFloorPickup.height - 1
     && setpoint.height > kPrepareToFloorPickup.height - 1
-  );
+  )
+  .or(()->getCarriageHeight().in(Inches)>12.7 && getAngle().in(Degrees) > 50);
 
 
   public boolean isAtPosition(ElevatorPose pose){

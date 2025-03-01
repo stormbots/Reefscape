@@ -360,7 +360,7 @@ public class AlgaeGrabber extends SubsystemBase {
       intakeMotor.setVoltage(9);
       shooterMotor.setVoltage(9);
       setArmAngle(-92.5);
-    }))
+    }, this))
     //could do checking conditions with lasercan, ignored for now.
     .finallyDo(()->haveAlgae=false);
   }
@@ -382,7 +382,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
 //is our shoot in net
   public Command scoreProcessor() {
-    return scoreAlgae(() -> -30, () -> 6000)
+    return scoreAlgae(() -> -25, () -> 6000)
     .withName("ScoreProcessor");
   }
 

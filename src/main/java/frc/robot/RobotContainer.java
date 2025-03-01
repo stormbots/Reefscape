@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import java.util.Set;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -15,9 +17,11 @@ import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -81,9 +85,7 @@ public class RobotContainer {
       ()->-driver.getRightX()/4.0
     ));
 
-    driver.leftTrigger().whileTrue(
-      swerveSubsystem.pidToPoseCommand(()->FieldNavigation.getCoralLeft(swerveSubsystem.getPose()))
-    );
+    // driver.rightTrigger().whileTrue(new DeferredCommand(()->swerveSubsystem.pidToPoseCommand(FieldNavigation.getCoralLeft(swerveSubsystem.getPose())), Set.of(swerveSubsystem)));
     driver.a().whileTrue(
       swerveSubsystem.driveCommandAllianceManaged(
         ()->-driver.getLeftY(), 
@@ -91,9 +93,10 @@ public class RobotContainer {
         ()->-driver.getRightX()+vision.getRotationDouble()*1
         ));
 
-    driver.rightTrigger().whileTrue(
-      swerveSubsystem.pidToPoseCommand(()->FieldNavigation.getCoralRight(swerveSubsystem.getPose()))
-    );
+    driver.leftTrigger().whileTrue(swerveSubsystem.pathToCoralRight());
+    driver.rightTrigger().whileTrue(swerveSubsystem.pathToCoralLeft());
+
+
     // driver.rightTrigger().whileTrue(
     //   swerveSubsystem.pathToCoralRight()
     // );
@@ -188,8 +191,8 @@ public class RobotContainer {
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
-    operator.back().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
-    operator.start().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
+    operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(elevator.runCoralScorer(-2500)));
+    operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(elevator.runCoralScorer(-2500)));
     operator.x().whileTrue(elevator.moveToStationPickup());
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
