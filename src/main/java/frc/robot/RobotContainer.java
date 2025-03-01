@@ -96,6 +96,17 @@ public class RobotContainer {
     driver.leftTrigger().whileTrue(swerveSubsystem.pathToCoralRight());
     driver.rightTrigger().whileTrue(swerveSubsystem.pathToCoralLeft());
 
+    // driver.x().whileTrue(swerveSubsystem.driveAlignedToHeading(
+    //   ()->-driver.getLeftY(), 
+    //   ()->-driver.getLeftX(), 
+    //   new Rotation2d(Math.toRadians(125))
+    //   ));
+
+    // driver.y().whileTrue(swerveSubsystem.driveAlignedToHeading(
+    //   ()->-driver.getLeftY(), 
+    //   ()->-driver.getLeftX(), 
+    //   new Rotation2d(Math.toRadians(-125))
+    //   ));
 
     // driver.rightTrigger().whileTrue(
     //   swerveSubsystem.pathToCoralRight()

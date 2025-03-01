@@ -326,7 +326,7 @@ public class AlgaeGrabber extends SubsystemBase {
     .andThen(new RunCommand(()->{
       intakeMotor.getClosedLoopController().setReference(-0.7, ControlType.kPosition, ClosedLoopSlot.kSlot1);
       shooterMotor.getClosedLoopController().setReference(-0.23, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-    }).withTimeout(1.5))
+    },this).withTimeout(1.5))
     .finallyDo((interrupted) -> {
         if (interrupted == false) {
             haveAlgae = true;

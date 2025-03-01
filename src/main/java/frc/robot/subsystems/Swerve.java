@@ -27,13 +27,16 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 
@@ -247,14 +250,38 @@ public class Swerve extends SubsystemBase {
     });
   }
 
+  //Aligns to a heading from the DRIVERS perspective
+  //Doesnt wrap or anything, literally the worst functionality. IDK why i made life hard for myself
   public Command driveAlignedToHeading(DoubleSupplier translationX, DoubleSupplier translationY, Rotation2d desiredRotation){
-    PIDController pid = new PIDController(2.0/360, 0.0, 0.0);
+    // PIDController pid = new PIDController(2.0/360, 0.0, 0.0);
+    ProfiledPIDController pid = new ProfiledPIDController(2.0/360.0, 0, 0, new TrapezoidProfile.Constraints(720, 540));
+    pid.enableContinuousInput(-180, 180);
+
+    BooleanSupplier shouldFlip = ()->{
+      var alliance = DriverStation.getAlliance();
+      if (alliance.isPresent()) {
+        return alliance.get() == DriverStation.Alliance.Red;
+      }
+      return false;
+    };
+    
     return run(()->{
-      double power = pid.calculate(getPose().getRotation().getDegrees(), desiredRotation.getDegrees());
-      swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
-                                          translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+      double sign = 1.0;
+      double desiredRotationDegrees = desiredRotation.getDegrees();
+      //Flips across y=x
+      if(shouldFlip.getAsBoolean()){
+        sign=-1.0;
+        desiredRotationDegrees-=180;
+        if(desiredRotationDegrees<180){
+          desiredRotationDegrees+=360;
+        }
+      }
+
+      double power = pid.calculate(getPose().getRotation().getDegrees(), desiredRotationDegrees);
+      swerveDrive.drive(new Translation2d(sign*translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                          sign*translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
                         power * swerveDrive.getMaximumChassisAngularVelocity(),
-                        false,
+                        true,
                         false);
     });
   }
@@ -312,8 +339,8 @@ public class Swerve extends SubsystemBase {
 
   //does not reset based off field
   private void pidToPose(Pose2d pose){
-    final double transltionP = 3.0;
-    final double thetaP = 2.0*4
+    final double transltionP = 3.0*1.2;
+    final double thetaP = 2.0*4*1.2 
     ;
 
     // Transform2d delta = pose.minus(swerveDrive.getPose());
@@ -324,12 +351,13 @@ public class Swerve extends SubsystemBase {
     //   -delta.getRotation().getRadians()*thetaP
     //   ), swerveDrive.getOdometryHeading()
     // ));
+    double clamp = 2.0;
 
     Pose2d delta = pose.relativeTo(swerveDrive.getPose());
 
     swerveDrive.setChassisSpeeds(new ChassisSpeeds(
-      delta.getX()*transltionP,
-      delta.getY()*transltionP,
+      MathUtil.clamp(delta.getX()*transltionP,-clamp, clamp),
+      MathUtil.clamp(delta.getY()*transltionP,-clamp,clamp),
       delta.getRotation().getRadians()*thetaP
     ));
   }
