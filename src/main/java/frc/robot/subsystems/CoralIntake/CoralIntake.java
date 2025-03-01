@@ -229,7 +229,7 @@ public class CoralIntake extends SubsystemBase {
     Command stow = new SequentialCommandGroup(
       new InstantCommand(()->rollerMotor.set(0)),
       new WaitCommand(99999).until(elevatorClear),
-      setAngleSpeed(()->65, ()->0)//.onlyWhile(elevatorClear)
+      setAngleSpeed(()->75, ()->0)//.onlyWhile(elevatorClear)
     ).repeatedly();
 
     stow.addRequirements(this);

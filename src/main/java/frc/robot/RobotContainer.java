@@ -199,7 +199,7 @@ public class RobotContainer {
       algaeGrabber.stop()
     ));
 
-    operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
+    operator.axisGreaterThan(1, 0).whileTrue(climber.climb().alongWith(intake.setAngle(()->65)));
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
     operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(elevator.runCoralScorer(-2500)));
@@ -207,11 +207,13 @@ public class RobotContainer {
     operator.x().whileTrue(elevator.moveToStationPickup());
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
-    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
+    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
+    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(elevator.runCoralScorer(-2500)));
 
-    operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
-    operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
-    operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
+    // operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
+    // operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
+    // operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
+    operator.rightBumper().whileTrue(goToDefenseMode());
 
     Command moveTo90 = elevator.moveToAngleTrap(()->90);
     moveTo90.addRequirements(elevator);
@@ -221,11 +223,14 @@ public class RobotContainer {
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
     //is actuaklky shoot
-    operator.rightStick().whileTrue(algaeGrabber.scoreProcessor());
+    operator.rightStick().whileTrue(algaeGrabber.scoreProcessor())
+    .whileTrue(elevator.moveToAngleTrap(()->90));
 
 
     // Expected algae control stuff
-    operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+    operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor())
+    .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
+    ;
 
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
@@ -279,9 +284,9 @@ public class RobotContainer {
   //Refolding Process
   public Command goToDefenseMode() {
     return Commands.sequence(
-      climber.setAngle(()->30.2),
-      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7, 0)).until(elevator.isAtTargetAngle),
-      intake.setAngle(()-> 65.0).withTimeout(2),
+      climber.setAngle(()->30.2).withTimeout(3),
+      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7, 0)).until(elevator.isAtTargetAngle).withTimeout(3),
+      intake.setAngle(()-> 75.0).withTimeout(0.5),
       elevator.moveToHeightUnfoldHighPrecision(3.78)
     );
   }

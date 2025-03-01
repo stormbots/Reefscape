@@ -142,7 +142,7 @@ public class AlgaeGrabber extends SubsystemBase {
     rollerConf.closedLoop
     // .p(1/500.0)
     .velocityFF(1/5760.0)
-    .p(0.1*4*2*2*2*2/9, ClosedLoopSlot.kSlot1)
+    .p(0.1*4*2*2*2*2*1.5/9, ClosedLoopSlot.kSlot1)
     .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
 
@@ -168,7 +168,7 @@ public class AlgaeGrabber extends SubsystemBase {
     shooterConf.closedLoop
     // .p(1/500.0)
     .velocityFF(1/5760.0*0.95)
-    .p(0.1*4*2*2*2*2/3, ClosedLoopSlot.kSlot1)
+    .p(0.1*4*2*2*2*2*1.5/3, ClosedLoopSlot.kSlot1)
     .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
     shooterMotor.configure(shooterConf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
@@ -293,10 +293,10 @@ public class AlgaeGrabber extends SubsystemBase {
         if (haveAlgae) {
           setIntakeRPM(ROLLERHOLDRPM);
           // setArmAngle(-65);
-          setArmAngle(-92.5);
+          setArmAngle(-88);
         } else {
           setIntakeRPM(0);
-          setArmAngle(-92.5);
+          setArmAngle(-88);
         }
     }).withName("DefaultCommand");
   }
@@ -324,8 +324,8 @@ public class AlgaeGrabber extends SubsystemBase {
       shooterMotor.getEncoder().setPosition(0);
     }))
     .andThen(new RunCommand(()->{
-      intakeMotor.getClosedLoopController().setReference(-0.7, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-      shooterMotor.getClosedLoopController().setReference(-0.23, ControlType.kPosition, ClosedLoopSlot.kSlot1);
+      intakeMotor.getClosedLoopController().setReference(-0.58, ControlType.kPosition, ClosedLoopSlot.kSlot1);
+      shooterMotor.getClosedLoopController().setReference(-0.6, ControlType.kPosition, ClosedLoopSlot.kSlot1);
     },this).withTimeout(1.5))
     .finallyDo((interrupted) -> {
         if (interrupted == false) {
@@ -336,7 +336,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public Command ejectFromFloor(){
     return run(()->{
-      setArmAngle(-20);
+      setArmAngle(-5);
       setIntakeRPM(-ROLLERINTAKERPM); //temp
       // setShooterRPM(SHOOTERINTAKERPM);
       shooterMotor.setVoltage(-1.0);
@@ -353,16 +353,16 @@ public class AlgaeGrabber extends SubsystemBase {
     // });
     
     return new RunCommand(()->{
-      shooterMotor.setVoltage(9);
+      shooterMotor.setVoltage(6);
       setArmAngle(-92.5);
     }, this).withTimeout(0.5)
     .andThen(new RunCommand(()->{
       intakeMotor.setVoltage(9);
-      shooterMotor.setVoltage(9);
+      shooterMotor.setVoltage(6);
       setArmAngle(-92.5);
-    }, this))
+    }, this));
     //could do checking conditions with lasercan, ignored for now.
-    .finallyDo(()->haveAlgae=false);
+    // .finallyDo(()->haveAlgae=false);
   }
 
   public Command prepareToShoot() {

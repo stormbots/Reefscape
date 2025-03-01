@@ -68,7 +68,7 @@ public class Elevator extends SubsystemBase {
   private final double toleranceHeightUnfolding = 0.5;
   private final double toleranceAngle = 5;
   private final double kArmMaxVelocity = 180.0;
-  private final double kArmMaxAcceleration = 200.0;
+  private final double kArmMaxAcceleration = 270.0;
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
@@ -124,6 +124,7 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kL3 =             new ElevatorPose(37, 145.5, 10);
   public final ElevatorPose kL4 =             new ElevatorPose(59.4, 135, 10);
   public final ElevatorPose kL2Algae =             new ElevatorPose(23.8, 142, -2500);
+  public final ElevatorPose kL2AlgaeFar =             new ElevatorPose(25.0, 152, -2500);
   public final ElevatorPose kL3Algae =             new ElevatorPose(39.5, 142, -2500);
 
 
