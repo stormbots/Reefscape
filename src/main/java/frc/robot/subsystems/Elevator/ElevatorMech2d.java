@@ -66,8 +66,7 @@ public class ElevatorMech2d {
 
     public void update(
         double height,
-        double angle,
-        double translatespeed
+        double angle
         ) {
     //   var height = elevatorMotor.getEncoder().getPosition();
     //   var angle = rotationMotor.getAbsoluteEncoder().getPosition();
@@ -83,11 +82,6 @@ public class ElevatorMech2d {
         + rotationArmClockingOffsetAtVertical; //offset
       translatorBarFwd.setAngle(scorerAngle);
       translatorBarRev.setAngle(scorerAngle);
-
-      //This is to just visualize the relative scorer speed
-      translatorSpeed.setAngle(scorerAngle);
-      translatorSpeed.setLength(translatespeed / 5760 * 6);
-      translatorSpeed.setColor(translatespeed>0 ? new Color8Bit(Color.kLime) : new Color8Bit(Color.kOrange));
 
     }
   }

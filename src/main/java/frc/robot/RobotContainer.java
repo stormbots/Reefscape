@@ -217,8 +217,7 @@ public class RobotContainer {
 
     Command moveTo90 = elevator.moveToAngleTrap(()->90);
     moveTo90.addRequirements(elevator);
-    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
-
+    
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
@@ -251,6 +250,12 @@ public class RobotContainer {
 
     bruh.a().whileTrue(getUnfoldRobot());
     bruh.b().whileTrue(goToDefenseMode());
+
+    //Old Coral Scorer commands
+    operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(elevator.runCoralScorer(-2500)));
+    operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(elevator.runCoralScorer(-2500)));
+    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
+    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(elevator.runCoralScorer(-2500)));
   }
 
   /**
@@ -285,7 +290,7 @@ public class RobotContainer {
   public Command goToDefenseMode() {
     return Commands.sequence(
       climber.setAngle(()->30.2).withTimeout(3),
-      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7, 0)).until(elevator.isAtTargetAngle).withTimeout(3),
+      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7)).until(elevator.isAtTargetAngle).withTimeout(3),
       intake.setAngle(()-> 75.0).withTimeout(0.5),
       elevator.moveToHeightUnfoldHighPrecision(3.78)
     );

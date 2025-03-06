@@ -61,117 +61,124 @@ public class ElevatorStateManager {
         stowedUp.AddNode(climbing,1); 
     }
 
- 
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    //TODO Most States need to exsist properly, states might need to have Scoring motor implemented//
+    /////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void addStates(){
-        //createallthestates
         boot = graph.new GraphCommandNode("Boot",
-        elevator.moveToPose(elevator.kStowed),
-        elevator.moveToPose(elevator.kStowed),
-        elevator.moveToPose(elevator.kStowed));
+        elevator.moveToPoseSafe(elevator.kStowed),
+        elevator.moveToPoseSafe(elevator.kStowed),
+        elevator.moveToPoseSafe(elevator.kStowed));
 
         stowed = graph.new GraphCommandNode("Stowed",
-        elevator.moveToPose(elevator.kStowed),
-        elevator.moveToPose(elevator.kStowed),
-        elevator.moveToPose(elevator.kStowed));
+        elevator.moveToPoseSafe(elevator.kStowed),
+        elevator.moveToPoseSafe(elevator.kStowed),
+        elevator.moveToPoseSafe(elevator.kStowed));
 
-        //TODO NEEDS TO EXIST PROPERLY
         stowedUp = graph.new GraphCommandNode("StowedUp",
-        elevator.moveToPose(elevator.kStowedUp),
-        elevator.moveToPose(elevator.kStowedUp),
-        elevator.moveToPose(elevator.kStowedUp));
+        elevator.moveToPoseSafe(elevator.kStowedUp),
+        elevator.moveToPoseSafe(elevator.kStowedUp),
+        elevator.moveToPoseSafe(elevator.kStowedUp));
 
-        //TODO NEEDS TO EXIST PROPERLY
+        //TODO Needs Actual pose
         prepareToSourcePickup = graph.new GraphCommandNode("prepareToSourePickUp", 
-        elevator.moveToPose(elevator.kMoveToSourcePickUp), 
-        elevator.moveToPose(elevator.kMoveToSourcePickUp), 
-        elevator.moveToPose(elevator.kMoveToSourcePickUp));
+        elevator.moveToPoseSafe(elevator.kStationPickup), 
+        elevator.moveToPoseSafe(elevator.kStationPickup), 
+        elevator.moveToPoseSafe(elevator.kStationPickup));
 
         sourcePickup = graph.new GraphCommandNode("SourcePickup",
-        elevator.moveToPose(elevator.kSourcePickup),
-        elevator.moveToPose(elevator.kSourcePickup),
-        elevator.moveToPose(elevator.kSourcePickup));
+        elevator.moveToPoseSafe(elevator.kStationPickup),
+        elevator.moveToPoseSafe(elevator.kStationPickup),
+        elevator.moveToPoseSafe(elevator.kStationPickup));
 
-        //TODO NEEDS TO EXIST PROPERLY
-        prepareToFloorPickUp = graph.new GraphCommandNode("prepareToFloorPickUp", 
-        elevator.moveToPose(elevator.kMoveToFloorPickUp), 
-        elevator.moveToPose(elevator.kMoveToFloorPickUp), 
-        elevator.moveToPose(elevator.kMoveToFloorPickUp));
+        // Floor Intake is gone ):
+        // prepareToFloorPickUp = graph.new GraphCommandNode("prepareToFloorPickUp", 
+        // elevator.moveToPoseSafe(elevator.kFloorPickup), 
+        // elevator.moveToPoseSafe(elevator.kFloorPickup), 
+        // elevator.moveToPoseSafe(elevator.kFloorPickup));
 
-        floorPickup = graph.new GraphCommandNode("FloorPickup",
-        elevator.moveToPose(elevator.kFloorPickup),
-        elevator.moveToPose(elevator.kFloorPickup),
-        elevator.moveToPose(elevator.kFloorPickup));
+        // FloornIntake is gone ):
+        // floorPickup = graph.new GraphCommandNode("FloorPickup",
+        // elevator.moveToPoseSafe(elevator.kFloorPickup),
+        // elevator.moveToPoseSafe(elevator.kFloorPickup),
+        // elevator.moveToPoseSafe(elevator.kFloorPickup));
 
-        //TODO NEEDS TO EXIST PROPERLY
-        moveToL1Algae = graph.new GraphCommandNode("moveToL1Algae",
-        elevator.moveToPose(elevator.kMoveToL1Algae),
-        elevator.moveToPose(elevator.kMoveToL1Algae),
-        elevator.moveToPose(elevator.kMoveToL1Algae));
 
-        //TODO NEEDS TO EXIST PROPERLY
-        moveToL2Algae = graph.new GraphCommandNode("moveToL2Algae",
-        elevator.moveToPose(elevator.kMoveToL2Algae),
-        elevator.moveToPose(elevator.kMoveToL2Algae),
-        elevator.moveToPose(elevator.kMoveToL2Algae));
+        //TODO Needs Actual pose
+        intakeAlgaeL1 = graph.new GraphCommandNode("prepareToPickUpL2Algae",
+        elevator.moveToPoseSafe(elevator.kL2Algae),
+        elevator.moveToPoseSafe(elevator.kL2Algae),
+        elevator.moveToPoseSafe(elevator.kL2Algae));
 
-        //TODO NEEDS TO EXIST PROPERLY
-        intakeAlgaeL1 = graph.new GraphCommandNode("moveToL2Algae",
-        elevator.moveToPose(elevator.kIntakeAlgaeL1),
-        elevator.moveToPose(elevator.kIntakeAlgaeL1),
-        elevator.moveToPose(elevator.kIntakeAlgaeL1));
+        intakeAlgaeL2 = graph.new GraphCommandNode("pickUpL2Algae",
+        elevator.moveToPoseSafe(elevator.kL2Algae),
+        elevator.moveToPoseSafe(elevator.kL2Algae),
+        elevator.moveToPoseSafe(elevator.kL2Algae));
 
-        //TODO NEEDS TO EXIST PROPERLY
-        intakeAlgaeL2 = graph.new GraphCommandNode("moveToL2Algae",
-        elevator.moveToPose(elevator.kIntakeAlgaeL2),
-        elevator.moveToPose(elevator.kIntakeAlgaeL2),
-        elevator.moveToPose(elevator.kIntakeAlgaeL2));
+        moveToL1Algae = graph.new GraphCommandNode("prepareToPickUpL3Algae",
+        elevator.moveToPoseSafe(elevator.kL3Algae),
+        elevator.moveToPoseSafe(elevator.kL3Algae),
+        elevator.moveToPoseSafe(elevator.kL3Algae));
 
         moveToL1 = graph.new GraphCommandNode("moveToL1", 
-        elevator.moveToPose(elevator.kL1), 
-        elevator.moveToPose(elevator.kL1), 
-        elevator.scoreAtPose(elevator.kL1));
+        elevator.moveToPoseSafe(elevator.kL1), 
+        elevator.moveToPoseSafe(elevator.kL1),
+        elevator.moveToPoseSafe(elevator.kL1)
+        //elevator.scoreAtPose(elevator.kL1)
+        );
 
         scoreToL1 = graph.new GraphCommandNode("scoreToL1",
-        elevator.moveToPoseWithScorer(elevator.kL1), 
-        elevator.moveToPoseWithScorer(elevator.kL1), 
-        elevator.moveToPoseWithScorer(elevator.kL1));
+        elevator.moveToPoseSafe(elevator.kL1), 
+        elevator.moveToPoseSafe(elevator.kL1), 
+        elevator.moveToPoseSafe(elevator.kL1)
+        );
 
         moveToL2 = graph.new GraphCommandNode("moveToL2",
-        elevator.moveToPose(elevator.kL2),
-        elevator.moveToPose(elevator.kL2), 
-        elevator.scoreAtPose(elevator.kL2));
+        elevator.moveToPoseSafe(elevator.kL2),
+        elevator.moveToPoseSafe(elevator.kL2),
+        elevator.moveToPoseSafe(elevator.kL2) 
+        );
 
         scoreToL2 = graph.new GraphCommandNode("scoreToL2",
-        elevator.moveToPoseWithScorer(elevator.kL2), 
-        elevator.moveToPoseWithScorer(elevator.kL2), 
-        elevator.moveToPoseWithScorer(elevator.kL2));
+        elevator.moveToPoseSafe(elevator.kL2), 
+        elevator.moveToPoseSafe(elevator.kL2), 
+        elevator.moveToPoseSafe(elevator.kL2)
+        //elevator.scoreAtPose(elevator.kL2)
+        //Graph command nodes need 3 poses, score at pose needs tobe implemented know that coral scorer is gone
+        );
 
         moveToL3 = graph.new GraphCommandNode("moveToL3",
-        elevator.moveToPose(elevator.kL3),
-        elevator.moveToPose(elevator.kL3), 
-        elevator.scoreAtPose(elevator.kL3));
+        elevator.moveToPoseSafe(elevator.kL3),
+        elevator.moveToPoseSafe(elevator.kL3), 
+        elevator.moveToPoseSafe(elevator.kL3));
 
         scoreToL3 = graph.new GraphCommandNode("scoreToL3",
-        elevator.moveToPoseWithScorer(elevator.kL3), 
-        elevator.moveToPoseWithScorer(elevator.kL3), 
-        elevator.moveToPoseWithScorer(elevator.kL3));
+        elevator.moveToPoseSafe(elevator.kL3), 
+        elevator.moveToPoseSafe(elevator.kL3), 
+        elevator.moveToPoseSafe(elevator.kL3)
+        //elevator.scoreAtPose(elevator.kL3)
+        //Graph command nodes need 3 poses, score at pose needs tobe implemented know that coral scorer is gone
+        );
 
         moveToL4 = graph.new GraphCommandNode("moveToL4",
-        elevator.moveToPose(elevator.kL4),
-        elevator.moveToPose(elevator.kL4), 
-        elevator.scoreAtPose(elevator.kL4));
+        elevator.moveToPoseSafe(elevator.kL4),
+        elevator.moveToPoseSafe(elevator.kL4), 
+        elevator.moveToPoseSafe(elevator.kL4));
 
         scoreToL4 = graph.new GraphCommandNode("scoreToL4",
-        elevator.moveToPoseWithScorer(elevator.kL4), 
-        elevator.moveToPoseWithScorer(elevator.kL4), 
-        elevator.moveToPoseWithScorer(elevator.kL4));
+        elevator.moveToPoseSafe(elevator.kL4), 
+        elevator.moveToPoseSafe(elevator.kL4), 
+        elevator.moveToPoseSafe(elevator.kL4)
+        //elevator.scoreAtPose(elevator.kL4)
+        //Graph command nodes need 3 poses, score at pose needs tobe implemented know that coral scorer is gone
+        );
 
 
         climbing = graph.new GraphCommandNode("Climbing",
-        elevator.moveToPose(elevator.kClimbing),
-        elevator.moveToPose(elevator.kClimbing),
-        elevator.moveToPose(elevator.kClimbing));
+        elevator.moveToPoseSafe(elevator.kClimbing),
+        elevator.moveToPoseSafe(elevator.kClimbing),
+        elevator.moveToPoseSafe(elevator.kClimbing));
     }
     
 

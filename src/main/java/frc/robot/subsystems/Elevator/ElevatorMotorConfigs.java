@@ -40,31 +40,6 @@ public class ElevatorMotorConfigs {
     return elevatorConfig;
   }
 
-
-
-
-  public static SparkBaseConfig getScorerConfig(){
-    SparkBaseConfig coralOutConfig = new SparkMaxConfig()
-      .smartCurrentLimit(30)
-      .idleMode(IdleMode.kBrake)
-      .inverted(true); //Positive is in, Negative is out
-
-    var coralOutConversionFactor = 1; //3.371;
-    coralOutConfig.encoder
-      .velocityConversionFactor(coralOutConversionFactor)
-      .positionConversionFactor(coralOutConversionFactor)
-      ;
-
-    coralOutConfig.closedLoop
-      .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .velocityFF(1/5760.0)
-      .p(0)
-      .p(0.1, ClosedLoopSlot.kSlot1);
-    return coralOutConfig;
-  }
-
-
-
   public static SparkBaseConfig getRotationConfig(){
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
       .smartCurrentLimit(50)

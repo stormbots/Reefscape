@@ -33,23 +33,18 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class ElevatorSimulation {
   SparkFlex elevatorMotor;
   SparkFlex rotationMotor;
-  SparkFlex scoringMotor;
 
   SparkFlexSim simElevatorMotor;
   SparkFlexSim simRotationMotor;
-  SparkFlexSim simScoringMotor;
   
   public ElevatorSimulation(
     SparkFlex elevatorMotor,
-    SparkFlex rotationMotor,
-    SparkFlex scoringMotor
+    SparkFlex rotationMotor
   ){
     this.elevatorMotor = elevatorMotor;
     this.rotationMotor = rotationMotor;
-    this.scoringMotor = scoringMotor;
     simElevatorMotor = new SparkFlexSim(this.elevatorMotor, DCMotor.getNeoVortex(1));
     simRotationMotor = new SparkFlexSim(this.rotationMotor, DCMotor.getNeoVortex(1));
-    simScoringMotor = new SparkFlexSim(this.scoringMotor, DCMotor.getNeoVortex(1));
   
     var startPosition=Degrees.of(75);
     simArm.setState(startPosition.in(Radians), 0);
@@ -82,12 +77,6 @@ public class ElevatorSimulation {
   );
 
   
-  FlywheelSim simScorer = new FlywheelSim(
-    LinearSystemId.createFlywheelSystem(
-      DCMotor.getNeoVortex(1), 0.00002016125, 1
-    ),
-    DCMotor.getNeoVortex(1)
-  );
 
   public void update() {
     // TODO Auto-generated method stub
@@ -99,9 +88,6 @@ public class ElevatorSimulation {
 
     simArm.setInputVoltage(simRotationMotor.getAppliedOutput()*vbus);
     simArm.update(dt);
-
-    simScorer.setInputVoltage(simScoringMotor.getAppliedOutput()*vbus);
-    simScorer.update(dt);
 
     SmartDashboard.putNumber("arm/plant/angle", Math.toDegrees(simArm.getAngleRads()));
 
@@ -117,7 +103,6 @@ public class ElevatorSimulation {
       dt
     );
 
-    simScoringMotor.iterate(simScorer.getAngularVelocityRPM(), vbus, dt);
   }
 
   public Angle getAngle(){
