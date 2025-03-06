@@ -70,11 +70,12 @@ public class Elevator extends SubsystemBase {
   private final double kArmMaxVelocity = 180.0;
   private final double kArmMaxAcceleration = 270.0;
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
+  
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
 
   /** System Goal State */
-  ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
+  ElevatorPose setpoint = new ElevatorPose(0, 0);
   /** This is the interrim setpoint used by the trapezoidal profile */
   ElevatorPose setpointIntermediate = new ElevatorPose(0, 0, 0);
 
@@ -287,10 +288,9 @@ public class Elevator extends SubsystemBase {
     ;
   }
 
-  //
+  @Deprecated
   public Command runCoralScorer(double speed){
-    return new RunCommand(()->setScorerSpeed(speed));
-    // return new RunCommand(()->coralOutMotor.setVoltage(6))
+    return new InstantCommand();
   }
 
   private Command moveToHeight(double height) {
