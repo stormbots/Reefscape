@@ -38,7 +38,7 @@ public class Climber extends SubsystemBase {
   private double setpoint=100;
 
   private final ClimberVisualizer visualizer;
-  SlewRateLimiter rateLimit = new SlewRateLimiter(60);
+  SlewRateLimiter rateLimit = new SlewRateLimiter(15);
   /** Creates a new Climber. */
   public Climber() {
     SmartDashboard.putBoolean("simulate", false);
@@ -137,7 +137,7 @@ public class Climber extends SubsystemBase {
 
   public Command climb() {
     return new InstantCommand(()->setIdleMode(IdleMode.kBrake))
-    .andThen(setAngle(()->-7));
+    .andThen(setAngle(()->100));
     // .andThen(setAngle(()->SmartDashboard.getNumber("climber/reseatAngle", -7)));
     // .andThen(setAngle(()->-35))
     // .andThen(setAngle(()->SmartDashboard.getNumber("climber/climbAngle", 0)));

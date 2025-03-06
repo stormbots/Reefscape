@@ -360,6 +360,10 @@ public class Swerve extends SubsystemBase {
       MathUtil.clamp(delta.getY()*transltionP,-clamp,clamp),
       delta.getRotation().getRadians()*thetaP
     ));
+
+    SmartDashboard.putNumber("swerve/pidTargetPoseX", pose.getX());
+    SmartDashboard.putNumber("swerve/pidTargetPoseY", pose.getY());
+
   }
 
   public Command pidToPoseCommand(Pose2d poseSupplier){
