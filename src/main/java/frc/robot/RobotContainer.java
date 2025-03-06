@@ -207,8 +207,8 @@ public class RobotContainer {
     operator.x().whileTrue(elevator.moveToStationPickup());
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
-    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
-    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(elevator.runCoralScorer(-2500)));
+    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
+    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(elevator.runCoralScorer(-2500)));
 
     // operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
     // operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
