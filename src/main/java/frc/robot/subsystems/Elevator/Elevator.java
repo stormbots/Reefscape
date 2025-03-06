@@ -222,11 +222,6 @@ public class Elevator extends SubsystemBase {
       .setReference(angle, ControlType.kPosition, ClosedLoopSlot.kSlot0, ff, ArbFFUnits.kVoltage);
   }
 
-  @Deprecated
-  private void setScorerSpeed(double speed) {
-  }
-  
-
   //TODO: The phrasing and management of this is all awful;
   // This has "setpoint" being used as an intermediary, whereas the rest of the system uses it 
   // as the "goal" state.
@@ -262,11 +257,6 @@ public class Elevator extends SubsystemBase {
     )
     // .until(isProfileMotionComplete)
     ;
-  }
-
-  @Deprecated
-  public Command runCoralScorer(double speed){
-    return new InstantCommand();
   }
 
   private Command moveToHeight(double height) {

@@ -18,26 +18,23 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.stormbots.LaserCanWrapper;
 
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Robot;
 
 
 public class Scorer extends SubsystemBase {
-  public boolean isHomed = false;
-  public int ROLLERSTALLCURRENT;
-
   Optional<ScorerSimulation> sim = Optional.empty();
   
-  SparkFlex coralOutMotor = new SparkFlex(12, MotorType.kBrushless);
+  SparkFlex motor = new SparkFlex(12, MotorType.kBrushless);
 
   private final Distance kNoCoralDistance = Millimeter.of(50);
   LaserCanWrapper laserCan = new LaserCanWrapper(22)
@@ -46,61 +43,86 @@ public class Scorer extends SubsystemBase {
     ;
 
   public Scorer() {
-    if(Robot.isSimulation()) sim = Optional.of(new ScorerSimulation(coralOutMotor));
+    if(Robot.isSimulation()) sim = Optional.of(new ScorerSimulation(motor));
 
     //Set up motor configs
-    coralOutMotor.configure(ScorerMotorConfigs.getScorerConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    motor.configure(ScorerMotorConfigs.getScorerConfig(), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     Timer.delay(0.1); //Wait until motors are happy and providing us correct data
 
-
     // setDefaultCommand(holdPosition());
     setDefaultCommand(run(()->{
-      coralOutMotor.stopMotor();
+      motor.stopMotor();
     }));
-
   }
 
   public void periodic(){
-    SmartDashboard.putNumber("scorer/rpm", coralOutMotor.getEncoder().getVelocity());
+    SmartDashboard.putNumber("scorer/rpm", motor.getEncoder().getVelocity());
   }
 
   public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
-    return coralOutMotor.getOutputCurrent() > ROLLERSTALLCURRENT;
+    return motor.getOutputCurrent() > 20;
   }).debounce(0.1);
-
-
-  SlewRateLimiter slewRateAngle = new SlewRateLimiter(60);
   
 
   private void setScorerSpeed(double speed) {
-    coralOutMotor
+    motor
         .getClosedLoopController()
         .setReference(speed, ControlType.kVelocity);
     // , ClosedLoopSlot.kSlot0, 0, ArbFFUnits.kVoltage);
     // coralOutMotor.setVoltage(SmartDashboard.getNumber("elevator/scorerSpeed", 0.000000000001)); //Temporary, just to make coral pickup work..., bruh
     // setpoint.speed = speed;
   }
-  
-
 
   public Command runCoralScorer(double speed){
     return run(()->setScorerSpeed(speed));
     // return run(()->coralOutMotor.setVoltage(6))
   }
 
-  public Command pidScorerBack(){
+  public Command pidCoralBack(){
     return run(()->{})//coralOutMotor.getEncoder().setPosition(0))
-    .andThen(run(()->coralOutMotor.getClosedLoopController().setReference(-2, ControlType.kPosition, ClosedLoopSlot.kSlot1)));
+    .andThen(run(()->motor.getClosedLoopController().setReference(-2, ControlType.kPosition, ClosedLoopSlot.kSlot1)));
   }
 
-  public Command realignCoralScorer(){
+  public Command realignCoral(){
     return Commands.sequence(
       run(()->setScorerSpeed(-1200)).onlyWhile(isCoralInScorer),
-      new InstantCommand(()->coralOutMotor.getEncoder().setPosition(0)),
-      run(()->coralOutMotor.getClosedLoopController().setReference(2, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+      new InstantCommand(()->motor.getEncoder().setPosition(0)),
+      run(()->motor.getClosedLoopController().setReference(2, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+    );
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  /// Make some cleaner functions so autos and buttons are easier and more clear. 
+  /// ////////////////////////////////////////////////////////////////////
+  public Command scoreCoral(){
+    return new SequentialCommandGroup(
+      //TODO: Test and make it work properly
+
+      //Always run the intake for long enough to do it
+      runCoralScorer(2500).withTimeout(0.5),
+      //in case of something going wrong, keep going until we've cleared the coral
+      new WaitCommand(2).onlyWhile(isCoralInScorer),
+      //Make sure it's definitely out of the system
+      runCoralScorer(2500).withTimeout(0.2)
+      );
+  }
+
+
+  public Command holdAlgae(){
+    return new SequentialCommandGroup(
+      //Always run the intake for long enough to do it
+      runCoralScorer(-2500) //TODO fix me
+      );
+  }
+
+  public Command loadCoral(){
+    return new SequentialCommandGroup(
+      //TODO: Put the right things here. 
+      runCoralScorer(2500).until(isCoralInScorer),
+      realignCoral() //Doesn't end, and doesn't provide a clean way to end! This may require consideration for autos
     );
   }
 
