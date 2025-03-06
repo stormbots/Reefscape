@@ -82,7 +82,7 @@ public class Elevator extends SubsystemBase {
 
   SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
   SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
-  SparkFlex coralOutMotor = new SparkFlex(12, MotorType.kBrushless);
+  SparkFlex coralOutMotor = new SparkFlex(22, MotorType.kBrushless);//delete me
 
   private final Distance kNoCoralDistance = Millimeter.of(50);
   LaserCanWrapper laserCan = new LaserCanWrapper(22)

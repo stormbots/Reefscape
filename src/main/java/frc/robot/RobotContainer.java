@@ -4,26 +4,10 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-
-import java.util.Set;
-
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.Swerve;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
@@ -31,6 +15,7 @@ import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.CoralIntake.CoralIntake;
 import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.Scorer.Scorer;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based i]
@@ -44,6 +29,7 @@ public class RobotContainer {
   public final Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final Elevator elevator = new Elevator();
+  public final Scorer  scorer = new Scorer();
   public final CoralIntake intake = new CoralIntake(elevator.isClear);
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
   private final Vision vision = new Vision(swerveSubsystem);
@@ -51,7 +37,7 @@ public class RobotContainer {
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
-  public final Autos autos = new Autos(swerveSubsystem, elevator, climber, intake, algaeGrabber);
+  public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber, intake, algaeGrabber);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
@@ -201,14 +187,14 @@ public class RobotContainer {
 
     operator.axisGreaterThan(1, 0).whileTrue(climber.climb().alongWith(intake.setAngle(()->65)));
 
-    //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
-    operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(elevator.runCoralScorer(-2500)));
-    operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(elevator.runCoralScorer(-2500)));
+    //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));;
+    operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(scorer.runCoralScorer(-2500)));
+    operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(scorer.runCoralScorer(-2500)));
     operator.x().whileTrue(elevator.moveToStationPickup());
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
-    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(elevator.runCoralScorer(-2500)));
+    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(scorer.runCoralScorer(-2500)));
 
     // operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
     // operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
@@ -217,7 +203,7 @@ public class RobotContainer {
 
     Command moveTo90 = elevator.moveToAngleTrap(()->90);
     moveTo90.addRequirements(elevator);
-    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
+    operator.rightTrigger().whileTrue(scorer.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
 
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
@@ -243,7 +229,7 @@ public class RobotContainer {
     // operator.leftStick().whileTrue(elevator.pidScorerBack());
 
     // operator.rightTrigger(threshold)
-    // operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));
+    // operator.rightTrigger().whileTrue(scorer.runCoralScorer(-10));
 
 
     // operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
