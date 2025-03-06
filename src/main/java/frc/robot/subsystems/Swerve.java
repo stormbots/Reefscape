@@ -4,15 +4,20 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.Radians;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.fasterxml.jackson.databind.deser.SettableBeanProperty.Delegating;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
@@ -22,13 +27,20 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -37,6 +49,7 @@ import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
@@ -53,6 +66,7 @@ public class Swerve extends SubsystemBase {
   SwerveDrive swerveDrive;
 
   PathConstraints constraintsFast = new PathConstraints(5, 3.5, 5, 3);
+  PathConstraints constraintsSlow = new PathConstraints(2.5, 1.75, 5, 1.5);
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
@@ -76,12 +90,22 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.0));
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35));
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+
+    swerveDrive.setMotorIdleMode(true); //just to be safe
     configurePathplanner();
     // PathfindingCommand.warmupCommand();
+
+    new Trigger(DriverStation::isTeleopEnabled).onTrue(new InstantCommand(()->
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0))
+    ));
+
+    new Trigger(DriverStation::isAutonomousEnabled).onTrue(new InstantCommand(()->
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35))
+    ));
   }
 
   @Override
@@ -90,11 +114,14 @@ public class Swerve extends SubsystemBase {
     swerveDrive.updateOdometry();
     debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
-
+    
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
     Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
-    Logger.recordOutput("odometry", swerveDrive.getPose());
+    Logger.recordOutput("swerve/pose", swerveDrive.getPose());
+    SmartDashboard.putNumber("swerve/x", swerveDrive.getPose().getX());
+    SmartDashboard.putNumber("swerve/y", swerveDrive.getPose().getY());
+
   }
 
   public void configurePathplanner(){
@@ -161,8 +188,39 @@ public class Swerve extends SubsystemBase {
   
   }
 
+  public Command driveCommandAllianceManaged(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
+    BooleanSupplier isRed = () -> {
+      // Boolean supplier that controls when the path will be mirrored for the red alliance
+      // This will flip the path being followed to the red side of the field.
+      // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
 
-  public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
+      var alliance = DriverStation.getAlliance();
+      if (alliance.isPresent()) {
+        return alliance.get() == DriverStation.Alliance.Red;
+      }
+      return false;
+    };
+
+    return run(() -> {
+      // Make the robot move
+      if(isRed.getAsBoolean()){
+        swerveDrive.drive(new Translation2d(-translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                            -translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                          angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
+                          true,
+                          false);
+      }
+      else{
+        swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                          angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
+                          true,
+                          false);
+      }
+    });
+  }
+
+  private Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX){
     return run(() -> {
       // Make the robot move
       swerveDrive.drive(new Translation2d(translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
@@ -188,6 +246,42 @@ public class Swerve extends SubsystemBase {
                                           translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
                         angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
+                        false);
+    });
+  }
+
+  //Aligns to a heading from the DRIVERS perspective
+  //Doesnt wrap or anything, literally the worst functionality. IDK why i made life hard for myself
+  public Command driveAlignedToHeading(DoubleSupplier translationX, DoubleSupplier translationY, Rotation2d desiredRotation){
+    // PIDController pid = new PIDController(2.0/360, 0.0, 0.0);
+    ProfiledPIDController pid = new ProfiledPIDController(2.0/360.0, 0, 0, new TrapezoidProfile.Constraints(720, 540));
+    pid.enableContinuousInput(-180, 180);
+
+    BooleanSupplier shouldFlip = ()->{
+      var alliance = DriverStation.getAlliance();
+      if (alliance.isPresent()) {
+        return alliance.get() == DriverStation.Alliance.Red;
+      }
+      return false;
+    };
+    
+    return run(()->{
+      double sign = 1.0;
+      double desiredRotationDegrees = desiredRotation.getDegrees();
+      //Flips across y=x
+      if(shouldFlip.getAsBoolean()){
+        sign=-1.0;
+        desiredRotationDegrees-=180;
+        if(desiredRotationDegrees<180){
+          desiredRotationDegrees+=360;
+        }
+      }
+
+      double power = pid.calculate(getPose().getRotation().getDegrees(), desiredRotationDegrees);
+      swerveDrive.drive(new Translation2d(sign*translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                                          sign*translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                        power * swerveDrive.getMaximumChassisAngularVelocity(),
+                        true,
                         false);
     });
   }
@@ -221,15 +315,11 @@ public class Swerve extends SubsystemBase {
 
       // delta.getTranslation().getNorm(); //distance to target pose
 
-       var gain = pose.interpolate(targetPose, 0.5);
 
       var distancex_m = delta.getMeasureX().in(Units.Meter); // the distance in the x axis
       var distancey_m = delta.getMeasureY().in(Units.Meter); //distnace in y
       var rotation_d = delta.getRotation().getDegrees();
 
-      var outx = distancex_m * gain.getX();
-      var outy = distancey_m * gain.getY();
-      var outRotation = (rotation_d/360.0)*(gain.getRotation().getDegrees()/360);
 
 
       debugField2d.getRobotObject().setPose(pose);
@@ -238,28 +328,84 @@ public class Swerve extends SubsystemBase {
       debugField2d.getObject("targetPoses").setPoses(list);
 
       //move -> robot relative
-      swerveDrive.drive(new Translation2d(outx * swerveDrive.getMaximumChassisVelocity(),
-                                          outy * swerveDrive.getMaximumChassisVelocity()),
-                        outRotation * swerveDrive.getMaximumChassisAngularVelocity(),
+      swerveDrive.drive(new Translation2d(distancex_m * swerveDrive.getMaximumChassisVelocity(),
+                                          distancey_m * swerveDrive.getMaximumChassisVelocity()),
+                        (rotation_d/360.0) * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
                         false);
 
     });
   }
 
+  //does not reset based off field
+  private void pidToPose(Pose2d pose){
+    final double transltionP = 3.0*1.2;
+    final double thetaP = 2.0*4*1.2 
+    ;
+
+    // Transform2d delta = pose.minus(swerveDrive.getPose());
+
+    // swerveDrive.setChassisSpeeds(ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(
+    //   -delta.getX()*transltionP, 
+    //   -delta.getY()*transltionP, 
+    //   -delta.getRotation().getRadians()*thetaP
+    //   ), swerveDrive.getOdometryHeading()
+    // ));
+    double clamp = 2.0;
+
+    Pose2d delta = pose.relativeTo(swerveDrive.getPose());
+
+    swerveDrive.setChassisSpeeds(new ChassisSpeeds(
+      MathUtil.clamp(delta.getX()*transltionP,-clamp, clamp),
+      MathUtil.clamp(delta.getY()*transltionP,-clamp,clamp),
+      delta.getRotation().getRadians()*thetaP
+    ));
+  }
+
+  public Command pidToPoseCommand(Pose2d poseSupplier){
+    return run(()->pidToPose(poseSupplier));
+  }
+
+  private void pidToPoseOdometryManaged(Pose2d pose){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    if(alliance == Alliance.Red){
+      //Flips across y=x, not across vertical acis
+      pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+    }
+
+    pidToPose(pose);
+  }
 
   private Command privatePathToPose(Pose2d pose){
-    return AutoBuilder.pathfindToPose(pose, constraintsFast);
+    return AutoBuilder.pathfindToPose(pose, constraintsSlow);
   }
 
+  public Command followPath(PathPlannerPath path)
+  {
+    return AutoBuilder.followPath(path);
+  }
+
+  // public Command pathToCoralLeft(){
+  //   Set<Subsystem> set = Set.of(this);
+  //   return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())),set);
+  // }
+
   public Command pathToCoralLeft(){
-    Set<Subsystem> set = Set.of(this);
-    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())),set);
+    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
+  // public Command pathToCoralRight(){
+  //   Set<Subsystem> set = Set.of(this);
+  //   return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())),set);
+  // }
+
   public Command pathToCoralRight(){
-    Set<Subsystem> set = Set.of(this);
-    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())),set);
+    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
+
+  public Command bruh(){
+    return new DeferredCommand(()->pidToPoseCommand(new Pose2d(2,7,new Rotation2d())), Set.of(this));
+  }
+
   public Command pathToReefAlgae(){
     Set<Subsystem> set = Set.of(this);
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getReefAlgae(getPose())),set);
@@ -279,8 +425,18 @@ public class Swerve extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  public void resetOdometry(Pose2d initialHolonomicPose){
+  private void resetOdometry(Pose2d initialHolonomicPose){
     swerveDrive.resetOdometry(initialHolonomicPose);
+  }
+
+  public void resetOdometryAllianceManaged(Pose2d initialHolonomicPose){
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    if(alliance == Alliance.Red){
+      //Flips across y=x, not across vertical acis
+      initialHolonomicPose  = new Pose2d(17.55-initialHolonomicPose.getX(),8.05-initialHolonomicPose.getY(), initialHolonomicPose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+    }
+    
+    resetOdometry(initialHolonomicPose);
   }
 
   public ChassisSpeeds getChassisSpeeds(){
@@ -296,9 +452,13 @@ public class Swerve extends SubsystemBase {
     return runOnce(swerveDrive::zeroGyro).ignoringDisable(true);
   }
 
+  public Command stop(){
+    return new InstantCommand(()->swerveDrive.setChassisSpeeds(new ChassisSpeeds()));
+  }
+
   public Command followPath(String name){
     try {
-      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(name));
+      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(name)).andThen(stop());
     } catch (Exception e) {
       // TODO: handle exception
       for(int i=0; i<1000; i++){

@@ -113,7 +113,7 @@ public class CoralIntake extends SubsystemBase {
     var config = new SparkFlexConfig();
 
     config.inverted(true);
-    config.smartCurrentLimit(40);
+    config.smartCurrentLimit(50);//60 will def cause slip, 40 is not enough
     
     // var rollerwheeldiameter=2; //TODO no clue
     var conversionfactor =1;// Math.PI*rollerwheeldiameter; //convert rotations to inches
@@ -141,8 +141,8 @@ public class CoralIntake extends SubsystemBase {
       // ,sim.getSimAngle()
     );
 
-    Logger.recordOutput("rollerSpeed", getRollerVelocity().in(InchesPerSecond));
-    Logger.recordOutput("pivotAngle", getAngle().in(Units.Degrees));
+    // Logger.recordOutput("rollerSpeed", getRollerVelocity().in(InchesPerSecond));
+    // Logger.recordOutput("pivotAngle", getAngle().in(Units.Degrees));
   }
 
   @Override
@@ -219,7 +219,7 @@ public class CoralIntake extends SubsystemBase {
     Timer timer = new Timer();
     return new SequentialCommandGroup(
       new InstantCommand(()->timer.reset()), //weird bug fix
-      setAngleSpeed(()->-45, ()->2500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
+      setAngleSpeed(()->-46, ()->4500).until(hasCoral.and(()->timer.hasElapsed(0.5)))
     );
     // return setAngleSpeed(()->-45, ()->25).until(hasCoral);
   }
@@ -229,7 +229,7 @@ public class CoralIntake extends SubsystemBase {
     Command stow = new SequentialCommandGroup(
       new InstantCommand(()->rollerMotor.set(0)),
       new WaitCommand(99999).until(elevatorClear),
-      setAngleSpeed(()->55, ()->0)//.onlyWhile(elevatorClear)
+      setAngleSpeed(()->75, ()->0)//.onlyWhile(elevatorClear)
     ).repeatedly();
 
     stow.addRequirements(this);

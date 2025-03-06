@@ -4,15 +4,25 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
+
+import java.util.Set;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Vision;
-import frc.robot.subsystems.AlgaeGrabber.AglaeGrabberIOReal;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
@@ -31,18 +41,22 @@ import frc.robot.subsystems.Elevator.Elevator;
 public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
-  Swerve swerveSubsystem = new Swerve();
+  public final Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final Elevator elevator = new Elevator();
   public final CoralIntake intake = new CoralIntake(elevator.isClear);
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
+  private final Vision vision = new Vision(swerveSubsystem);
 
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
+  public final Autos autos = new Autos(swerveSubsystem, elevator, climber, intake, algaeGrabber);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
+  CommandXboxController bruh = new CommandXboxController(2);
+
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -50,7 +64,7 @@ public class RobotContainer {
     configureDriverBindings();
     configureOperatorBindings();
 
-    swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(
+    swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommandAllianceManaged(
       ()->-driver.getLeftY(),
       ()->-driver.getLeftX(),
       ()->-driver.getRightX()
@@ -65,12 +79,34 @@ public class RobotContainer {
 
     driver.start().onTrue(swerveSubsystem.resetGyro());
     //TODO: Slow mode?
-    driver.povDown().toggleOnTrue(swerveSubsystem.driveCommand(
+    driver.povDown().toggleOnTrue(swerveSubsystem.driveCommandAllianceManaged(
       ()->-driver.getLeftY()/4.0, 
       ()->-driver.getLeftX()/4.0,
       ()->-driver.getRightX()/4.0
     ));
 
+    // driver.rightTrigger().whileTrue(new DeferredCommand(()->swerveSubsystem.pidToPoseCommand(FieldNavigation.getCoralLeft(swerveSubsystem.getPose())), Set.of(swerveSubsystem)));
+    driver.a().whileTrue(
+      swerveSubsystem.driveCommandAllianceManaged(
+        ()->-driver.getLeftY(), 
+        ()->-driver.getLeftX(),
+        ()->-driver.getRightX()+vision.getRotationDouble()*1
+        ));
+
+    driver.leftTrigger().whileTrue(swerveSubsystem.pathToCoralRight());
+    driver.rightTrigger().whileTrue(swerveSubsystem.pathToCoralLeft());
+
+    // driver.x().whileTrue(swerveSubsystem.driveAlignedToHeading(
+    //   ()->-driver.getLeftY(), 
+    //   ()->-driver.getLeftX(), 
+    //   new Rotation2d(Math.toRadians(125))
+    //   ));
+
+    // driver.y().whileTrue(swerveSubsystem.driveAlignedToHeading(
+    //   ()->-driver.getLeftY(), 
+    //   ()->-driver.getLeftX(), 
+    //   new Rotation2d(Math.toRadians(-125))
+    //   ));
 
     // driver.rightTrigger().whileTrue(
     //   swerveSubsystem.pathToCoralRight()
@@ -163,30 +199,48 @@ public class RobotContainer {
       algaeGrabber.stop()
     ));
 
-    operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
+    operator.axisGreaterThan(1, 0).whileTrue(climber.climb().alongWith(intake.setAngle(()->65)));
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
+    operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(elevator.runCoralScorer(-2500)));
+    operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(elevator.runCoralScorer(-2500)));
+    operator.x().whileTrue(elevator.moveToStationPickup());
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
+    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(elevator.runCoralScorer(-2500)));
 
-    operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
-    operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
-    operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
+    // operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
+    // operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
+    // operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
+    operator.rightBumper().whileTrue(goToDefenseMode());
 
-    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500));//Outake
+    Command moveTo90 = elevator.moveToAngleTrap(()->90);
+    moveTo90.addRequirements(elevator);
+    operator.rightTrigger().whileTrue(elevator.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
 
-    operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
-    operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
+    // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
+    // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
+
+    //is actuaklky shoot
+    operator.rightStick().whileTrue(algaeGrabber.scoreProcessor())
+    .whileTrue(elevator.moveToAngleTrap(()->90));
 
 
     // Expected algae control stuff
-    operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor());
+    operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor())
+    .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
+    ;
 
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
-    operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
+    // operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
+    operator.leftTrigger().whileTrue(algaeGrabber.ejectFromFloor());
 
+    //is also algae score
     operator.leftStick().whileTrue(algaeGrabber.eject());
+
+    //TEST, will not work as does not require elevator subsystem due to intracacieswadkn
+    // operator.leftStick().whileTrue(elevator.pidScorerBack());
 
     // operator.rightTrigger(threshold)
     // operator.rightTrigger().whileTrue(elevator.runCoralScorer(-10));
@@ -194,14 +248,18 @@ public class RobotContainer {
 
     // operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());
+
+    bruh.a().whileTrue(getUnfoldRobot());
+    bruh.b().whileTrue(goToDefenseMode());
   }
 
   /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
+   * @return the A sequence that runs in Test mode for testing and only testing
+   * Because autos go in Autos now.
    */
-  public Command getAutonomousCommand() {
+  public Command getProgrammingTestSequence() {
+    return new InstantCommand();
+
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
     // return new SequentialCommandGroup(
@@ -215,32 +273,35 @@ public class RobotContainer {
       
     // );
     // return swerveSubsystem.pathToCoralLeft();
-    return new InstantCommand();
+    // return basicCenterAuto();
     // return swerveSubsystem.followPath("1Meter");
     // return Commands.sequence(
     //   algaeGrabber.prepareToShoot().withTimeout(5),
     //   algaeGrabber.scoreProcessor()  
     // );
   }
-  public Command getResetRobotToStartingPose() {
+  
+  //Refolding Process
+  public Command goToDefenseMode() {
     return Commands.sequence(
-      new WaitCommand(1),
-      intake.setAngle(()->100).until(intake.isOnTarget),
-      new WaitCommand(1),
-      climber.setAngle(()->10),
-      //insert elevator command here
-      new WaitCommand(1),
-      climber.stow(),
-      new WaitCommand(1),
-      intake.stow(elevator.isClear)
+      climber.setAngle(()->30.2).withTimeout(3),
+      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7, 0)).until(elevator.isAtTargetAngle).withTimeout(3),
+      intake.setAngle(()-> 75.0).withTimeout(0.5),
+      elevator.moveToHeightUnfoldHighPrecision(3.78)
     );
   }
+
+
+  ////////////////////////////////////////////////////////////////////////
+  /// PUT AUTOS IN THE AUTOS FILE DON"T PUT THEM HERE WE CAN DO BETTER ///
+  /// ////////////////////////////////////////////////////////////////////
+
+
   public Command getUnfoldRobot() {
     return Commands.sequence(
-      elevator.moveToHeightUnfoldHighPrecision(1.43),
-      climber.setAngle(()->37),
-      elevator.moveToHeightUnfoldHighPrecision(12.35),
-      climber.stow()
+      elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
+      intake.setAngle(()-> 60.0).withTimeout(2),
+      climber.setAngle(()->30.2)
     );
   }
 }

@@ -7,6 +7,8 @@ package frc.robot.subsystems.Elevator;
 
 import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Millimeter;
@@ -38,6 +40,7 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -48,6 +51,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
@@ -73,6 +77,8 @@ public class Elevator extends SubsystemBase {
   ElevatorPose setpoint = new ElevatorPose(0, 0, 0);
   /** This is the interrim setpoint used by the trapezoidal profile */
   ElevatorPose setpointIntermediate = new ElevatorPose(0, 0, 0);
+
+  boolean hasArmSynced = false;
 
   SparkFlex elevatorMotor = new SparkFlex(10, MotorType.kBrushless);
   SparkFlex rotationMotor = new SparkFlex(11, MotorType.kBrushless);
@@ -106,25 +112,26 @@ public class Elevator extends SubsystemBase {
   }
 
 
-  public final ElevatorPose kStationPickup =  new ElevatorPose(5, 60, -10);
+  public final ElevatorPose kStationPickup =  new ElevatorPose(13.2, 57, 2500);
   //need special procedure to move to floor pickup
-  private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66.3, -10);
-  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66.3, 0);
+  private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66, -10);
+  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66, 0);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84, 0);
   public final ElevatorPose kStowedUp =         new ElevatorPose(26, 84, 0);
   public final ElevatorPose kClimbing =       new ElevatorPose(16, 128, 0);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90, 10);
   public final ElevatorPose kL2 =             new ElevatorPose(21, 145.5, 10);
-  public final ElevatorPose kL3 =             new ElevatorPose(35, 145.5, 10);
-  public final ElevatorPose kL4 =             new ElevatorPose(58.4, 135, 10);
-  public final ElevatorPose kL2Coral =             new ElevatorPose(23.8, 142, -2500);
-  public final ElevatorPose kL3Coral =             new ElevatorPose(39.5, 142, -2500);
+  public final ElevatorPose kL3 =             new ElevatorPose(37, 145.5, 10);
+  public final ElevatorPose kL4 =             new ElevatorPose(59.4, 135, 10);
+  public final ElevatorPose kL2Algae =             new ElevatorPose(23.8, 142, -2500);
+  public final ElevatorPose kL2AlgaeFar =             new ElevatorPose(25.0, 152, -2500);
+  public final ElevatorPose kL3Algae =             new ElevatorPose(39.5, 142, -2500);
 
 
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
-  // ArmFeedforward rotatorFF = new ArmFeedforward(0.3, 0.25, 0.0, 0.0);
+  // ArmFeedforward rotatorFF = new ArmFeedforward(0.1, 0.25, 0.0, 0.0);
   ArmFeedforward rotatorFF = new ArmFeedforward(0.0, 0.25, 0.0, 0.0);
   ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, (.45 -.071)/2, 0.0);
   public Elevator() {
@@ -143,6 +150,11 @@ public class Elevator extends SubsystemBase {
     //should probably do again, sometimes doesnt get sent
     rotationMotor.getEncoder().setPosition(getAngleAbsolute().in(Degrees));
     // new Trigger(DriverStation::isEnabled).and(() -> isHomed == false).onTrue(homeElevator());
+    new Trigger(DriverStation::isEnabled).and(()->!hasArmSynced)
+    .onTrue(new InstantCommand(()->{
+      rotationMotor.getEncoder().setPosition(getAngleAbsolute().in(Degrees));
+      hasArmSynced=true;
+    }));
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
 
     // setDefaultCommand(holdPosition());
@@ -154,7 +166,7 @@ public class Elevator extends SubsystemBase {
 
   }
 
-  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped.debounce(0.03);
+  public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return coralOutMotor.getOutputCurrent() > ROLLERSTALLCURRENT;
@@ -196,6 +208,10 @@ public class Elevator extends SubsystemBase {
 
   public Angle getAngle(){
     return Degrees.of(rotationMotor.getEncoder().getPosition());
+  }
+
+  public AngularVelocity getAngularVelocity(){
+    return DegreesPerSecond.of(rotationMotor.getEncoder().getVelocity());
   }
 
   public Distance getCarriageHeight(){
@@ -347,15 +363,44 @@ public class Elevator extends SubsystemBase {
     ));
   }
 
+  //Elevator cannot move while arm is at peak speed, too much torque.
+  public Command moveToPoseUnchecked(ElevatorPose pose, BooleanSupplier canMoveElevator) {
+    return new InstantCommand(() -> {
+      slewRateAngle.reset(getAngle().in(Degrees));
+    })
+    .andThen(new ParallelCommandGroup(
+      moveToAngleTrap(()->pose.angle), //THIS ONE requires elevator subsystem
+      new RunCommand(()->{
+        if(canMoveElevator.getAsBoolean()){
+          setHeight(pose.height);
+        }
+        setScorerSpeed(0);
+      })
+    ));
+  }
+
   public Command moveToPoseSafe(ElevatorPose pose) {
     return new SequentialCommandGroup(
       moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
-      moveToPoseUnchecked(pose)
+      // moveToPoseUnchecked(pose)
+      new ParallelDeadlineGroup(
+        moveToPoseUnchecked(pose, ()->getAngularVelocity().in(DegreesPerSecond)<45)
+        // realignCoralScorer()
+      )
     );
   }
   public Command scoreAtPoseSafe(ElevatorPose pose) {
-    return moveToPoseSafe(pose)
-    .andThen(moveToPoseWithScorer(pose));
+    // return moveToPoseSafe(pose)
+    // .andThen(moveToPoseWithScorer(pose));
+
+    return new SequentialCommandGroup(
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
+      // moveToPoseUnchecked(pose)
+      new ParallelDeadlineGroup(
+        moveToPoseWithScorer(pose)
+        // realignCoralScorer()
+      )
+    );
   }
 
 
@@ -376,10 +421,40 @@ public class Elevator extends SubsystemBase {
       new ParallelCommandGroup(
         moveToHeight(kFloorPickup.height),
         new RunCommand(()->coralOutMotor.setVoltage(6))
+        .until(isCoralInScorer)
+        // .andThen(new WaitCommand(0.1))
+        .finallyDo((e)->{
+          // coralOutMotor.setVoltage(-2);
+          coralOutMotor.getEncoder().setPosition(0);
+        })
       )
     );
     //In theory, move back up at very end. doesnt work, causes things to break, whatever
     // .finallyDo((e)->moveToHeight(kPrepareToFloorPickup.height));
+  }
+
+  public Command moveToStationPickup(){
+    return new SequentialCommandGroup(
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
+      moveToPoseWithScorer(kStationPickup)
+    ).until(isCoralInScorer)
+    .finallyDo((e)->{
+      // coralOutMotor.setVoltage(-2);
+      coralOutMotor.getEncoder().setPosition(0);
+    });
+  }
+
+  public Command pidScorerBack(){
+    return new InstantCommand(()->{})//coralOutMotor.getEncoder().setPosition(0))
+    .andThen(new RunCommand(()->coralOutMotor.getClosedLoopController().setReference(-2, ControlType.kPosition, ClosedLoopSlot.kSlot1)));
+  }
+
+  public Command realignCoralScorer(){
+    return Commands.sequence(
+      new RunCommand(()->setScorerSpeed(-1200)).onlyWhile(isCoralInScorer),
+      new InstantCommand(()->coralOutMotor.getEncoder().setPosition(0)),
+      new RunCommand(()->coralOutMotor.getClosedLoopController().setReference(2, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+    );
   }
 
   SysIdRoutineLog log = new SysIdRoutineLog("elevatorArm");
@@ -447,7 +522,8 @@ public class Elevator extends SubsystemBase {
   )
   .or(()->getCarriageHeight().in(Inches) > kPrepareToFloorPickup.height - 1
     && setpoint.height > kPrepareToFloorPickup.height - 1
-  );
+  )
+  .or(()->getCarriageHeight().in(Inches)>12.7 && getAngle().in(Degrees) > 50);
 
 
   public boolean isAtPosition(ElevatorPose pose){
@@ -459,29 +535,29 @@ public class Elevator extends SubsystemBase {
   @Override
   public void periodic(){
     SmartDashboard.putNumber("elevator/height", getCarriageHeight().in(Inches));
-    SmartDashboard.putNumber("elevator/setpoint", setpoint.height);
-    SmartDashboard.putNumber("elevator/appliedvoltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
-    SmartDashboard.putNumber("elevator/current", elevatorMotor.getOutputCurrent());
+    // SmartDashboard.putNumber("elevator/setpoint", setpoint.height);
+    // SmartDashboard.putNumber("elevator/appliedvoltage", elevatorMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    // SmartDashboard.putNumber("elevator/current", elevatorMotor.getOutputCurrent());
     
     
-    // SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
-    // SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
+    // // SmartDashboard.putNumber("elevator/out-motor/position", coralOutMotor.getEncoder().getPosition());
+    // // SmartDashboard.putNumber("elevator/out-motor/voltage", coralOutMotor.getEncoder().getVelocity());
 
-    SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
-    SmartDashboard.putNumber("elevator/rotation/relativeAngle", getAngle().in(Degree));
+    // SmartDashboard.putNumber("elevator/angle/Current", rotationMotor.getOutputCurrent());
+    SmartDashboard.putNumber("elevator/rotation/angle", getAngle().in(Degree));
     SmartDashboard.putNumber("elevator/rotation/absoluteAngel", getAngleAbsolute().in(Degree));
-    SmartDashboard.putNumber("elevator/rotation/velocity", rotationMotor.getEncoder().getVelocity());
-    SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
-    SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
+    // SmartDashboard.putNumber("elevator/rotation/velocity", rotationMotor.getEncoder().getVelocity());
+    // SmartDashboard.putNumber("elevator/angleVoltage",rotationMotor.getAppliedOutput()*rotationMotor.getBusVoltage());
+    // SmartDashboard.putNumber("elevator/inputVoltage",rotationMotor.getBusVoltage());
 
-    SmartDashboard.putNumber("elevator/rotation/plot/setpointNrml", setpoint.angle);
-    SmartDashboard.putNumber("elevator/rotation/plot/setpointTrap", armSetpoint.position);
+    // SmartDashboard.putNumber("elevator/rotation/plot/setpointNrml", setpoint.angle);
+    // SmartDashboard.putNumber("elevator/rotation/plot/setpointTrap", armSetpoint.position);
     
-    SmartDashboard.putNumber("elevator/lasercanDistance", laserCan.getDistanceOptional().orElse(Inches.of(99999)).in(Inches));
-    SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
-    SmartDashboard.putBoolean("elevator/isClear", isClear.getAsBoolean());
+    // SmartDashboard.putNumber("elevator/lasercanDistance", laserCan.getDistanceOptional().orElse(Inches.of(99999)).in(Inches));
+    // SmartDashboard.putBoolean("elevator/lasercanHAsGamepiece", isCoralInScorer.getAsBoolean());
+    // SmartDashboard.putBoolean("elevator/isClear", isClear.getAsBoolean());
 
-    SmartDashboard.putData("elevator/lasercan", laserCan);
+    // SmartDashboard.putData("elevator/lasercan", laserCan);
     // SmartDashboard.putData("elevator/lasercan", laserCan.sen);
     
     mechanism.update(

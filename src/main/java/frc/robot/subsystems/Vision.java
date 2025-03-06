@@ -5,10 +5,12 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
+import java.lang.StackWalker.Option;
 import java.util.Optional;
 
 import org.photonvision.EstimatedRobotPose;
@@ -17,6 +19,7 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import com.studica.frc.AHRS;
 
@@ -25,6 +28,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.PoseEstimator;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -38,66 +42,106 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Vision extends SubsystemBase {
 
   Swerve swerve ; 
-  AHRS navx;
   AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
 
   NetworkTableInstance table = NetworkTableInstance.getDefault();
-  PhotonCamera camera = new PhotonCamera("c1");
+  Optional<PhotonCamera> leftCamera;
+  Optional<PhotonCamera> rightCamera;
+  Optional<PhotonCamera> backCamera;
+
+  Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
+  Transform3d rightRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), -Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, -Math.toRadians(40.0+180.0)));
+  Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
+  PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
+  PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
   
-  Transform3d robotToCam = new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0, 0, 0));
-  PhotonPoseEstimator cameraPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
-
+   
   /** Creates a new Vision. */
-  public Vision(Swerve swerve, AHRS navxGyro) {
-
+  public Vision(Swerve swerve) {
     this.swerve = swerve;
-    //FIXME: I don't think we need or use direct gyro access like this
-    this.navx = (AHRS)swerve.swerveDrive.getGyro().getIMU();
+
+    //move camera constructors here
     
+    try{
+      leftCamera = Optional.of(new PhotonCamera("Back_Left"));
+
+    }catch(Error e){
+      System.err.print(e);
+      leftCamera = Optional.empty();
+    }
+
+    try{
+      // rightCamera = Optional.of(new PhotonCamera("Back_Right"));
+      rightCamera = Optional.empty();
+    }catch(Error e){
+      System.err.print(e);
+      rightCamera = Optional.empty();
+    }
+
+    try{
+      backCamera = Optional.of(new PhotonCamera("Back"));
+    }catch(Error e){
+      System.err.print(e);
+      backCamera = Optional.empty();
+    }
+
 
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    PhotonPipelineResult results = camera.getLatestResult();
+    SmartDashboard.putBoolean("vision/leftCamera", leftCamera.isPresent());
+    SmartDashboard.putBoolean("vision/rightCamera", rightCamera.isPresent());
+    SmartDashboard.putBoolean("vision/backCamera", backCamera.isPresent());
 
-    SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
+    // if(leftCamera.isPresent()){
+    //   PhotonPipelineResult results = leftCamera.get().getLatestResult();
+    //   SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
+    // }
 
     updateOdometry();
-    getDistanceFromCamera();
-    
+    //getDistanceFromCamera();
 
+    //SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());
+  
   }
 
 
   public void updateOdometry(){
-
-    updateCameraSideOdometry(cameraPoseEstimator, camera);
-
-  }
-
-  public void getDistanceFromCamera(){
-
-    var results = camera.getLatestResult();
-    if(results.hasTargets()){
-      var pitch = results.getBestTarget().getPitch();   
-      SmartDashboard.putNumber("Distance", 
-    PhotonUtils.calculateDistanceToTargetMeters(Meters.convertFrom(7.5, Inches), 
-    Meters.convertFrom(56, Inches), Radians.convertFrom(30, Degrees), 
-    -Radians.convertFrom(pitch, Degrees)));   
-
+    //if camera is present
+    if(leftCamera.isPresent()){
+      updateCameraSideOdometry(leftPoseEstimator, leftCamera.get());
+    }
+    if(rightCamera.isPresent()){
+      updateCameraSideOdometry(rightPoseEstimator, rightCamera.get());
     }
   }
-  
+  // public void getDistanceFromCamera(){
+
+  //   if(leftCamera.isPresent()){
+  //   var results = leftCamera.get().getAllUnreadResults();
+  //   // if(results.hasTargets()){
+  //     // var pitch = results.getBestTarget().getPitch();   
+  //     // SmartDashboard.putNumber("Distance", 0);
+  //   //   PhotonUtils.calculateDistanceToTargetMeters(
+  //   //     Meters.convertFrom(7.5, Inches), 
+  //   //     Meters.convertFrom(56, Inches),
+  //   //     Radians.convertFrom(30, Degrees), 
+  //   //     -Radians.convertFrom(pitch, Degrees))
+  //   // );   
+  //   }
+
+  //   }
+  // }
 
   private void updateCameraSideOdometry(PhotonPoseEstimator photonPoseEstimator, PhotonCamera camera){
 
     var latesResults = camera.getAllUnreadResults();
     for(PhotonPipelineResult result : latesResults){
       Optional<EstimatedRobotPose> estimatedPose = photonPoseEstimator.update(result);
-      SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
-      if(estimatedPose.isPresent()){
+      // SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
+      if(estimatedPose.isPresent()){  
         double latency;
 
         if(result.hasTargets()){
@@ -108,7 +152,7 @@ public class Vision extends SubsystemBase {
         }
         Matrix<N3, N1> stddev = getStdDeviation(estimatedPose.get());
 
-        SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
+        // SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
         //update pose
 
         swerve.swerveDrive.addVisionMeasurement(estimatedPose.get().estimatedPose.toPose2d(), result.getTimestampSeconds());
@@ -160,6 +204,23 @@ public class Vision extends SubsystemBase {
 
   }
 
+  public double getRotationDouble(){
+    var value = getRotationToObject().orElse(new Rotation2d()).rotateBy(swerve.getHeading()).getRotations();
+    return value;
+  }
+
+  public Optional<Rotation2d> getRotationToObject(){
+    if(backCamera.isPresent()){
+    PhotonPipelineResult results = backCamera.get().getLatestResult();
+
+    if (results.hasTargets()){
+      PhotonTrackedTarget target = results.getBestTarget();
+      return Optional.of(new Rotation2d(Degrees.of(target.getYaw())));
+    }
+    }
+    return Optional.empty();
+    
+  }
 
 }
 

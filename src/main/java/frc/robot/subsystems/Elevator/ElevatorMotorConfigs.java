@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.Elevator;
 
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
@@ -45,7 +46,7 @@ public class ElevatorMotorConfigs {
   public static SparkBaseConfig getScorerConfig(){
     SparkBaseConfig coralOutConfig = new SparkMaxConfig()
       .smartCurrentLimit(30)
-      .idleMode(IdleMode.kCoast)
+      .idleMode(IdleMode.kBrake)
       .inverted(true); //Positive is in, Negative is out
 
     var coralOutConversionFactor = 1; //3.371;
@@ -57,7 +58,8 @@ public class ElevatorMotorConfigs {
     coralOutConfig.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
       .velocityFF(1/5760.0)
-      .p(0);
+      .p(0)
+      .p(0.1, ClosedLoopSlot.kSlot1);
     return coralOutConfig;
   }
 

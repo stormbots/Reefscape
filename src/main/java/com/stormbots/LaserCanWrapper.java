@@ -24,6 +24,12 @@ public class LaserCanWrapper implements Sendable{
   public LaserCanWrapper(int canID){
     laserCan = new LaserCan(canID);
 
+    try {
+      laserCan.setTimingBudget(TimingBudget.TIMING_BUDGET_20MS);
+      
+    } catch (Exception e) {
+      // TODO: handle exception
+    }
     //Do a default config for short range
     configureShortRange();
   }
