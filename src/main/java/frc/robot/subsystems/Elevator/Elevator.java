@@ -377,28 +377,8 @@ public class Elevator extends SubsystemBase {
     );
   }
 
-
-  public Command goToIntake(Trigger isDown){
-    return new SequentialCommandGroup(
-      moveToPoseSafe(kPrepareToFloorPickup).until(isAtTargetPosition),
-      Commands.idle(this).until(isDown),
-      moveToPoseUnchecked(kFloorPickup)
-    );
-  }
-
-
   //Move to prepare to floor pickup, wait for intake to lower(also cuz if we rotate straight to intake we ram into support)
-  public Command moveToIntake(Trigger lowerIntake){
-    return new SequentialCommandGroup(
-      moveToPoseSafe(kPrepareToFloorPickup).until(()->isAtPosition((kPrepareToFloorPickup))),
-      Commands.idle(this).until(lowerIntake),
-      new ParallelCommandGroup(
-        moveToHeight(kFloorPickup.height)
-        )
-      );
-    //In theory, move back up at very end. doesnt work, causes things to break, whatever
-    // .finallyDo((e)->moveToHeight(kPrepareToFloorPickup.height));
-  }
+
 
   public Command moveToStationPickup(){
     return new SequentialCommandGroup(

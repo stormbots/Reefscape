@@ -27,7 +27,6 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
-import frc.robot.subsystems.CoralIntake.CoralIntake;
 import frc.robot.subsystems.Elevator.Elevator;
 
 /** Add your docs here. */
@@ -47,7 +46,6 @@ public class Autos {
     Swerve swerveSubsystem;
     Elevator elevator;
     Climber climber;
-    CoralIntake intake;
     AlgaeGrabber algae;
     // Vision vision;
 
@@ -55,14 +53,12 @@ public class Autos {
         Swerve swerve,
         Elevator elevator,
         Climber climber,
-        CoralIntake coralIntake,
         AlgaeGrabber algae
         // Vision vision
     ){
         this.swerveSubsystem = swerve;
         this.elevator = elevator;
         this.climber = climber;
-        this.intake = coralIntake;
         // this.vision = vision;
 
         // Add options to our chooser; This could be done manually if we wanted
@@ -168,7 +164,6 @@ public class Autos {
         return Commands.sequence(
           elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
           new ParallelCommandGroup(
-            intake.setAngle(()-> 60.0).withTimeout(2),
             climber.setAngle(()->30.2)
           )
         );

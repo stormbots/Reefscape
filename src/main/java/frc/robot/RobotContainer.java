@@ -29,7 +29,6 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
-import frc.robot.subsystems.CoralIntake.CoralIntake;
 import frc.robot.subsystems.Elevator.Elevator;
 
 /**
@@ -44,14 +43,13 @@ public class RobotContainer {
   public final Swerve swerveSubsystem = new Swerve();
   public final Climber climber = new Climber();
   public final Elevator elevator = new Elevator();
-  public final CoralIntake intake = new CoralIntake(elevator.isClear);
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
   private final Vision vision = new Vision(swerveSubsystem);
 
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
-  public final Autos autos = new Autos(swerveSubsystem, elevator, climber, intake, algaeGrabber);
+  public final Autos autos = new Autos(swerveSubsystem, elevator, climber, algaeGrabber);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
@@ -195,11 +193,10 @@ public class RobotContainer {
     operator.axisLessThan(1, 0).whileTrue(new ParallelCommandGroup(
       climber.prepareToClimb(),
       elevator.moveToPoseUnchecked(elevator.kClimbing),
-      intake.setAngle(()->65),
       algaeGrabber.stop()
     ));
 
-    operator.axisGreaterThan(1, 0).whileTrue(climber.climb().alongWith(intake.setAngle(()->65)));
+    operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));
     operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(elevator.runCoralScorer(-2500)));
@@ -263,7 +260,8 @@ public class RobotContainer {
    * Because autos go in Autos now.
    */
   public Command getProgrammingTestSequence() {
-    return new InstantCommand();
+    // return new InstantCommand();
+    return elevator.moveToPoseSafe(elevator.kL4);
 
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
@@ -291,7 +289,6 @@ public class RobotContainer {
     return Commands.sequence(
       climber.setAngle(()->30.2).withTimeout(3),
       elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7)).until(elevator.isAtTargetAngle).withTimeout(3),
-      intake.setAngle(()-> 75.0).withTimeout(0.5),
       elevator.moveToHeightUnfoldHighPrecision(3.78)
     );
   }
@@ -305,7 +302,6 @@ public class RobotContainer {
   public Command getUnfoldRobot() {
     return Commands.sequence(
       elevator.moveToPoseUnchecked(elevator.kStowedUp).until(elevator.isAtTargetPosition),
-      intake.setAngle(()-> 60.0).withTimeout(2),
       climber.setAngle(()->30.2)
     );
   }
