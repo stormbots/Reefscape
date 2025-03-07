@@ -105,7 +105,6 @@ public class Elevator extends SubsystemBase {
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(13.2, 57);
   private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66);
-  public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84);
   public final ElevatorPose kStowedUp =       new ElevatorPose(26, 84);
   public final ElevatorPose kClimbing =       new ElevatorPose(16, 128);
@@ -118,6 +117,8 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kL3Algae =        new ElevatorPose(39.5, 142);
 
 
+  //DEPRECATED ground Intake dosent exsist ):
+  //public final ElevatorPose kPrepareToFloorPickup = new ElevatorPose(43, -66);
 
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
@@ -291,6 +292,7 @@ public class Elevator extends SubsystemBase {
   }
   
   //DEPRICATED: Left here for debugging
+  @Deprecated
   public Command moveToAngle(double angle) {
     return startRun(
         () -> {
@@ -305,18 +307,6 @@ public class Elevator extends SubsystemBase {
 
   
   public Command moveToPoseUnchecked(ElevatorPose pose) {
-    // return startRun(
-    //     () -> {
-    //       slewRateAngle.reset(getAngle().in(Degrees));
-    //     },
-    //     () -> {
-    //       setHeight(pose.height);
-    //       setAngle(pose.angle);
-    //       setScorerSpeed(0);
-    //     }
-    // // exit condition on arriving?
-    // );//.until(isAtTargetPosition); //no good, can't have
-
     return new InstantCommand(() -> {
       slewRateAngle.reset(getAngle().in(Degrees));
     })
@@ -329,41 +319,25 @@ public class Elevator extends SubsystemBase {
   }
 
   //Elevator cannot move while arm is at peak speed, too much torque.
-  public Command moveToPoseUnchecked(ElevatorPose pose, BooleanSupplier canMoveElevator) {
-    return new InstantCommand(() -> {
-      slewRateAngle.reset(getAngle().in(Degrees));
-    })
-    .andThen(new ParallelCommandGroup(
-      moveToAngleTrap(()->pose.angle), //THIS ONE requires elevator subsystem
-      new RunCommand(()->{
-        if(canMoveElevator.getAsBoolean()){
-          setHeight(pose.height);
-        }
-      })
-    ));
-  }
+  // No  more center carraige, not needed anymores
+  // @Deprecated
+  // public Command moveToPoseUnchecked(ElevatorPose pose, BooleanSupplier canMoveElevator) {
+  //   return new InstantCommand(() -> {
+  //     slewRateAngle.reset(getAngle().in(Degrees));
+  //   })
+  //   .andThen(new ParallelCommandGroup(
+  //     moveToAngleTrap(()->pose.angle), //THIS ONE requires elevator subsystem
+  //     new RunCommand(()->{
+  //       if(canMoveElevator.getAsBoolean()){
+  //         setHeight(pose.height);
+  //       }
+  //     })
+  //   ));
+  // }
 
   public Command moveToPoseSafe(ElevatorPose pose) {
-    return new SequentialCommandGroup(
-      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
-      // moveToPoseUnchecked(pose)
-      new ParallelDeadlineGroup(
-        moveToPoseUnchecked(pose, ()->getAngularVelocity().in(DegreesPerSecond)<45)
-        // realignCoralScorer()
-      )
-    );
-  }
-  public Command scoreAtPoseSafe(ElevatorPose pose) {
-    // return moveToPoseSafe(pose)
-    // .andThen(moveToPoseWithScorer(pose));
-
-    return new SequentialCommandGroup(
-      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
-      // moveToPoseUnchecked(pose)
-      new ParallelDeadlineGroup(
-        moveToPoseWithScorer(pose)
-        // realignCoralScorer()
-      )
+    return new RunCommand(() -> 
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition)
     );
   }
 
@@ -372,8 +346,7 @@ public class Elevator extends SubsystemBase {
 
   public Command moveToStationPickup(){
     return new SequentialCommandGroup(
-      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition),
-      moveToPoseWithScorer(kStationPickup)
+      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition)
     );
   }
   
@@ -399,29 +372,6 @@ public class Elevator extends SubsystemBase {
     return routine.quasistatic(direction);
   }
 
-  public Command moveToPoseWithScorer(ElevatorPose pose) {
-    // return startRun(
-    //     () -> {
-    //       slewRateAngle.reset(getAngle().in(Degrees));
-    //     },
-    //     () -> {
-    //       setHeight(pose.height);
-    //       setAngle(pose.angle);
-    //       setScorerSpeed(pose.speed);
-    //     }
-    // );
-    // exit condition on arriving?
-
-    return new InstantCommand(() -> {
-      slewRateAngle.reset(getAngle().in(Degrees));
-    })
-    .andThen(new ParallelCommandGroup(
-      moveToAngleTrap(()->pose.angle), //THIS ONE requires elevator subsystem
-      new RunCommand(()->{
-        setHeight(pose.height);
-      })
-    ));
-  }
 
   public Command holdPosition(){
     return run(
@@ -446,19 +396,9 @@ public class Elevator extends SubsystemBase {
 
   public Trigger isAtTargetPosition = isAtTargetAngle.and(isAtTargetHeight).debounce(0.02*3);
 
-  public Trigger isClear = new Trigger(()->getAngle().in(Degree) > 85.0
-    && setpoint.angle > 85.0
-  )
-  .or(()->getCarriageHeight().in(Inches) > kPrepareToFloorPickup.height - 1
-    && setpoint.height > kPrepareToFloorPickup.height - 1
-  )
-  .or(()->getCarriageHeight().in(Inches)>12.7 && getAngle().in(Degrees) > 50);
-
-
   public boolean isAtPosition(ElevatorPose pose){
     return MathUtil.isNear(pose.angle, getAngle().in(Degrees), toleranceAngle) && 
     MathUtil.isNear(pose.height, getCarriageHeight().in(Inches), toleranceHeight);
-
   }
 
   @Override
