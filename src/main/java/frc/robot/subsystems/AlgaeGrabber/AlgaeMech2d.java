@@ -7,6 +7,7 @@ package frc.robot.subsystems.AlgaeGrabber;
 import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.RPM;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -33,6 +34,7 @@ class AlgaeMech2d {
     MechanismLigament2d shooterbar = root.append(new MechanismLigament2d("AlgaeShooterBar", 24, -90 + 10));
     MechanismLigament2d intake = intakebar.append(new MechanismLigament2d("AlgaeIntake", 0, 90));
     MechanismLigament2d shooter = shooterbar.append(new MechanismLigament2d("AlgaeShooter", 0, 90));
+    MechanismLigament2d breakBeamIndicator = root.append(new MechanismLigament2d("AlgaeBreakBeam", -4, 0));
 
     MechanismLigament2d armPlant = root.append(new MechanismLigament2d("simBar", 30, 0));
 
@@ -40,16 +42,19 @@ class AlgaeMech2d {
     Supplier<AngularVelocity> getIntakeSpeed;
     Supplier<AngularVelocity> getShooterSpeed;
     Supplier<Angle> getSimAngle;
+    BooleanSupplier breakbeam;
 
     public AlgaeMech2d(
         Supplier<Angle> angleSupplier,
         Supplier<AngularVelocity> intakeSpeedSupplier,
         Supplier<AngularVelocity> shooterSpeedSupplier,
+        BooleanSupplier breakbeam,
         Supplier<Angle> angleSupplierSim
     ) {
       this.getAngle = angleSupplier;
       this.getIntakeSpeed = intakeSpeedSupplier;
       this.getShooterSpeed = shooterSpeedSupplier;
+      this.breakbeam = breakbeam;
       this.getSimAngle = angleSupplier;
 
       var barweight = 10;
@@ -67,6 +72,8 @@ class AlgaeMech2d {
       shooter.setLineWeight(barweight);
       armPlant.setLineWeight(1);
 
+      breakBeamIndicator.setLineWeight(barweight*2);
+
       if(Robot.isReal())armPlant.setLength(0);
       
       SmartDashboard.putData("mechanism/algaegrabber", mech);
@@ -80,6 +87,8 @@ class AlgaeMech2d {
 
       intake.setLength(getIntakeSpeed.get().in(RPM) / 5760.0 * barlength / 4);
       shooter.setLength(getShooterSpeed.get().in(RPM) / 5760.0 * barlength / 4);
+
+      breakBeamIndicator.setColor(breakbeam.getAsBoolean()? new Color8Bit(Color.kGreen): new Color8Bit(Color.kRed));
 
       // This is mostly to validate absolute vs relative, since they should be identical
     //   intakebarRelative.setAngle(new Rotation2d(Math.toRadians(armMotor.getEncoder().getPosition())));

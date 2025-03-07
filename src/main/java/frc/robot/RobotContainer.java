@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
@@ -55,7 +56,7 @@ public class RobotContainer {
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
-  CommandXboxController bruh = new CommandXboxController(2);
+  CommandXboxController testController = new CommandXboxController(2);
 
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -223,21 +224,21 @@ public class RobotContainer {
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
     //is actuaklky shoot
-    operator.rightStick().whileTrue(algaeGrabber.scoreProcessor())
+    operator.rightStick().whileTrue(algaeGrabber.newShootAlgae())
     .whileTrue(elevator.moveToAngleTrap(()->90));
 
 
     // Expected algae control stuff
-    operator.leftBumper().whileTrue(algaeGrabber.intakeAlgaeFromFloor())
+    operator.leftBumper().whileTrue(algaeGrabber.newIntakeFromGround())
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
     ;
 
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreInNetEzMode());
     // operator.leftTrigger().whileTrue(algaeGrabber.scoreProcessor());
-    operator.leftTrigger().whileTrue(algaeGrabber.ejectFromFloor());
+    // operator.leftTrigger().whileTrue(algaeGrabber.ejectFromFloor()); //TODO: Find what this is intended to do
 
     //is also algae score
-    operator.leftStick().whileTrue(algaeGrabber.eject());
+    operator.leftStick().whileTrue(algaeGrabber.newScoreProcessor());
 
     //TEST, will not work as does not require elevator subsystem due to intracacieswadkn
     // operator.leftStick().whileTrue(elevator.pidScorerBack());
@@ -249,8 +250,6 @@ public class RobotContainer {
     // operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
     // operator.a().whileTrue(algaeGrabber.prepareToShoot());
 
-    bruh.a().whileTrue(getUnfoldRobot());
-    bruh.b().whileTrue(goToDefenseMode());
   }
 
   /**
