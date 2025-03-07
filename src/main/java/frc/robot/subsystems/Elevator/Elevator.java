@@ -74,6 +74,9 @@ public class Elevator extends SubsystemBase {
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
 
+  private TrapezoidProfile.State elevatorGoal = new TrapezoidProfile.State();
+  private TrapezoidProfile.State elevatorSetpoint = new TrapezoidProfile.State(); 
+
   /** System Goal State */
   ElevatorPose setpoint = new ElevatorPose(0, 0);
   /** This is the interrim setpoint used by the trapezoidal profile */
@@ -260,6 +263,25 @@ public class Elevator extends SubsystemBase {
     ;
   }
 
+
+
+  private Command movetoheightTrapNoRequires(){
+    //start end noooo
+    return new SequentialCommandGroup(
+      new InstantCommand(
+        setpoint.height = position.getAsDouble();
+        elevatorSetpoint = new TrapezoidProfile.State(getAngle().in(Degrees), elevatorMotor.getEncoder().getVelocity());
+      ), //do the "start" stuff for setup
+      new RunCommand(()->{})//the rest
+    );
+  }
+
+  public Command movetoheightTrap(){
+    var command = movetoheightTrapNoRequires();
+    command.addRequirements(this);
+    return command;
+  }
+
   private Command moveToHeight(double height) {
     return runEnd(
       () -> setHeight(height),
@@ -348,17 +370,6 @@ public class Elevator extends SubsystemBase {
     return new SequentialCommandGroup(
       moveToPoseUnchecked(kStowedUp).until(isAtSafePosition)
     );
-  }
-  
-
-  @Deprecated
-  public Command pidScorerBack(){
-   return new InstantCommand();
-  }
-
-  @Deprecated
-  public Command realignCoralScorer(){
-    return new InstantCommand();
   }
 
   SysIdRoutineLog log = new SysIdRoutineLog("elevatorArm");
