@@ -201,9 +201,8 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
 
-  Trigger isBreakbeamTripped = laserCan.isBreakBeamTripped.debounce((0.03))
-  .or(()->Timer.getFPGATimestamp()%6<1);
-
+  Trigger isBreakbeamTripped = laserCan.isBreakBeamTripped.debounce((0.03));
+  
   Trigger intakeStalled = new Trigger(()->intakeMotor.getOutputCurrent() > 50)
     .and(()->intakeMotor.getEncoder().getVelocity()<250)    
     .debounce(0.1);
