@@ -242,6 +242,52 @@ public class Vision extends SubsystemBase {
 
   
 
+  public Matrix<N3, N1> getStdevTake3(EstimatedRobotPose estimatedPose){
+    //Get one that's easy to work with
+    var stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE);
+
+    var targets = estimatedPose.targetsUsed;
+    if(targets.isEmpty()) return stddev.times(10);
+
+    double distanceToEstimatedPose = 10; //m
+    double distanceToCurrentPose = 10; //m
+    var estimate = estimatedPose.estimatedPose.toPose2d();
+    var bot = swerve.getPose().getTranslation();
+
+    //See how far away we're being told to move
+    distanceToCurrentPose = Math.min(bot.getDistance(estimate.getTranslation()), distanceToCurrentPose);
+
+    //Check how far away the tag is from where the tags say we *should* be.
+    for (var tgt : targets){
+      var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
+      if(tagPose.isEmpty()) continue;
+
+      var tag = tagPose.get().toPose2d().getTranslation();
+      distanceToEstimatedPose = Math.min(tag.getDistance(estimate.getTranslation()), distanceToEstimatedPose) ;
+    }
+
+    var scalar = 1.0;
+
+    //if we're seeing tags near the estimated pose, decrease stdev ; That means we're close to it. 
+    distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
+    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 0.1, 4);
+
+    // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
+    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 0.1, 10);
+
+    //if we're moving fast, increase stdev; Speed introduces potential errors
+    var speedsobject = swerve.getChassisSpeeds();
+    var speed = Math.hypot(speedsobject.vxMetersPerSecond,speedsobject.vyMetersPerSecond);
+    var omega = speedsobject.omegaRadiansPerSecond;
+    scalar *= Lerp.lerp(speed, 0, 5, 1, 3);
+    //Fast rotations are particularly bad; Negate this harshly
+    scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
+
+    //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
+    scalar = MathUtil.clamp(scalar,0.005, 20);
+    return stddev.times(scalar);
+  }
+
 
   public double getRotationDouble(){
     var value = getRotationToObject().orElse(new Rotation2d()).rotateBy(swerve.getHeading()).getRotations();
