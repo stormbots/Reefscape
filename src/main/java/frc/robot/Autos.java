@@ -87,6 +87,9 @@ public class Autos {
         autoChooser.addOption("Drive forward for 5 seconds :'(", this::driveForwardAuto);
 
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
+        //test autos here
+        autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
+        autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
         // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
         // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
@@ -103,6 +106,7 @@ public class Autos {
      *  almost never happen, but is safely handled internally if it does
      */
     public Command getAutonomousCommand(){
+      //TODO: mark command as "ran" and rebuild in periodic
         try{
              return selectedAutoFuture.get();
         }
@@ -177,10 +181,15 @@ public class Autos {
   public Command basicCenterAutoL4(){
     // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
+
+    var path = "basicCenterAuto";
+    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    Timer.delay(5); //let vision set the precise location before building the path
+
     return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
+      //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
       getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicCenterAuto"),
+      swerveSubsystem.followPath(path),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
       new WaitCommand(0.5),
@@ -189,11 +198,34 @@ public class Autos {
     );
   }
 
+  public Command basicCenterAutoTest(){
+    
+    var path = "basicCenterAuto";
+    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    Timer.delay(5); //let vision set the precise location before building the path
+
+    //sequence that only moves, no elevator or climber stuff
+    return Commands.sequence(
+      swerveSubsystem.followPath(path)
+    );
+  }
+  public Command basicLeftAutoTest(){
+
+    var path = "basicLeftAuto";
+    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    Timer.delay(5); //let vision set the precise location before building the path
+
+    //sequence that only moves, no elevator or climber stuff
+    return Commands.sequence(
+      swerveSubsystem.followPath(path)
+    );
+  }
+
   public Command basicCenterAutoAlgaeGrab(){
     // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
     return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
+      //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
       getUnfoldRobot().withTimeout(7),
       swerveSubsystem.followPath("basicCenterAuto"),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
@@ -212,7 +244,7 @@ public class Autos {
     // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
     return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
+      //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
       getUnfoldRobot().withTimeout(7),
       swerveSubsystem.followPath("basicCenterAuto"),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
@@ -246,7 +278,7 @@ public class Autos {
   public Command basicLeftAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     return Commands.sequence(
-    new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
+    //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
         getUnfoldRobot().withTimeout(7),
         swerveSubsystem.followPath("basicLeftAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
@@ -259,7 +291,7 @@ public class Autos {
   public Command lessBasicLeftAuto(){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     return Commands.sequence(
-    new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
+    //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
         getUnfoldRobot().withTimeout(7),
         swerveSubsystem.followPath("basicLeftAuto"),
         swerveSubsystem.pathToCoralRight().withTimeout(3),
