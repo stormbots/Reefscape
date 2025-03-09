@@ -235,7 +235,7 @@ public class AlgaeGrabber extends SubsystemBase {
       // angle down
       //run motors to loadfrom stuck inside  bot
     //go to resting angle, motors off or hold position
-    var stowangleEmpty = AlgaeGrabberConfigs.kLowerSoftLimit;
+    var stowangleEmpty = -99.6;//AlgaeGrabberConfigs.kLowerSoftLimit;
     var stowangleAlgae = -70;
 
     var withAlgae = run(()->{
