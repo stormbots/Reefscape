@@ -97,8 +97,8 @@ public class Elevator extends SubsystemBase {
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(4.2, -35);
   public final ElevatorPose kDefense =        new ElevatorPose(0.0, -60);
-  public final ElevatorPose kStowed =         new ElevatorPose(0, 84);
-  public final ElevatorPose kStowedUp =       new ElevatorPose(26, 84);
+  public final ElevatorPose kStowed =         new ElevatorPose(0, -40);
+  public final ElevatorPose kStowedUp =       new ElevatorPose(0, -40);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, -40);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90);
   public final ElevatorPose kL2 =             new ElevatorPose(4.8, 205.5);

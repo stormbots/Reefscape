@@ -207,7 +207,7 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
     //is actuaklky shoot
-    operator.rightStick().whileTrue(algaeGrabber.newShootAlgae())
+    operator.leftTrigger().whileTrue(algaeGrabber.newShootAlgae())
     .whileTrue(elevator.moveToAngleTrap(()->90));
 
 

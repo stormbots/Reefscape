@@ -49,7 +49,7 @@ public class AlgaeGrabber extends SubsystemBase {
   SparkFlex intakeMotor = new SparkFlex(17, MotorType.kBrushless);
 
   private SlewRateLimiter armAngleSlew = new SlewRateLimiter(90);
-  LaserCanWrapper laserCan = new LaserCanWrapper(23)//TODO: Needs correct id
+  LaserCanWrapper laserCan = new LaserCanWrapper(23)
     .configureShortRange()
     .setThreshhold(Inches.of(6));
 
@@ -64,11 +64,11 @@ public class AlgaeGrabber extends SubsystemBase {
   private double intakeRPMSetpoint = 0;
 
   //TODO: Find real angles
-  private ArmFeedforward armFF = new ArmFeedforward(0.3, 0.25, 0);
+  private ArmFeedforward armFF = new ArmFeedforward(0.3, 0.026, 0); //old kg 0.25
 
 
   private final TrapezoidProfile armTrapProfile = new TrapezoidProfile(
-    new TrapezoidProfile.Constraints(30, 30)
+    new TrapezoidProfile.Constraints(180, 270)
   );
 
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
@@ -242,6 +242,7 @@ public class AlgaeGrabber extends SubsystemBase {
       shooterMotor.stopMotor();
       setArmAngle(stowangleAlgae);
       setIntakeRPM(0);
+      intakeMotor.getEncoder().setPosition(0);
     }).onlyWhile(isBreakbeamTripped);
 
     var withoutAlgae = new SequentialCommandGroup(
@@ -266,17 +267,18 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   public Command newShootAlgae(){
-    double angle = -25;
+    double angle = -25;//-25;
     double shooterrpm = 4000;
     return new SequentialCommandGroup(
-      clearShooterForShooting(),
+      testMoveArmWithTrap(()->angle).until(isArmTrapComplete),
+      // clearShooterForShooting(),
       new WaitCommand(0.1),
+      newClearShooter(),
       //run prepare operation so we're at the right angle
       run(() ->{
         //Leaving intake at holding PID from clearShooter
-        setArmAngle(angle);
         setShooterRPM(shooterrpm);
-      }).until(isAtTargetAngle.and(isAtTargetRPM)),
+      }).until(isAtTargetAngle.and(isAtTargetRPM)).withTimeout(1),
       new WaitCommand(0.1),
       //Actually shoot things
       run(() ->{
@@ -296,7 +298,7 @@ public class AlgaeGrabber extends SubsystemBase {
     //grapple? Probably not viable or consistent
     //run back X rotations
 
-    var intakeClearance = -0.7;
+    var intakeClearance = -0.3;
     var shooterClearance = -0.23;
     //Brian solution was this: 
     return new SequentialCommandGroup(
@@ -309,6 +311,17 @@ public class AlgaeGrabber extends SubsystemBase {
       );
     //TODO: We can't have it rely on a long timer. 
     //Validate that a process like this works reliably
+  }
+
+  private Command newClearShooter() {
+    // intakeMotor.getEncoder().setPosition(0);
+    return run(()->{
+      intakeMotor.setVoltage(-0.3);
+      shooterMotor.setVoltage(-0.3);
+    }).until(()->intakeMotor.getEncoder().getPosition() <= -0.3)
+    .andThen(
+      new  InstantCommand(()->intakeMotor.getClosedLoopController().setReference(-0.3, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+    );
   }
 
   public Command newScoreProcessor(){
@@ -340,6 +353,10 @@ public class AlgaeGrabber extends SubsystemBase {
     // shoot out
     return runOnce(() -> {});
   }
+
+  Trigger isArmTrapComplete = new Trigger(()->{
+    return MathUtil.isNear(armSetpoint.position, armGoal.position, 5);
+  });
 
   //Use relative to ensure onboard motor pid is on same page
   public Trigger isAtTargetAngle = new Trigger(() -> {
@@ -377,7 +394,8 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/arm angle abs", getAbsoluteAngleDegrees());
     // SmartDashboard.putNumber("algae/intake roller pos", intakeMotor.getEncoder().getPosition());
     // SmartDashboard.putNumber("algae/shooter roller pos", shooterMotor.getEncoder().getPosition());
-
+    SmartDashboard.putBoolean("algae/lasercan/isBlocked", isBreakbeamTripped.getAsBoolean());
+    SmartDashboard.putNumber("algae/lasercan/distance", laserCan.getDistanceOptional().orElse(Inches.of(-999.0)).in(Inches));
     SmartDashboard.putNumber("algae/arm output",armMotor.getOutputCurrent());
     SmartDashboard.putNumber("algae/arm applied output",armMotor.getAppliedOutput());
     SmartDashboard.putNumber("algae/shooter velocity",shooterMotor.getEncoder().getVelocity());

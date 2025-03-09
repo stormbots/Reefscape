@@ -33,11 +33,14 @@ public class AlgaeGrabberConfigs {
         armConf.softLimit
         .forwardSoftLimit(kUpperSoftLimit).forwardSoftLimitEnabled(false)
         .reverseSoftLimit(kLowerSoftLimit).reverseSoftLimitEnabled(false)
+        
         ;
 
         armConf.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .p(0.2*4/60.0)
+        .i((12/50)/20)
+        .iZone(10)
         ;
 
         return armConf;
@@ -64,6 +67,7 @@ public class AlgaeGrabberConfigs {
         .velocityFF(1/5760.0)
         .p(0.1*4*2*2*2*2*1.5/9, ClosedLoopSlot.kSlot1)
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
+        
 
 
         rollerConf.closedLoopRampRate(0.05);
@@ -75,7 +79,7 @@ public class AlgaeGrabberConfigs {
         var shooterConf = new SparkFlexConfig();
         shooterConf
         .inverted(false)
-        .smartCurrentLimit(80)
+        .smartCurrentLimit(50)
         .idleMode(IdleMode.kBrake)
         ;
 
@@ -89,6 +93,7 @@ public class AlgaeGrabberConfigs {
         // .p(1/500.0)
         .velocityFF(1/5760.0*0.95)
         .p(0.1*4*2*2*2*2*1.5/3, ClosedLoopSlot.kSlot1)
+        .i(100/50)
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
         shooterConf.closedLoopRampRate(0.05);
