@@ -68,23 +68,12 @@ public class Autos {
         SmartDashboard.putData("AutoSelector/chooser",autoChooser);
         autoChooser.setDefaultOption("Select Auto",()->new InstantCommand());
         //INSERT TESTED AUTOS HERE; Drivers wil use these.
-        // autoChooser.addOption("drive first left auto", this::driveFirstLeftAuto);
-        // autoChooser.addOption("drive first right auto", this::driveFirstRightAuto);
-
+        //New L4 autos
+        autoChooser.addOption("L4 Basic Left Auto", this::basicLeftAutoL4);
+        autoChooser.addOption("L4 Basic Right Auto", this::basicRightAutoL4);
         autoChooser.addOption("L4 Basic Center Auto", this::basicCenterAutoL4);
-        autoChooser.addOption("Algae Basic Center Auto", this::basicCenterAutoAlgaeGrab);
-        autoChooser.addOption("Far Algae Basic Center Auto", this::basicCenterAutoFarAlgaeGrab);
-        // autoChooser.addOption("Less Basic Center Auto", this::lessBasicCenterAuto);
-        // autoChooser.addOption("Basic Right Auto", this::basicRightAuto);
-        // autoChooser.addOption("Less Basic Right Auto", this::lessBasicRightAuto);
-        autoChooser.addOption("Algae Basic Right Auto", this::basicRightAutoAlgaeGrab);
-        autoChooser.addOption("Far Algae Basic Right Auto", this::basicRightAutoFarAlgaeGrab);
-        // autoChooser.addOption("Basic Left Auto", this::basicLeftAuto);
-        // autoChooser.addOption("Less Basic Left Auto", this::lessBasicLeftAuto);
-        autoChooser.addOption("Algae Basic Left Auto", this::basicLeftAutoAlgaeGrab);
-        autoChooser.addOption("Far Algae Basic Left Auto", this::basicLeftAutoFarAlgaeGrab);
-        autoChooser.addOption("Drive forward for 5 seconds :'(", this::driveForwardAuto);
-
+        
+        
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //test autos here
         autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
@@ -178,16 +167,17 @@ public class Autos {
 
     return Commands.sequence(
       //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
+     // getUnfoldRobot().withTimeout(7),
       swerveSubsystem.followPath(path),
+      swerveSubsystem.pidToCoralLeft().withTimeout(1),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
       new WaitCommand(0.5),
       scorer.runCoralScorer(2500).withTimeout(1),
-      elevator.moveToAngleTrap(()->90)
-    ).andThen(
+      elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
+    );//andThen(
       //grab algae and shoot, not yet possible need elev and alg changes
-    );
+   // );
   }
 
   public Command basicLeftAutoL4(){
@@ -196,32 +186,68 @@ public class Autos {
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
-        getUnfoldRobot().withTimeout(7),
-        swerveSubsystem.followPath("basicLeftAuto"),
+      swerveSubsystem.followPath(path),
+      swerveSubsystem.pidToCoralLeft().withTimeout(1),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90),
-        new WaitCommand(3)
+        elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
     ).andThen(
-      //moving to coral source then scoring again command sequence
-        coralSourceScoreLeft()
+      new WaitCommand(3),
+      coralSourceScoreLeft()
     );
   }
 
+  public Command basicRightAutoL4(){
+    var path = "basicRightAuto";
+    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    Timer.delay(5); //let vision set the precise location before building the path
+
+    return Commands.sequence(
+       // getUnfoldRobot().withTimeout(7),
+        swerveSubsystem.followPath("basicRightAuto"),
+        swerveSubsystem.pidToCoralLeft(),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+        scorer.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
+   // ).andThen(
+      //moving to coral source then scoring again command sequence
+  //      new WaitCommand(3),
+   //     coralSourceScoreLeft()
+    );
+  }
+
+  //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works on both sides
   public Command coralSourceScoreLeft(){
     return Commands.sequence(
       swerveSubsystem.pathToCoralSource(),//.withTimeout(3),
+      new WaitCommand(2),
       swerveSubsystem.pidToCoralSource().withTimeout(1),
-     // elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup)),
-      //elevator coral scorer intake command
+      elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup)),
+      scorer.loadCoral().withTimeout(2),
       swerveSubsystem.pathToCoralLeft(),//.withTimeout(3),
-      swerveSubsystem.pidToCoralLeft().withTimeout(1)
-     // elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-     // scorer.runCoralScorer(2500).withTimeout(1),
-     // elevator.moveToAngleTrap(()->90)
+      swerveSubsystem.pidToCoralLeft().withTimeout(1),
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      scorer.runCoralScorer(2500).withTimeout(1),
+      elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
     );
   }
+  //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works both sides
+  public Command coralSourceScoreRight(){
+    return Commands.sequence(
+      swerveSubsystem.pathToCoralSource(),//.withTimeout(3),
+      swerveSubsystem.pidToCoralSource().withTimeout(1),
+      elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup)),
+      scorer.loadCoral(),
+      swerveSubsystem.pathToCoralRight(),//.withTimeout(3),
+      swerveSubsystem.pidToCoralRight().withTimeout(1),
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      scorer.runCoralScorer(2500).withTimeout(1),
+      elevator.moveToAngleTrap(()->90)
+    );
+  }
+
 
   public Command basicCenterAutoTest(){
     
@@ -234,6 +260,8 @@ public class Autos {
       swerveSubsystem.followPath(path)
     );
   }
+
+
   public Command basicLeftAutoTest(){
 
     var path = "basicLeftAuto";
@@ -243,227 +271,17 @@ public class Autos {
     //sequence that only moves, no elevator or climber stuff
     return Commands.sequence(
       swerveSubsystem.followPath(path),
-      swerveSubsystem.pidToCoralLeft().withTimeout(1)
-    ).andThen(
-      coralSourceScoreLeft()
+      new WaitCommand(2),
+      swerveSubsystem.pathToCoralSource(),
+      new WaitCommand(2),
+      swerveSubsystem.pathToCoralRight(),
+      new WaitCommand(2),
+      swerveSubsystem.pathToCoralSource(),
+      new WaitCommand(2),
+      swerveSubsystem.pathToCoralLeft()
     );
+
   }
-
-  public Command basicCenterAutoAlgaeGrab(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-    return Commands.sequence(
-      //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicCenterAuto"),
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      new ParallelCommandGroup(
-        new SequentialCommandGroup(
-          elevator.moveToPoseSafe(elevator.kL2Algae).until(()->elevator.isAtPosition(elevator.kL2Algae)),
-          new WaitCommand(1),
-          elevator.moveToAngleTrap(()->90)
-        ),
-        scorer.runCoralScorer(-2500)
-      )
-    );
-  }
-
-  public Command basicCenterAutoFarAlgaeGrab(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-    return Commands.sequence(
-      //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicCenterAuto"),
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      new ParallelCommandGroup(
-        new SequentialCommandGroup(
-          elevator.moveToPoseSafe(elevator.kL2AlgaeFar).until(()->elevator.isAtPosition(elevator.kL2AlgaeFar)),
-          new WaitCommand(1),
-          elevator.moveToAngleTrap(()->90)
-        ),
-        scorer.runCoralScorer(-2500)
-      )
-    );
-  }
-
-  // public Command lessBasicCenterAuto(){
-  //   // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-  //   // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-  //   return Commands.sequence(
-  //     new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
-  //     getUnfoldRobot().withTimeout(7),
-  //     swerveSubsystem.followPath("basicCenterAuto"),
-  //     swerveSubsystem.pathToCoralRight().withTimeout(3),
-  //     // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-  //     elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
-  //     new WaitCommand(0.5),
-  //     scorer.runCoralScorer(2500).withTimeout(1),
-  //     elevator.moveToAngleTrap(()->90)
-  //   );
-  // }
-
-  public Command basicLeftAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    return Commands.sequence(
-    //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
-        getUnfoldRobot().withTimeout(7),
-        swerveSubsystem.followPath("basicLeftAuto"),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
-    );
-  }
-
-  public Command lessBasicLeftAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    return Commands.sequence(
-    //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
-        getUnfoldRobot().withTimeout(7),
-        swerveSubsystem.followPath("basicLeftAuto"),
-        swerveSubsystem.pidToCoralRight().withTimeout(3),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
-    );
-  }
-
-  public Command driveFirstLeftAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    return Commands.sequence(
-    new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
-        swerveSubsystem.followPath("basicLeftAuto"),
-        getUnfoldRobot().withTimeout(7),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
-        new WaitCommand(0.5),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
-    );
-  }
-
-  public Command basicLeftAutoAlgaeGrab(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-    return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicLeftAuto"),
-            // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      new ParallelCommandGroup(
-        new SequentialCommandGroup(
-          elevator.moveToPoseSafe(elevator.kL2Algae).until(()->elevator.isAtPosition(elevator.kL2Algae)),
-          new WaitCommand(1),
-          elevator.moveToAngleTrap(()->90)
-        ),
-        scorer.runCoralScorer(-2500)
-      )
-    );
-  }
-
-  public Command basicLeftAutoFarAlgaeGrab(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-    return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicLeftAuto"),
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      new ParallelCommandGroup(
-        new SequentialCommandGroup(
-          elevator.moveToPoseSafe(elevator.kL2AlgaeFar).until(()->elevator.isAtPosition(elevator.kL2AlgaeFar)),
-          new WaitCommand(1),
-          elevator.moveToAngleTrap(()->90)
-        ),
-        scorer.runCoralScorer(-2500)
-      )
-    );
-  }
-
-  public Command basicRightAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    return Commands.sequence(
-        new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
-        getUnfoldRobot(),
-        swerveSubsystem.followPath("basicRightAuto"),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
-    );
-  }
-
-  public Command lessBasicRightAuto(){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    return Commands.sequence(
-        new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
-        getUnfoldRobot(),
-        swerveSubsystem.followPath("basicRightAuto"),
-        swerveSubsystem.pidToCoralLeft().withTimeout(3),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
-    );
-  }
-
-  public Command driveFirstRightAuto(){
-    return Commands.sequence(
-        new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
-        swerveSubsystem.followPath("basicRightAuto"),
-        getUnfoldRobot(),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-        elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90)
-    );
-  }
-
-  public Command basicRightAutoAlgaeGrab(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-    return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicRightAuto"),
-            // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      new ParallelCommandGroup(
-        new SequentialCommandGroup(
-          elevator.moveToPoseSafe(elevator.kL2Algae).until(()->elevator.isAtPosition(elevator.kL2Algae)),
-          new WaitCommand(1),
-          elevator.moveToAngleTrap(()->90)
-        ),
-        scorer.runCoralScorer(-2500)
-      )
-    );
-  }
-
-  public Command basicRightAutoFarAlgaeGrab(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-    return Commands.sequence(
-      new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
-      getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath("basicRightAuto"),
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      new ParallelCommandGroup(
-        new SequentialCommandGroup(
-          elevator.moveToPoseSafe(elevator.kL2AlgaeFar).until(()->elevator.isAtPosition(elevator.kL2AlgaeFar)),
-          new WaitCommand(1),
-          elevator.moveToAngleTrap(()->90)
-        ),
-        scorer.runCoralScorer(-2500)
-      )
-    );
-  }
-  
-  public Command driveForwardAuto(){
-    return swerveSubsystem.driveCommandRobotRelative(()->-0.5, ()->0.0, ()->0.0).withTimeout(2);
-  }
-
-
   
 
 }

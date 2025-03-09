@@ -237,8 +237,11 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
    */
   public Command getProgrammingTestSequence() {
     // return new InstantCommand();
-    return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
+    // return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
 
+    return new SequentialCommandGroup(
+      swerveSubsystem.pathToCoralLeft()
+    );
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);
     // return new SequentialCommandGroup(

@@ -356,7 +356,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command pidToPoseCommand(Pose2d poseSupplier){
-    return run(()->pidToPose(poseSupplier));
+    return run(()->pidToPose(poseSupplier)).finallyDo(()->stop());
   }
 
   private Pose2d flipPoseIfAppropriate(Pose2d pose){
@@ -377,8 +377,17 @@ public class Swerve extends SubsystemBase {
   //   pidToPose(pose);
   // }
 
+  public boolean isNearEnoughToPosition(Pose2d target){
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    SmartDashboard.putBoolean("isNearEnough",distance <=1);
+    return distance <= 1.0;
+  }
+
   private Command privatePathToPose(Pose2d pose){
-    return AutoBuilder.pathfindToPose(pose, constraintsSlow);
+    return AutoBuilder.pathfindToPose(pose, constraintsSlow)
+    .until(()->isNearEnoughToPosition(pose))
+    .finallyDo(this::stop)
+    ;
   }
 
   public Command followPath(PathPlannerPath path)
@@ -461,8 +470,11 @@ public class Swerve extends SubsystemBase {
     return runOnce(swerveDrive::zeroGyro).ignoringDisable(true);
   }
 
-  public Command stop(){
-    return new InstantCommand(()->swerveDrive.setChassisSpeeds(new ChassisSpeeds()));
+  public Command stopCommand(){
+    return runOnce(this::stop);
+  }
+  private void stop(){
+    swerveDrive.setChassisSpeeds(new ChassisSpeeds());
   }
 
   /** Spam path data to the field for validation */
@@ -501,8 +513,7 @@ public class Swerve extends SubsystemBase {
 
       plotPathOnField(path, debugField2d);
 
-      return AutoBuilder.followPath(path)
-      .andThen(stop());
+      return AutoBuilder.followPath(path).finallyDo(this::stop);
     } catch (Exception e) {
       // TODO: handle exception
       for(int i=0; i<1000; i++){
