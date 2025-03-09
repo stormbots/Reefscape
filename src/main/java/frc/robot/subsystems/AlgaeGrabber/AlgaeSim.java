@@ -48,7 +48,7 @@ public class AlgaeSim {
   );
   FlywheelSim simShooter = new FlywheelSim(
     LinearSystemId.createFlywheelSystem(
-      DCMotor.getNeoVortex(1), 0.00002016125, 1
+      DCMotor.getNeoVortex(1), 0.00002016125*3, 1
     ),
     DCMotor.getNeoVortex(1)
   );
@@ -81,7 +81,7 @@ public class AlgaeSim {
     simIntake.setInputVoltage(simIntakeMotor.getAppliedOutput()*vbus);
     simIntake.update(dt);
     simIntakeMotor.iterate(
-      simShooter.getAngularVelocity().in(RPM),
+      simIntake.getAngularVelocity().in(RPM),
       vbus, dt
     );
 
