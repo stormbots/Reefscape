@@ -195,6 +195,41 @@ public class Autos {
       new WaitCommand(0.5),
       elevator.runCoralScorer(2500).withTimeout(1),
       elevator.moveToAngleTrap(()->90)
+    ).andThen(
+      //grab algae and shoot, not yet possible need elev and alg changes
+    );
+  }
+
+  public Command basicLeftAutoL4(){
+    var path = "basicLeftAuto";
+    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    Timer.delay(5); //let vision set the precise location before building the path
+
+    return Commands.sequence(
+        getUnfoldRobot().withTimeout(7),
+        swerveSubsystem.followPath("basicLeftAuto"),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+        elevator.runCoralScorer(2500).withTimeout(1),
+        elevator.moveToAngleTrap(()->90),
+        new WaitCommand(3)
+    ).andThen(
+      //moving to coral source then scoring again command sequence
+        coralSourceScoreLeft()
+    );
+  }
+
+  public Command coralSourceScoreLeft(){
+    return Commands.sequence(
+      swerveSubsystem.pathToCoralSource(),//.withTimeout(3),
+      swerveSubsystem.pidToCoralSource().withTimeout(1),
+     // elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup)),
+      //elevator coral scorer intake command
+      swerveSubsystem.pathToCoralLeft(),//.withTimeout(3),
+      swerveSubsystem.pidToCoralLeft().withTimeout(1)
+     // elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+     // elevator.runCoralScorer(2500).withTimeout(1),
+     // elevator.moveToAngleTrap(()->90)
     );
   }
 
@@ -217,7 +252,10 @@ public class Autos {
 
     //sequence that only moves, no elevator or climber stuff
     return Commands.sequence(
-      swerveSubsystem.followPath(path)
+      swerveSubsystem.followPath(path),
+      swerveSubsystem.pidToCoralLeft().withTimeout(1)
+    ).andThen(
+      coralSourceScoreLeft()
     );
   }
 
@@ -294,7 +332,7 @@ public class Autos {
     //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 6.15, new Rotation2d()))),
         getUnfoldRobot().withTimeout(7),
         swerveSubsystem.followPath("basicLeftAuto"),
-        swerveSubsystem.pathToCoralRight().withTimeout(3),
+        swerveSubsystem.pidToCoralRight().withTimeout(3),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
         elevator.runCoralScorer(2500).withTimeout(1),
@@ -373,7 +411,7 @@ public class Autos {
         new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 1.88, new Rotation2d()))),
         getUnfoldRobot(),
         swerveSubsystem.followPath("basicRightAuto"),
-        swerveSubsystem.pathToCoralLeft().withTimeout(3),
+        swerveSubsystem.pidToCoralLeft().withTimeout(3),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
         elevator.runCoralScorer(2500).withTimeout(1),

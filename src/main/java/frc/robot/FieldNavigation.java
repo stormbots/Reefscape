@@ -28,9 +28,11 @@ public class FieldNavigation {
     static double coralX = Inches.of(26/2.0).in(Meters);
     static double coralY = Inches.of(15/2.0).in(Meters);
 
-    static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY+coralYOffset+Inches.of(1.0).in(Meters), new Rotation2d(Degrees.of(180-180))));
-    static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY+coralYOffset+Inches.of(2.0).in(Meters), new Rotation2d(Degrees.of(180-180))));
-    static Transform2d reefAlgae = new Transform2d(new Pose2d(), new Pose2d(coralX, 0, new Rotation2d(Degrees.of(180-180))));
+    static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(coralX, coralY+coralYOffset+Inches.of(1.0).in(Meters), new Rotation2d(Degrees.of(0))));
+    static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(coralX, -coralY+coralYOffset+Inches.of(2.0).in(Meters), new Rotation2d(Degrees.of(0))));
+    static Transform2d reefAlgae = new Transform2d(new Pose2d(), new Pose2d(coralX, 0, new Rotation2d(Degrees.of(0))));
+    static Transform2d coralSource = new Transform2d(new Pose2d(), new Pose2d(coralX, 0, new Rotation2d(Degrees.of(180))));
+
 
 
     public static List<Pose2d> tagsReef = new ArrayList<>(){{
@@ -67,6 +69,7 @@ public class FieldNavigation {
     public static Pose2d redBarge = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape).getTagPose(14).get().toPose2d();
 
 
+
     public Pose2d getNearestReef(Pose2d currentPose){
         return currentPose.nearest(tagsReef);
     }
@@ -91,6 +94,13 @@ public class FieldNavigation {
     public static Pose2d getCoralRight(Pose2d currentPose){
         var nearest = currentPose.nearest(tagsReef);
         return nearest.transformBy(coralRight);
+    }
+
+    public static Pose2d getCoralSource(Pose2d currentPose){
+        var nearest = currentPose.nearest(tagsSource);
+        return nearest.transformBy(coralSource);
+
+        
     }
 
     public static Pose2d getReefAlgae(Pose2d currentPose){

@@ -384,12 +384,28 @@ public class Swerve extends SubsystemBase {
     return AutoBuilder.followPath(path);
   }
 
-  public Command pathToCoralLeft(){
+  public Command pidToCoralLeft(){
     return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
 
-  public Command pathToCoralRight(){
+  public Command pidToCoralRight(){
     return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+  }
+
+  public Command pidToCoralSource(){
+    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralSource(getPose())), Set.of(this));
+  }
+
+  public Command pathToCoralLeft(){
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+  }
+
+  public Command pathToCoralRight(){
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+  }
+
+  public Command pathToCoralSource(){
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
 
   public Command bruh(){
