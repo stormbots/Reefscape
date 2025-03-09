@@ -19,16 +19,17 @@ public class ElevatorMotorConfigs {
   public static SparkBaseConfig getElevatorConfig(){
     SparkBaseConfig elevatorConfig = new SparkMaxConfig()
       .smartCurrentLimit(40)
-      .idleMode(IdleMode.kBrake)
+      .idleMode(IdleMode.kCoast)
       .inverted(true)
       ;
     elevatorConfig.softLimit
-    .forwardSoftLimit(64)
+    .forwardSoftLimit(33.5)
     .forwardSoftLimitEnabled(true)
     .reverseSoftLimit(0)
     .reverseSoftLimitEnabled(true);
     ;
-    var elevatorConversionfactor = (72.375-8.5)/(52.9+18.1);
+    //.18 measured, 65.25 actual
+    var elevatorConversionfactor =(33.5/74.4);//(72.375-8.5)/(52.9+18.1);
     elevatorConfig.encoder
         .positionConversionFactor(elevatorConversionfactor)
         .velocityConversionFactor(elevatorConversionfactor / 60.0)
@@ -43,7 +44,7 @@ public class ElevatorMotorConfigs {
   public static SparkBaseConfig getRotationConfig(){
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
       .smartCurrentLimit(50)
-      .idleMode(IdleMode.kBrake)
+      .idleMode(IdleMode.kCoast)
       .inverted(true)
       ;
 

@@ -187,7 +187,7 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));;
     operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(scorer.runCoralScorer(-2500)));
     operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(scorer.runCoralScorer(-2500)));
-    operator.x().whileTrue(elevator.moveToStationPickup());
+    operator.x().whileTrue(elevator.moveToStationPickup().alongWith(scorer.loadCoral()));
     operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
     operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
     operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
@@ -269,8 +269,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
   public Command goToDefenseMode() {
     return Commands.sequence(
       climber.setAngle(()->30.2).withTimeout(3),
-      elevator.moveToPoseSafe(elevator.new ElevatorPose(3.7, 86.7)).until(elevator.isAtTargetAngle).withTimeout(3),
-      elevator.moveToHeightUnfoldHighPrecision(3.78)
+      elevator.moveToPoseSafe(elevator.kDefense).until(elevator.isAtTargetAngle).withTimeout(3)
+      // elevator.moveToHeightUnfoldHighPrecision(3.78)
     );
   }
 

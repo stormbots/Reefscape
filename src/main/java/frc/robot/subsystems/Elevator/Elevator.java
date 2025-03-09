@@ -69,7 +69,10 @@ public class Elevator extends SubsystemBase {
   private final double toleranceAngle = 5;
   private final double kArmMaxVelocity = 180.0;
   private final double kArmMaxAcceleration = 270.0;
+  private final double kElevatorMaxVelocity = 12; //TODO: need actual values
+  private final double kElevatorMaxAcceleration = 24;
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
+  private final TrapezoidProfile elevatorTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kElevatorMaxVelocity, kElevatorMaxAcceleration));
   
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
   private TrapezoidProfile.State armSetpoint = new TrapezoidProfile.State(); 
@@ -106,18 +109,18 @@ public class Elevator extends SubsystemBase {
   }
 
 
-  public final ElevatorPose kStationPickup =  new ElevatorPose(13.2, 57);
-  private final ElevatorPose kFloorPickup =    new ElevatorPose(26.3, -66);
+  public final ElevatorPose kStationPickup =  new ElevatorPose(4.2, -35);
+  public final ElevatorPose kDefense =    new ElevatorPose(0.0, -60);
   public final ElevatorPose kStowed =         new ElevatorPose(0, 84);
   public final ElevatorPose kStowedUp =       new ElevatorPose(26, 84);
-  public final ElevatorPose kClimbing =       new ElevatorPose(16, 128);
+  public final ElevatorPose kClimbing =       new ElevatorPose(0, -40);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90);
-  public final ElevatorPose kL2 =             new ElevatorPose(21, 145.5);
-  public final ElevatorPose kL3 =             new ElevatorPose(37, 145.5);
-  public final ElevatorPose kL4 =             new ElevatorPose(59.4, 135);
-  public final ElevatorPose kL2Algae =        new ElevatorPose(23.8, 142);
+  public final ElevatorPose kL2 =             new ElevatorPose(4.8, 205.5);
+  public final ElevatorPose kL3 =             new ElevatorPose(4.6, 145.5);
+  public final ElevatorPose kL4 =             new ElevatorPose(25, 133);
+  public final ElevatorPose kL2Algae =        new ElevatorPose(0.6, 171.5);
   public final ElevatorPose kL2AlgaeFar =     new ElevatorPose(25.0, 152);
-  public final ElevatorPose kL3Algae =        new ElevatorPose(39.5, 142);
+  public final ElevatorPose kL3Algae =        new ElevatorPose(6, 132);
 
 
   //DEPRECATED ground Intake dosent exsist ):
@@ -231,7 +234,7 @@ public class Elevator extends SubsystemBase {
   // as the "goal" state.
   // They're also being set independently and checked independently, which *will* result in bugs and jank
   // We will need to fix this before Salem. 
-  Trigger isProfileMotionComplete = new Trigger(()->{
+  Trigger isArmTrapComplete = new Trigger(()->{
     return MathUtil.isNear(armSetpoint.position, armGoal.position, toleranceAngle) 
     && MathUtil.isNear(armSetpoint.velocity, armGoal.velocity, 20 /*degrees per second*/);
   });
@@ -265,19 +268,34 @@ public class Elevator extends SubsystemBase {
 
 
 
-  private Command movetoheightTrapNoRequires(){
+  private Command movetoheightTrapNoRequires(DoubleSupplier position){
     //start end noooo
     return new SequentialCommandGroup(
-      new InstantCommand(
+      new InstantCommand( ()->{
+        //Seed the initial state/setpoint with the current state
         setpoint.height = position.getAsDouble();
         elevatorSetpoint = new TrapezoidProfile.State(getAngle().in(Degrees), elevatorMotor.getEncoder().getVelocity());
-      ), //do the "start" stuff for setup
-      new RunCommand(()->{})//the rest
+      }),
+      new RunCommand(()->{
+        //Make sure the goal is dynamically updated
+        elevatorGoal = new TrapezoidProfile.State(position.getAsDouble(), 0);
+
+        //update our setpoint to be our next state
+        elevatorSetpoint = elevatorTrapezoidProfile.calculate(0.02, elevatorSetpoint, elevatorGoal);
+    
+        var ff = elevatorFF.calculate(elevatorSetpoint.position, elevatorSetpoint.velocity);
+        elevatorMotor.getClosedLoopController()
+        .setReference(
+          elevatorSetpoint.position,
+          ControlType.kPosition, ClosedLoopSlot.kSlot0,
+          ff, ArbFFUnits.kVoltage
+        );
+      })
     );
   }
 
-  public Command movetoheightTrap(){
-    var command = movetoheightTrapNoRequires();
+  public Command movetoheightTrap(DoubleSupplier position){
+    var command = movetoheightTrapNoRequires(position);
     command.addRequirements(this);
     return command;
   }
@@ -358,9 +376,7 @@ public class Elevator extends SubsystemBase {
   // }
 
   public Command moveToPoseSafe(ElevatorPose pose) {
-    return new RunCommand(() -> 
-      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition)
-    );
+    return moveToPoseUnchecked(pose).until(isAtTargetPosition);
   }
 
   //Move to prepare to floor pickup, wait for intake to lower(also cuz if we rotate straight to intake we ram into support)
@@ -368,7 +384,7 @@ public class Elevator extends SubsystemBase {
 
   public Command moveToStationPickup(){
     return new SequentialCommandGroup(
-      moveToPoseUnchecked(kStowedUp).until(isAtSafePosition)
+      moveToPoseUnchecked(kStationPickup).until(isAtTargetPosition)
     );
   }
 
