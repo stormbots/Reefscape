@@ -39,6 +39,9 @@ public class Autos {
     /** The value last selected on the chooser.  */
     private Supplier<Command> selectedAuto = ()->new InstantCommand();
 
+    /** Track if we need to re-build the auto due to having ran it and done a field reset */
+    private boolean requireRebuild=true;
+
     //Pass in subsystems so we can access them easily
     Swerve swerveSubsystem;
     Elevator elevator;
@@ -91,9 +94,6 @@ public class Autos {
         // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
         // autoChooser.addOption("LongSpline", ()->swerve.followPath("LongSpline"));
 
-        autoChooser.addOption("v EXAMPLES v",()->new InstantCommand());
-        autoChooser.addOption("2024 Example Amp", this::ampTwoNote);
-        autoChooser.addOption("2024 Example Source", this::sourceTwoNote);
     }
 
     /** Should be checked in Robot.java::autonomousInit
@@ -102,7 +102,7 @@ public class Autos {
      *  almost never happen, but is safely handled internally if it does
      */
     public Command getAutonomousCommand(){
-      //TODO: mark command as "ran" and rebuild in periodic
+        this.requireRebuild = true;
         try{
              return selectedAutoFuture.get();
         }
@@ -126,38 +126,33 @@ public class Autos {
         if(autoChooser.getSelected() == null) return;
 
         //Just show the status of our current build on the dashboard
-        SmartDashboard.putBoolean("AutoSelector/ready",selectedAutoFuture.isDone());
+        var ready = selectedAutoFuture.isDone() && requireRebuild==false;
+        SmartDashboard.putBoolean("AutoSelector/ready",ready);
 
         //If we haven't changed auto or alliance, nothing to do
         if(selectedAuto == autoChooser.getSelected() 
             && alliance == DriverStation.getAlliance().get()
+            && requireRebuild==false
         ){
             return;
+        }
+
+        if( ! selectedAutoFuture.isDone() ){
+          //Ideally we want to cancel the future, but it doesn't work properly
+          //work around it by waiting until it's done first, then swap out the 
+          //future
+          return; 
         }
 
         //Save which one we're running now
         selectedAuto = autoChooser.getSelected();
         alliance = DriverStation.getAlliance().get();
 
-        //cancel current computation and start the new one.
-        selectedAutoFuture.cancel(true);
+        //No longer needs a rebuild
+        requireRebuild=false;
 
         //Run the function that builds the desired auto in the background
         selectedAutoFuture = CompletableFuture.supplyAsync(selectedAuto);
-    }
-
-    // Example autos that have *super* long build times thanks to timer.delay 
-    private Command ampTwoNote(){
-        System.out.println("starting auto build");
-        Timer.delay(3);
-        System.out.println("built amp auto");
-        return new InstantCommand();
-    }
-    private Command sourceTwoNote(){
-        System.out.println("starting auto build");
-        Timer.delay(1.5);
-        System.out.println("built source auto");
-        return new InstantCommand();
     }
 
     ///////////////////////////////////////////////////
@@ -205,7 +200,7 @@ public class Autos {
         swerveSubsystem.followPath("basicLeftAuto"),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-        elevator.runCoralScorer(2500).withTimeout(1),
+        scorer.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90),
         new WaitCommand(3)
     ).andThen(
@@ -223,7 +218,7 @@ public class Autos {
       swerveSubsystem.pathToCoralLeft(),//.withTimeout(3),
       swerveSubsystem.pidToCoralLeft().withTimeout(1)
      // elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-     // elevator.runCoralScorer(2500).withTimeout(1),
+     // scorer.runCoralScorer(2500).withTimeout(1),
      // elevator.moveToAngleTrap(()->90)
     );
   }

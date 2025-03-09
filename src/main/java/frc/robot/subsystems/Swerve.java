@@ -24,6 +24,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.FlippingUtil;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
@@ -51,6 +52,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
+import frc.robot.Robot;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 
@@ -359,8 +361,8 @@ public class Swerve extends SubsystemBase {
 
   private Pose2d flipPoseIfAppropriate(Pose2d pose){
     if(shouldFlipPoseBasedOnAlliance()){
-      pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
-      return pose;
+      return new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+      // return FlippingUtil.flipFieldPose(pose); //We should just use this
     }
     return pose;
   }
@@ -435,7 +437,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 
-  @Deprecated
+  @Deprecated //We just set the position from the initial pose
   public void resetOdometryAllianceManaged(Pose2d initialHolonomicPose){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     if(alliance == Alliance.Red){
@@ -463,6 +465,19 @@ public class Swerve extends SubsystemBase {
     return new InstantCommand(()->swerveDrive.setChassisSpeeds(new ChassisSpeeds()));
   }
 
+  /** Spam path data to the field for validation */
+  public void plotPathOnField(PathPlannerPath path, Field2d field){
+    if(DriverStation.isFMSAttached())return;  //Don't do this at comps
+    // if(Robot.isReal())return;  //Don't do this on a real bot
+
+    field.getObject("path").setPoses(
+      path.getPathPoses()
+      .stream()
+      .map(this::flipPoseIfAppropriate)
+      .toList()
+    );
+  }
+
   public void setInitialPoseFromPath(String name){
     
     try {
@@ -472,12 +487,7 @@ public class Swerve extends SubsystemBase {
       var pose = poseOptional.get();
       pose = flipPoseIfAppropriate(pose);
 
-      debugField2d.getObject("path").setPoses(
-        // path.getPathPoses()
-        flipPoseIfAppropriate(path.getStartingHolonomicPose().get()),
-        flipPoseIfAppropriate(path.getPathPoses().get(path.getPathPoses().size()-1))
-      );
-
+      plotPathOnField(path, debugField2d);
 
       resetOdometry(pose);
 
@@ -488,11 +498,8 @@ public class Swerve extends SubsystemBase {
   public Command followPath(String name){
     try {
       var path = PathPlannerPath.fromPathFile(name);
-      //set initial pose if intended
-      //debugField2d.getObject("path").setPoses(
-      //   path.getPathPoses()
-      //  );
-      
+
+      plotPathOnField(path, debugField2d);
 
       return AutoBuilder.followPath(path)
       .andThen(stop());
