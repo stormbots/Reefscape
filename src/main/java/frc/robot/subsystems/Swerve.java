@@ -177,8 +177,8 @@ public class Swerve extends SubsystemBase {
       this::getChassisSpeeds,
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(0.0, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(1, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(1, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
       shouldFlipPath, 
@@ -231,6 +231,14 @@ public class Swerve extends SubsystemBase {
     });
   }
 
+  public boolean shouldFlipPoseBasedOnAlliance(){
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent()) {
+      return alliance.get() == DriverStation.Alliance.Red;
+    }
+    return false;
+  }
+
   //Robot Relative version
   /**
    * 
@@ -252,11 +260,17 @@ public class Swerve extends SubsystemBase {
 
   //Aligns to a heading from the DRIVERS perspective
   //Doesnt wrap or anything, literally the worst functionality. IDK why i made life hard for myself
-  public Command driveAlignedToHeading(DoubleSupplier translationX, DoubleSupplier translationY, Rotation2d desiredRotation){
+  public Command alignToCoralStation(DoubleSupplier translationX, DoubleSupplier translationY, Rotation2d desiredRotation){
+    
+    //TODO Get nearest coral station tag
+    // Get angle of that tag
+    // Align to that angle
+    
     // PIDController pid = new PIDController(2.0/360, 0.0, 0.0);
-    ProfiledPIDController pid = new ProfiledPIDController(2.0/360.0, 0, 0, new TrapezoidProfile.Constraints(720, 540));
-    pid.enableContinuousInput(-180, 180);
+    ProfiledPIDController commandTurnToPid = new ProfiledPIDController(2.0/360.0, 0, 0, new TrapezoidProfile.Constraints(720, 540));
+    commandTurnToPid.enableContinuousInput(0, 360);
 
+    // commandTurnToPid.reset //TODO when we touch the pid we need to do this
     BooleanSupplier shouldFlip = ()->{
       var alliance = DriverStation.getAlliance();
       if (alliance.isPresent()) {
@@ -277,7 +291,7 @@ public class Swerve extends SubsystemBase {
         }
       }
 
-      double power = pid.calculate(getPose().getRotation().getDegrees(), desiredRotationDegrees);
+      double power = commandTurnToPid.calculate(getPose().getRotation().getDegrees(), desiredRotationDegrees);
       swerveDrive.drive(new Translation2d(sign*translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
                                           sign*translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
                         power * swerveDrive.getMaximumChassisAngularVelocity(),
@@ -291,41 +305,16 @@ public class Swerve extends SubsystemBase {
   }
 
 
-  public Command goToPose(Pose2d targetPoseIgnore){
+  public Command goToPose(Pose2d targetPose){
 
     return run(()->{
       //get current pose
       var pose = getPose();
-      List<Pose2d> list = new ArrayList<>();{{
-        // add(new Pose2d(1,2,new Rotation2d())); //how to add to a fixed object
-      }};
-      
-  
-      list.add(debugField2d.getObject("targetPoseOne").getPose());
-      list.add(debugField2d.getObject("targetPoseTwo").getPose());
-      list.add(debugField2d.getObject("targetPoseThree").getPose());
-
-      var targetPose = pose.nearest(list);
-
       var delta = targetPose.relativeTo(pose);  
-      //THIS DON'T WORK YET, but trying to do pathfinding
-     // PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-      
-     // AutoBuilder.pathfindToPose(targetPose, constraints);
-
-      // delta.getTranslation().getNorm(); //distance to target pose
-
 
       var distancex_m = delta.getMeasureX().in(Units.Meter); // the distance in the x axis
       var distancey_m = delta.getMeasureY().in(Units.Meter); //distnace in y
       var rotation_d = delta.getRotation().getDegrees();
-
-
-
-      debugField2d.getRobotObject().setPose(pose);
-      debugField2d.getObject("targetPose").setPose(targetPose);
-      debugField2d.getObject("delta").setPose(delta);
-      debugField2d.getObject("targetPoses").setPoses(list);
 
       //move -> robot relative
       swerveDrive.drive(new Translation2d(distancex_m * swerveDrive.getMaximumChassisVelocity(),
@@ -333,15 +322,13 @@ public class Swerve extends SubsystemBase {
                         (rotation_d/360.0) * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
                         false);
-
     });
   }
 
   //does not reset based off field
   private void pidToPose(Pose2d pose){
     final double transltionP = 3.0*1.2;
-    final double thetaP = 2.0*4*1.2 
-    ;
+    final double thetaP = 2.0*4*1.2 ;
 
     // Transform2d delta = pose.minus(swerveDrive.getPose());
 
@@ -360,21 +347,33 @@ public class Swerve extends SubsystemBase {
       MathUtil.clamp(delta.getY()*transltionP,-clamp,clamp),
       delta.getRotation().getRadians()*thetaP
     ));
+
+    SmartDashboard.putNumber("swerve/pidTargetPoseX", pose.getX());
+    SmartDashboard.putNumber("swerve/pidTargetPoseY", pose.getY());
+
   }
 
   public Command pidToPoseCommand(Pose2d poseSupplier){
     return run(()->pidToPose(poseSupplier));
   }
 
-  private void pidToPoseOdometryManaged(Pose2d pose){
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    if(alliance == Alliance.Red){
-      //Flips across y=x, not across vertical acis
+  private Pose2d flipPoseIfAppropriate(Pose2d pose){
+    if(shouldFlipPoseBasedOnAlliance()){
       pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+      return pose;
     }
-
-    pidToPose(pose);
+    return pose;
   }
+
+  // private void pidToPoseOdometryManaged(Pose2d pose){
+  //   var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+  //   if(alliance == Alliance.Red){
+  //     //Flips across y=x, not across vertical acis
+  //     pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+  //   }
+
+  //   pidToPose(pose);
+  // }
 
   private Command privatePathToPose(Pose2d pose){
     return AutoBuilder.pathfindToPose(pose, constraintsSlow);
@@ -385,21 +384,28 @@ public class Swerve extends SubsystemBase {
     return AutoBuilder.followPath(path);
   }
 
-  // public Command pathToCoralLeft(){
-  //   Set<Subsystem> set = Set.of(this);
-  //   return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())),set);
-  // }
-
-  public Command pathToCoralLeft(){
+  public Command pidToCoralLeft(){
     return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
-  // public Command pathToCoralRight(){
-  //   Set<Subsystem> set = Set.of(this);
-  //   return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())),set);
-  // }
+
+  public Command pidToCoralRight(){
+    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+  }
+
+  public Command pidToCoralSource(){
+    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralSource(getPose())), Set.of(this));
+  }
+
+  public Command pathToCoralLeft(){
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+  }
 
   public Command pathToCoralRight(){
-    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+  }
+
+  public Command pathToCoralSource(){
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
 
   public Command bruh(){
@@ -429,6 +435,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 
+  @Deprecated
   public void resetOdometryAllianceManaged(Pose2d initialHolonomicPose){
     var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     if(alliance == Alliance.Red){
@@ -456,9 +463,39 @@ public class Swerve extends SubsystemBase {
     return new InstantCommand(()->swerveDrive.setChassisSpeeds(new ChassisSpeeds()));
   }
 
+  public void setInitialPoseFromPath(String name){
+    
+    try {
+      var path = PathPlannerPath.fromPathFile(name);
+      var poseOptional = path.getStartingHolonomicPose();
+      if(poseOptional.isEmpty()) return ;
+      var pose = poseOptional.get();
+      pose = flipPoseIfAppropriate(pose);
+
+      debugField2d.getObject("path").setPoses(
+        // path.getPathPoses()
+        flipPoseIfAppropriate(path.getStartingHolonomicPose().get()),
+        flipPoseIfAppropriate(path.getPathPoses().get(path.getPathPoses().size()-1))
+      );
+
+
+      resetOdometry(pose);
+
+    } catch (Exception e) {
+    }
+  }
+
   public Command followPath(String name){
     try {
-      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(name)).andThen(stop());
+      var path = PathPlannerPath.fromPathFile(name);
+      //set initial pose if intended
+      //debugField2d.getObject("path").setPoses(
+      //   path.getPathPoses()
+      //  );
+      
+
+      return AutoBuilder.followPath(path)
+      .andThen(stop());
     } catch (Exception e) {
       // TODO: handle exception
       for(int i=0; i<1000; i++){

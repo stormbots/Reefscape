@@ -77,8 +77,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
         ()->-driver.getRightX()+vision.getRotationDouble()*1
         ));
 
-    driver.leftTrigger().whileTrue(swerveSubsystem.pathToCoralRight());
-    driver.rightTrigger().whileTrue(swerveSubsystem.pathToCoralLeft());
+    driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRight());
+    driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralLeft());
 
     // driver.x().whileTrue(swerveSubsystem.driveAlignedToHeading(
     //   ()->-driver.getLeftY(), 
