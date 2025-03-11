@@ -40,8 +40,9 @@ public class RobotContainer {
 public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber, algaeGrabber);
 
   CommandXboxController driver = new CommandXboxController(0);
-  CommandXboxController operator = new CommandXboxController(1);
-  CommandXboxController testController = new CommandXboxController(2);
+  CommandXboxController fightstick = new CommandXboxController(1);
+  CommandXboxController sofiabox = new CommandXboxController(2);
+  CommandXboxController testController = new CommandXboxController(3);
 
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -71,7 +72,6 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
       ()->-driver.getRightX()/4.0
     ));
 
-    // driver.rightTrigger().whileTrue(new DeferredCommand(()->swerveSubsystem.pidToPoseCommand(FieldNavigation.getCoralLeft(swerveSubsystem.getPose())), Set.of(swerveSubsystem)));
     driver.a().whileTrue(
       swerveSubsystem.driveCommandAllianceManaged(
         ()->-driver.getLeftY(), 
@@ -82,156 +82,63 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRight());
     driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralLeft());
 
-    // driver.x().whileTrue(swerveSubsystem.driveAlignedToHeading(
-    //   ()->-driver.getLeftY(), 
-    //   ()->-driver.getLeftX(), 
-    //   new Rotation2d(Math.toRadians(125))
-    //   ));
-
-    // driver.y().whileTrue(swerveSubsystem.driveAlignedToHeading(
-    //   ()->-driver.getLeftY(), 
-    //   ()->-driver.getLeftX(), 
-    //   new Rotation2d(Math.toRadians(-125))
-    //   ));
-
-    // driver.rightTrigger().whileTrue(
-    //   swerveSubsystem.pathToCoralRight()
-    // );
-    // driver.leftTrigger().whileTrue(
-    //   swerveSubsystem.pathToCoralLeft()
-    // );
-    /*driver.x().whileTrue(
-      swerveSubsystem.pathToReefAlgae()
-    );*/
-
-
-    // driver.a().whileTrue(new RunCommand(()->intake.setAngleSpeed(-30, 100), intake));
-    // driver.b().whileTrue(new RunCommand(()->intake.setAngleSpeed(60, 0), intake));
-    
-    // driver.b().whileTrue(climber.climb());
-    // driver.a().whileTrue(climber.prepareToClimb());
-    
-    // driver.b().whileFalse(intake.stow());
-    // driver.b().whileTrue(intake.intake());
   }
 
   /*********************************
   * OPERATOR BINDINGS
   **********************************/
   
-  //Axis 1 (-) = climb
-  //Axis 1 (+) = climber in
-  //Axis 0 (-) = climber stow
-  //disable climber till last 30s?
-  //Axis 0 (+) = processor
-  //button 5 (LB) = algae intake
-  //Axis 2 (LT) = net (dosen't say whether shoot or place)
-  //Button 3 (X) = L1
-  //Button 4 (Y) = L2
-  //Button 1 (A) = L3
-  //Button 2 (B) = L4
-  //Button 6 (RB) = intake
-  //Axis 3 (RT) = score coral
-  //Button 7 (share) = rezero (vague, button changed from home as home is not usable)
-  //Button 8 (options) = manual mode (bad idea)
-  //Button 9 (SL) = eject algae
-  //Button 10 (SR) = eject coral
-
-
-
   private void configureOperatorBindings() {
 
-    //TODO: ELEVATOR TO L1 (???)
-    //TODO: ELEVATOR TO L2
-    //TODO: ELEVATOR TO L3
-    //TODO: ELEVATOR TO L4
-
-    //TODO: ELEVATOR TO Reef ALGAE
-
-    //TODO: Make all these bindings associate to operator.
-
-    // driver.a().whileTrue(
-    //   elevator.moveToPoseSafe(elevator.kL3)
-    // );
-
-    
-    // driver.y().whileTrue(
-    //   elevator.moveToPoseSafe(elevator.kStowedUp)
-    // );
-
-    // //Move to prep and complete motion only if intake is down
-    // driver.b().whileTrue(elevator.moveToIntake(intake.readyToLoad));
-
-
-    // driver.a().whileTrue(
-    //   elevator.moveToPoseSafe(elevator.kL3)
-    // );
-
-    // driver.x().whileTrue( new ParallelCommandGroup(
-    //   climber.prepareToClimb(), elevator.moveToPoseSafe(elevator.kClimbing), intake.stow())
-    // );
-
-    // // driver.back().whileTrue(elevator.homeElevator());
-
-    // driver.start().whileTrue(climber.climb());
-
-    // driver.leftTrigger().onTrue(intake.setAngle(()-> -20));
-    // driver.rightTrigger().onTrue(intake.setAngle(()-> 90));
-
-    operator.axisLessThan(1, 0).whileTrue(new ParallelCommandGroup(
+    fightstick.axisLessThan(1, 0)
+    .or(sofiabox.button(9))
+    .whileTrue(new ParallelCommandGroup(
       climber.prepareToClimb(),
       elevator.moveToPoseUnchecked(elevator.kClimbing),
       algaeGrabber.stop()
     ));
 
-    operator.axisGreaterThan(1, 0).whileTrue(climber.climb());
+    fightstick.axisGreaterThan(1, 0)
+      .or(sofiabox.button(3))
+      .whileTrue(climber.climb());
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));;
-    operator.back().whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(scorer.runCoralScorer(-2500)));
-    operator.start().whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(scorer.runCoralScorer(-2500)));
-    operator.x().whileTrue(elevator.moveToStationPickup().alongWith(scorer.loadCoral()));
-    operator.y().whileTrue(elevator.moveToPoseSafe(elevator.kL2));
-    operator.a().whileTrue(elevator.moveToPoseSafe(elevator.kL3));
-    operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL4));
-    // operator.b().whileTrue(elevator.moveToPoseSafe(elevator.kL2AlgaeFar).alongWith(scorer.runCoralScorer(-2500)));
+    fightstick.back().or(sofiabox.button(7))
+      .whileTrue(elevator.moveToPoseSafe(elevator.kL2Algae).alongWith(scorer.holdAlgae()));
+    fightstick.start().or(sofiabox.button(1))
+      .whileTrue(elevator.moveToPoseSafe(elevator.kL3Algae).alongWith(scorer.holdAlgae()));
+    fightstick.x().or(sofiabox.button(10))
+      .whileTrue(elevator.moveToStationPickup().alongWith(scorer.loadCoral()));
+    fightstick.y().or(sofiabox.button(4))
+      .whileTrue(elevator.moveToPoseSafe(elevator.kL2));
+    fightstick.a().or(sofiabox.button(5))
+      .whileTrue(elevator.moveToPoseSafe(elevator.kL3));
+    fightstick.b().or(sofiabox.button(6))
+      .whileTrue(elevator.moveToPoseSafe(elevator.kL4));
 
-    // operator.rightBumper().whileTrue(elevator.moveToIntake(intake.readyToLoad));
-    // operator.rightBumper().whileTrue(intake.intake(elevator.isCoralInScorer));
-    // operator.rightBumper().whileFalse(intake.stow(elevator.isClear));
-    operator.rightBumper().whileTrue(goToDefenseMode());
+    fightstick.rightBumper().or(sofiabox.button(17))
+    .whileTrue(goToDefenseMode());
 
-    Command moveTo90 = elevator.moveToAngleTrap(()->90);
-    moveTo90.addRequirements(elevator);
-    operator.rightTrigger()
+    fightstick.rightTrigger().or(sofiabox.button(11))
     .and(elevator.isAtScorePose).whileTrue(scorer.scoreCoral().repeatedly());//Outake
 
-    // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
-    // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
-    //is actuaklky shoot
-    operator.rightStick().whileTrue(algaeGrabber.newShootAlgae())
-    .whileTrue(elevator.moveToAngleTrap(()->-40));
+    fightstick.rightStick().or(sofiabox.button(8))
+    .whileTrue(algaeGrabber.newShootAlgae())
+    .whileTrue(elevator.moveToPoseSafe(elevator.kStowed));
 
 
-    // Expected algae control stuff
-    operator.leftBumper().whileTrue(algaeGrabber.newIntakeFromGround())
+    fightstick.leftBumper().or(sofiabox.button(2))
+    .whileTrue(algaeGrabber.newIntakeFromGround())
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
     ;
 
-    //is also algae score
-    operator.leftStick().whileTrue(algaeGrabber.newScoreProcessor());
+    fightstick.leftStick().or(sofiabox.button(14))
+    .whileTrue(algaeGrabber.newScoreProcessor());
 
-    operator.leftTrigger().whileTrue(algaeGrabber.algaeUnstuck());
+    fightstick.leftTrigger().or(sofiabox.button(13))
+    .whileTrue(algaeGrabber.algaeUnstuck());
 
-    //TEST, will not work as does not require elevator subsystem due to intracacieswadkn
-    // operator.leftStick().whileTrue(elevator.pidScorerBack());
-
-    // operator.rightTrigger(threshold)
-    // operator.rightTrigger().whileTrue(scorer.runCoralScorer(-10));
-
-
-    // operator.axisGreaterThan(0,0).whileTrue(algaeGrabber.scoreProcessor());
-    // operator.a().whileTrue(algaeGrabber.prepareToShoot());
 
   }
 
@@ -240,28 +147,9 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
    * Because autos go in Autos now.
    */
   public Command getProgrammingTestSequence() {
-    // return new InstantCommand();
-    return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
+    return new InstantCommand();
+    // return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
 
-    // An example command will be run in autonomous
-    // return Autos.exampleAuto(exampleSubsystem);
-    // return new SequentialCommandGroup(
-    //   climber.prepareToClimb(),
-    //   new WaitCommand(1),
-    //   climber.climb(),
-    //   new WaitCommand(3),
-    //   climber.setAngle(()->45),
-    //   // new WaitCommand(1),
-    //   climber.stow()
-      
-    // );
-    // return swerveSubsystem.pathToCoralLeft();
-    // return basicCenterAuto();
-    // return swerveSubsystem.followPath("1Meter");
-    // return Commands.sequence(
-    //   algaeGrabber.prepareToShoot().withTimeout(5),
-    //   algaeGrabber.scoreProcessor()  
-    // );
   }
   
   //Refolding Process
