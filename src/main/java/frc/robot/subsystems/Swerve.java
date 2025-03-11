@@ -4,20 +4,16 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Degree;
-import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
-import com.fasterxml.jackson.databind.deser.SettableBeanProperty.Delegating;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
@@ -25,34 +21,29 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.FlippingUtil;
-import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
-import frc.robot.Robot;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 
@@ -350,8 +341,9 @@ public class Swerve extends SubsystemBase {
       delta.getRotation().getRadians()*thetaP
     ));
 
-    SmartDashboard.putNumber("swerve/pidTargetPoseX", pose.getX());
-    SmartDashboard.putNumber("swerve/pidTargetPoseY", pose.getY());
+    debugField2d.getObject("pidtarget").setPose(pose);
+    SmartDashboard.putNumber("swerve/pid/deltax", pose.getX());
+    SmartDashboard.putNumber("swerve/pid/deltay", pose.getY());
 
   }
 
@@ -361,39 +353,36 @@ public class Swerve extends SubsystemBase {
 
   private Pose2d flipPoseIfAppropriate(Pose2d pose){
     if(shouldFlipPoseBasedOnAlliance()){
-      return new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
-      // return FlippingUtil.flipFieldPose(pose); //We should just use this
+      //return new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+      return FlippingUtil.flipFieldPose(pose); //We should just use this
     }
     return pose;
   }
 
-  // private void pidToPoseOdometryManaged(Pose2d pose){
-  //   var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-  //   if(alliance == Alliance.Red){
-  //     //Flips across y=x, not across vertical acis
-  //     pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
-  //   }
-
-  //   pidToPose(pose);
-  // }
-
-  public boolean isNearEnoughToPosition(Pose2d target){
+  public boolean isNearEnoughToPID(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
-    SmartDashboard.putBoolean("isNearEnough",distance <=1);
-    return distance <= 1.0;
+    var result = distance <= Inches.of(10).in(Meters);
+    SmartDashboard.putBoolean("swerve/isNearEnough",result);
+    return result;
   }
+  public boolean isNearEnoughToWork(Pose2d target){
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    return distance <= Inches.of(1.5).in(Meters);
+  }
+
 
   private Command privatePathToPose(Pose2d pose){
-    return AutoBuilder.pathfindToPose(pose, constraintsSlow)
-    .until(()->isNearEnoughToPosition(pose))
-    .finallyDo(this::stop)
-    ;
+    return Commands.sequence(
+      AutoBuilder.pathfindToPose(pose, constraintsSlow).until(()->isNearEnoughToPID(pose)),
+      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(2),
+      stopCommand()
+    );
   }
 
-  public Command followPath(PathPlannerPath path)
-  {
-    return AutoBuilder.followPath(path);
-  }
+  // public Command followPath(PathPlannerPath path)
+  // {
+  //   return AutoBuilder.followPath(path);
+  // }
 
   public Command pidToCoralLeft(){
     return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
@@ -417,10 +406,6 @@ public class Swerve extends SubsystemBase {
 
   public Command pathToCoralSource(){
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
-  }
-
-  public Command bruh(){
-    return new DeferredCommand(()->pidToPoseCommand(new Pose2d(2,7,new Rotation2d())), Set.of(this));
   }
 
   public Command pathToReefAlgae(){

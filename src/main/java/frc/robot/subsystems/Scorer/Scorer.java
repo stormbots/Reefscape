@@ -99,14 +99,7 @@ public class Scorer extends SubsystemBase {
   /// ////////////////////////////////////////////////////////////////////
   public Command scoreCoral(){
     return new SequentialCommandGroup(
-      //TODO: Test and make it work properly
-
-      //Always run the intake for long enough to do it
-      runCoralScorer(2500).withTimeout(0.5),
-      //in case of something going wrong, keep going until we've cleared the coral
-      new WaitCommand(2).onlyWhile(isCoralInScorer),
-      //Make sure it's definitely out of the system
-      runCoralScorer(2500).withTimeout(0.2)
+      runCoralScorer(2500).withTimeout(0.5)
       );
   }
 
