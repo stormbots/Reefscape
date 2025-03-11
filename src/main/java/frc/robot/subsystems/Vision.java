@@ -64,15 +64,15 @@ public class Vision extends SubsystemBase {
     
     try{
       leftCamera = Optional.of(new PhotonCamera("Back_Left"));
-
+      // leftCamera = Optional.empty();
     }catch(Error e){
       System.err.print(e);
       leftCamera = Optional.empty();
     }
 
     try{
-      // rightCamera = Optional.of(new PhotonCamera("Back_Right"));
-      rightCamera = Optional.empty();
+      rightCamera = Optional.of(new PhotonCamera("Back_Right"));
+      // rightCamera = Optional.empty();
     }catch(Error e){
       System.err.print(e);
       rightCamera = Optional.empty();

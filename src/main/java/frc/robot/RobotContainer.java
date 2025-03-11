@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -201,14 +202,15 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
 
     Command moveTo90 = elevator.moveToAngleTrap(()->90);
     moveTo90.addRequirements(elevator);
-    operator.rightTrigger().whileTrue(scorer.runCoralScorer(2500).withTimeout(0.5).andThen(moveTo90));//Outake
+    operator.rightTrigger()
+    .and(elevator.isAtScorePose).whileTrue(scorer.scoreCoral().repeatedly());//Outake
 
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL2Coral));
     // operator.rightStick().whileTrue(elevator.moveToPoseWithScorer(elevator.kL3Coral));
 
     //is actuaklky shoot
-    operator.leftTrigger().whileTrue(algaeGrabber.newShootAlgae())
-    .whileTrue(elevator.moveToAngleTrap(()->90));
+    operator.rightStick().whileTrue(algaeGrabber.newShootAlgae())
+    .whileTrue(elevator.moveToAngleTrap(()->-40));
 
 
     // Expected algae control stuff
@@ -218,6 +220,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
 
     //is also algae score
     operator.leftStick().whileTrue(algaeGrabber.newScoreProcessor());
+
+    operator.leftTrigger().whileTrue(algaeGrabber.algaeUnstuck());
 
     //TEST, will not work as does not require elevator subsystem due to intracacieswadkn
     // operator.leftStick().whileTrue(elevator.pidScorerBack());

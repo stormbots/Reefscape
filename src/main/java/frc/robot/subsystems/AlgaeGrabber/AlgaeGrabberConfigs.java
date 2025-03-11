@@ -9,7 +9,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 public class AlgaeGrabberConfigs {
     
     public static final double kAbsEncoderConversionFactor = 360/2.0;
-    public static final double kLowerSoftLimit = -95;
+    public static final double kLowerSoftLimit = -100;
     public static final double kUpperSoftLimit = 10;
   
   
@@ -79,21 +79,21 @@ public class AlgaeGrabberConfigs {
         var shooterConf = new SparkFlexConfig();
         shooterConf
         .inverted(false)
-        .smartCurrentLimit(50)
+        .smartCurrentLimit(80) //TODO: Test Code
         .idleMode(IdleMode.kBrake)
         ;
 
-        shooterConf.encoder
-        .uvwMeasurementPeriod(8)
-        .uvwAverageDepth(2)
-        .quadratureMeasurementPeriod(2)
-        .quadratureAverageDepth(2);
+        // shooterConf.encoder
+        // .uvwMeasurementPeriod(8)
+        // .uvwAverageDepth(2)
+        // .quadratureMeasurementPeriod(2)
+        // .quadratureAverageDepth(2);
 
         shooterConf.closedLoop
         // .p(1/500.0)
         .velocityFF(1/5760.0*0.95)
         .p(0.1*4*2*2*2*2*1.5/3, ClosedLoopSlot.kSlot1)
-        .i(100/50)
+        .i(5/50)
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
         shooterConf.closedLoopRampRate(0.05);

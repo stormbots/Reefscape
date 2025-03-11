@@ -150,6 +150,11 @@ public class Elevator extends SubsystemBase {
   public Trigger isAtSafePosition = new Trigger( () ->  getCarriageHeight().in(Inch) > kStowedUp.height-1 )
   .and( ()-> getAngle().in(Degrees) > 0 && getAngle().in(Degrees) < 93);
 
+  public Trigger isAtScorePose = new Trigger(()->
+      isAtPosition(this.kL2)
+   || isAtPosition(this.kL3)
+   || isAtPosition(this.kL4)
+   );
 
   public Command homeElevator() {
     // step 0: Make sure scorer is in a safe position

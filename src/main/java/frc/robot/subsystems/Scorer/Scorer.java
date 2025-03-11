@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -50,10 +51,7 @@ public class Scorer extends SubsystemBase {
 
     Timer.delay(0.1); //Wait until motors are happy and providing us correct data
 
-    // setDefaultCommand(holdPosition());
-    setDefaultCommand(run(()->{
-      motor.stopMotor();
-    }));
+    setDefaultCommand(defaultCommand());
   }
 
   public void periodic(){
@@ -81,17 +79,19 @@ public class Scorer extends SubsystemBase {
     // return run(()->coralOutMotor.setVoltage(6))
   }
 
-  public Command pidCoralBack(){
-    return run(()->{})//coralOutMotor.getEncoder().setPosition(0))
-    .andThen(run(()->motor.getClosedLoopController().setReference(-2, ControlType.kPosition, ClosedLoopSlot.kSlot1)));
-  }
-
   public Command realignCoral(){
     return Commands.sequence(
-      run(()->setScorerSpeed(-1200)).onlyWhile(isCoralInScorer),
+      run(()->setScorerSpeed(-800)).onlyWhile(isCoralInScorer),
       new InstantCommand(()->motor.getEncoder().setPosition(0)),
-      run(()->motor.getClosedLoopController().setReference(2, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+      run(()->motor.getClosedLoopController().setReference(3, ControlType.kPosition, ClosedLoopSlot.kSlot1))
     );
+  }
+
+  public Command defaultCommand(){
+    return new ConditionalCommand(
+      realignCoral(), 
+      run(()->motor.stopMotor()), 
+      isCoralInScorer);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -102,11 +102,7 @@ public class Scorer extends SubsystemBase {
       //TODO: Test and make it work properly
 
       //Always run the intake for long enough to do it
-      runCoralScorer(2500).withTimeout(0.5),
-      //in case of something going wrong, keep going until we've cleared the coral
-      new WaitCommand(2).onlyWhile(isCoralInScorer),
-      //Make sure it's definitely out of the system
-      runCoralScorer(2500).withTimeout(0.2)
+      runCoralScorer(2500).withTimeout(0.5)
       );
   }
 
@@ -121,8 +117,8 @@ public class Scorer extends SubsystemBase {
   public Command loadCoral(){
     return new SequentialCommandGroup(
       //TODO: Put the right things here. 
-      runCoralScorer(2500).until(isCoralInScorer),
-      realignCoral() //Doesn't end, and doesn't provide a clean way to end! This may require consideration for autos
+      runCoralScorer(2500).until(isCoralInScorer)
+      // realignCoral() //Doesn't end, and doesn't provide a clean way to end! This may require consideration for autos
     );
   }
 
