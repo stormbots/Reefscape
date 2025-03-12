@@ -213,7 +213,7 @@ public class AlgaeGrabber extends SubsystemBase {
       run(() ->{
         setArmAngle(-35);
         setIntakeRPM(3500);
-        shooterMotor.stopMotor();
+        poweredStop(shooterMotor);;
       }).until(isBreakbeamTripped)
       //todo: Do we need to have a settling operation to ensure the encoder reset is reliable?
     )
@@ -239,7 +239,7 @@ public class AlgaeGrabber extends SubsystemBase {
     var stowangleAlgae = -70;
 
     var withAlgae = run(()->{
-      shooterMotor.stopMotor();
+      poweredStop(shooterMotor);;
       setArmAngle(stowangleAlgae);
       setIntakeRPM(0);
       intakeMotor.getEncoder().setPosition(0);
@@ -247,7 +247,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
     var withoutAlgae = new SequentialCommandGroup(
       run(()->{
-        shooterMotor.stopMotor();
+        poweredStop(shooterMotor);
         setIntakeRPM(ROLLERINTAKERPM);
         setArmAngle(stowangleEmpty);
       }).withTimeout(2),
@@ -292,6 +292,10 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public Command algaeUnstuck(){
     return new RunCommand(()->setArmAngle(100.0) ,this);
+  }
+
+  private void poweredStop(SparkFlex motor){
+    motor.getClosedLoopController().setReference(motor.getEncoder().getPosition(), ControlType.kPosition);
   }
 
 

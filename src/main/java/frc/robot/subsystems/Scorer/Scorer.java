@@ -55,7 +55,7 @@ public class Scorer extends SubsystemBase {
   }
 
   public void periodic(){
-    SmartDashboard.putNumber("scorer/rpm", motor.getEncoder().getVelocity());
+    // SmartDashboard.putNumber("scorer/rpm", motor.getEncoder().getVelocity());
   }
 
   public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
