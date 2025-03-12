@@ -103,7 +103,7 @@ public class Vision extends SubsystemBase {
     //   SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
     // }
 
-    updateOdometry();
+   // updateOdometry();
     //getDistanceFromCamera();
 
     //SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());
@@ -158,7 +158,11 @@ public class Vision extends SubsystemBase {
         // SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
         //update pose
 
-        swerve.swerveDrive.addVisionMeasurement(estimatedPose.get().estimatedPose.toPose2d(), result.getTimestampSeconds());
+        swerve.swerveDrive.addVisionMeasurement(
+          estimatedPose.get().estimatedPose.toPose2d(),
+          result.getTimestampSeconds()
+          //TODO: Actually use stdev!!!!!
+          );
       }
     }
   }
@@ -203,7 +207,7 @@ public class Vision extends SubsystemBase {
 
     }
 
-    estStdDeviation = estStdDeviation.times(20);
+    // estStdDeviation = estStdDeviation.times(1);
     return estStdDeviation;
 
   }

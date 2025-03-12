@@ -165,7 +165,7 @@ public class Autos {
         new ParallelCommandGroup(
         swerveSubsystem.pathToCoralSource(),
         elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup))
-      ),
+      ).until(scorer.isCoralInScorer).withTimeout(5),
       new ParallelCommandGroup(
         swerveSubsystem.stopCommand(),
         scorer.loadCoral(),

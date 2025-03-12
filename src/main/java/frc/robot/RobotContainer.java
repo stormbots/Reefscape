@@ -240,11 +240,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     // return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
 
     return new SequentialCommandGroup(
-      swerveSubsystem.pathToCoralLeft(),
-      swerveSubsystem.pathToCoralSource(),
-      swerveSubsystem.pathToCoralRight(),
-      swerveSubsystem.pathToCoralSource(),
-      swerveSubsystem.pathToCoralLeft()
+     
+    // autos.loadFromStation()
     );
     // An example command will be run in autonomous
     // return Autos.exampleAuto(exampleSubsystem);

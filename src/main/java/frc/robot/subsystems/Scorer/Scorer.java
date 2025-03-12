@@ -91,7 +91,11 @@ public class Scorer extends SubsystemBase {
       run(()->setScorerSpeed(-1200)).onlyWhile(isCoralInScorer),
       new InstantCommand(()->motor.getEncoder().setPosition(0)),
       run(()->motor.getClosedLoopController().setReference(2, ControlType.kPosition, ClosedLoopSlot.kSlot1))
-    );
+    ) ;
+  }
+
+  public void stop(){
+    motor.set(0);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -116,7 +120,7 @@ public class Scorer extends SubsystemBase {
       //TODO: Put the right things here. 
       runCoralScorer(2500).until(isCoralInScorer),
       realignCoral() //Doesn't end, and doesn't provide a clean way to end! This may require consideration for autos
-    );
+    ).finallyDo(this::stop);
   }
 
   @Override
