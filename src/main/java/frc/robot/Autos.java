@@ -167,6 +167,7 @@ public class Autos {
         elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup))
       ),
       new ParallelCommandGroup(
+        swerveSubsystem.stopCommand(),
         scorer.loadCoral(),
         elevator.moveToPoseSafe(elevator.kStationPickup)
       ).until(scorer.isCoralInScorer).withTimeout(5)
@@ -178,7 +179,7 @@ public class Autos {
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         scorer.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
-      );
+      );//TODO deadline a stop command
     }
   
     ///////////////////////////////////////////////////
@@ -207,17 +208,15 @@ public class Autos {
   }
 
   public Command leftL4CoralAuto(){
-    var path = "basicLeftAuto";
+   var path = "basicLeftAuto";
     swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
       swerveSubsystem.pathToCoralLeft(),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      scorer.scoreCoral(),
-      elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
-    );
+      scoreAtL4()    
+      );
   }
 
   public Command rightL4CoralAuto(){
@@ -239,14 +238,14 @@ public class Autos {
   public Command leftMultiCoralAuto(){
     return Commands.sequence(
       leftL4CoralAuto(),
-      new WaitCommand(2),
       loadFromStation(),
       swerveSubsystem.pathToCoralLeft(),
       //score coral
-      new WaitCommand(2),
+      swerveSubsystem.stopCommand().withTimeout(2),
       scoreAtL4(),
       loadFromStation(),
       swerveSubsystem.pathToCoralRight(),
+      swerveSubsystem.stopCommand().withTimeout(2),
       scoreAtL4()
     );
   }

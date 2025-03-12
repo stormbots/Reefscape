@@ -8,7 +8,7 @@ import static edu.wpi.first.units.Units.Degrees;
 
 import java.util.function.DoubleSupplier;
 
-import org.littletonrobotics.junction.Logger;
+// import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -30,10 +30,11 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.subsystems.Climber.ClimberIO.ClimberIOInputs;
 
 public class Climber extends SubsystemBase {
   private final ClimberIO io;
-  private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+  private final ClimberIOInputs inputs = new ClimberIOInputs();
 
   private double setpoint=100;
 
@@ -113,7 +114,7 @@ public class Climber extends SubsystemBase {
     //We need to read them from the sim, and *then* have it log them.
     //Which makes this wrong
     io.updateInputs(inputs);
-    Logger.processInputs("Climber", inputs);
+    // Logger.processInputs("Climber", inputs);
     visualizer.update(inputs.climberAbsoluteAngle);
     // SmartDashboard.putNumber("climber/ClimberAngle", getPosition());
     // SmartDashboard.putNumber("climber/Setpoint", setpoint);

@@ -89,6 +89,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
 
     swerveDrive.setMotorIdleMode(true); //just to be safe
+
     configurePathplanner();
     // PathfindingCommand.warmupCommand();
 
@@ -107,6 +108,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.updateOdometry();
     debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
+    SmartDashboard.putNumber("wheelencoder", swerveDrive.getModules()[0].getPosition().distanceMeters);
     
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
@@ -170,8 +172,8 @@ public class Swerve extends SubsystemBase {
       this::getChassisSpeeds,
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(1, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(1, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(0.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
       shouldFlipPath, 
@@ -373,9 +375,9 @@ public class Swerve extends SubsystemBase {
 
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
-      AutoBuilder.pathfindToPose(pose, constraintsSlow).until(()->isNearEnoughToPID(pose)),
-      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(2),
-      stopCommand()
+      // AutoBuilder.pathfindToPose(pose, constraintsSlow).until(()->isNearEnoughToPID(pose)),
+      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(4.5),
+      new InstantCommand(this::stop,this)
     );
   }
 
@@ -456,7 +458,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command stopCommand(){
-    return runOnce(this::stop);
+    return run(this::stop);
   }
   private void stop(){
     swerveDrive.setChassisSpeeds(new ChassisSpeeds());

@@ -21,6 +21,7 @@ import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+import com.fasterxml.jackson.databind.ext.OptionalHandlerFactory;
 import com.studica.frc.AHRS;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -64,6 +65,7 @@ public class Vision extends SubsystemBase {
     
     try{
       leftCamera = Optional.of(new PhotonCamera("Back_Left"));
+      // leftCamera = Optional.empty();
 
     }catch(Error e){
       System.err.print(e);
@@ -71,6 +73,7 @@ public class Vision extends SubsystemBase {
     }
 
     try{
+      //Camera giving bad results, turn off for now.
       // rightCamera = Optional.of(new PhotonCamera("Back_Right"));
       rightCamera = Optional.empty();
     }catch(Error e){
@@ -200,6 +203,7 @@ public class Vision extends SubsystemBase {
 
     }
 
+    estStdDeviation = estStdDeviation.times(20);
     return estStdDeviation;
 
   }
