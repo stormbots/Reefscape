@@ -14,7 +14,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 /** Add your docs here. */
 public interface ClimberIO {
   
-  @AutoLog
+  // @AutoLog
   public static class ClimberIOInputs {
     /** Degrees */
     double climberAbsoluteAngle = 0.0;

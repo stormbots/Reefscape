@@ -97,8 +97,8 @@ public class Elevator extends SubsystemBase {
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(4.2, -35);
   public final ElevatorPose kDefense =        new ElevatorPose(0.0, -60);
-  public final ElevatorPose kStowed =         new ElevatorPose(0, 84);
-  public final ElevatorPose kStowedUp =       new ElevatorPose(26, 84);
+  public final ElevatorPose kStowed =         new ElevatorPose(0, -40);
+  public final ElevatorPose kStowedUp =       new ElevatorPose(0, -40);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, -40);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90);
   public final ElevatorPose kL2 =             new ElevatorPose(4.8, 205.5);
@@ -138,11 +138,11 @@ public class Elevator extends SubsystemBase {
     }));
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
 
-    // setDefaultCommand(holdPosition());
-    setDefaultCommand(run(()->{
-      elevatorMotor.setVoltage(elevatorFF.calculate(0));
-      rotationMotor.setVoltage(rotatorFF.calculate(getAngle().in(Degree), 0));
-    }));
+    setDefaultCommand(holdPosition());
+    // setDefaultCommand(run(()->{
+    //   elevatorMotor.setVoltage(elevatorFF.calculate(0));
+    //   rotationMotor.setVoltage(rotatorFF.calculate(getAngle().in(Degree), 0));
+    // }));
 
   }
 
@@ -150,6 +150,11 @@ public class Elevator extends SubsystemBase {
   public Trigger isAtSafePosition = new Trigger( () ->  getCarriageHeight().in(Inch) > kStowedUp.height-1 )
   .and( ()-> getAngle().in(Degrees) > 0 && getAngle().in(Degrees) < 93);
 
+  public Trigger isAtScorePose = new Trigger(()->
+      isAtPosition(this.kL2)
+   || isAtPosition(this.kL3)
+   || isAtPosition(this.kL4)
+   );
 
   public Command homeElevator() {
     // step 0: Make sure scorer is in a safe position
@@ -387,11 +392,11 @@ public class Elevator extends SubsystemBase {
 
 
   public Command holdPosition(){
-    return run(
+    return startRun(
       () -> {
         setHeight(getCarriageHeight().in(Inches));
         setAngle(getAngle().in(Degrees)); //intentionally not trapped, holding angle basepid
-      }
+      },()->{} 
     );
   }
 

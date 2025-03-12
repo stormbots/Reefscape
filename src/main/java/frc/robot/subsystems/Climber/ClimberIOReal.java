@@ -17,7 +17,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
   SparkFlex motor = new SparkFlex(9, MotorType.kBrushless);
-  ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+  ClimberIOInputs inputs = new ClimberIOInputs();
 
   public ClimberIOReal() {
   }
@@ -25,11 +25,11 @@ public class ClimberIOReal implements ClimberIO {
   @Override
   public void updateInputs(ClimberIOInputs newinputs) {
     //disregard incoming inputs and just run it. 
-    inputs.climberAbsoluteAngle = motor.getAbsoluteEncoder().getPosition();
-    inputs.climberCurrentDraw = motor.getOutputCurrent();
-    inputs.climberRelativeAngle = motor.getEncoder().getPosition();
-    inputs.climberVoltage = motor.getAppliedOutput() * motor.getBusVoltage();
-    inputs.climberVelocity = motor.getAbsoluteEncoder().getVelocity();
+    // inputs.climberAbsoluteAngle = motor.getAbsoluteEncoder().getPosition();
+    // inputs.climberCurrentDraw = motor.getOutputCurrent();
+    // inputs.climberRelativeAngle = motor.getEncoder().getPosition();
+    // inputs.climberVoltage = motor.getAppliedOutput() * motor.getBusVoltage();
+    // inputs.climberVelocity = motor.getAbsoluteEncoder().getVelocity();
   }
 
   @Override
