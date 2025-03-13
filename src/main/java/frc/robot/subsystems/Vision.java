@@ -227,10 +227,10 @@ public class Vision extends SubsystemBase {
 
     //if we're seeing tags near the estimated pose, decrease stdev ; That means we're close to it. 
     distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
-    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 0.1, 4);
+    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 1, 4);
 
     // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
-    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 0.1, 10);
+    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 1, 10);
 
     //if we're moving fast, increase stdev; Speed introduces potential errors
     var speedsobject = swerve.getChassisSpeeds();
@@ -241,7 +241,9 @@ public class Vision extends SubsystemBase {
     scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
 
     //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
-    scalar = MathUtil.clamp(scalar,0.2, 20);
+    scalar = MathUtil.clamp(scalar,2, 40);
+
+    SmartDashboard.putNumber("vision/stdev",scalar);
     return stddev.times(scalar);
   }
 

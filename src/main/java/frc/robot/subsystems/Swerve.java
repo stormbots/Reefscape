@@ -351,7 +351,7 @@ public class Swerve extends SubsystemBase {
     final double transltionP = 3.0*1.2*1.5;
     final double thetaP = 2.0*4*1.2 ;
 
-    double clamp = 0.5;
+    double clamp = 0.75;
 
     Pose2d delta = pose.relativeTo(swerveDrive.getPose());
 
@@ -457,6 +457,7 @@ public class Swerve extends SubsystemBase {
   }
 
   private void resetOdometry(Pose2d initialHolonomicPose){
+    System.out.print("RESETTING ODOMETRY");
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 
