@@ -6,28 +6,24 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inch;
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Radians;
 
-import java.lang.StackWalker.Option;
 import java.util.Optional;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-import com.studica.frc.AHRS;
+import com.stormbots.Lerp;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.estimator.PoseEstimator;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -35,7 +31,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -150,7 +145,10 @@ public class Vision extends SubsystemBase {
         else{
           latency = 0;
         }
-        Matrix<N3, N1> stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(10);
+        
+        Matrix<N3, N1> stddev;
+        // stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(10);
+        stddev = getStandardDeviationNearest(estimatedPose.get());
 
         // swerve.swerveDrive.addVisionMeasurement(robotPose, timestamp, visionMeasurementStdDevs);
         swerve.swerveDrive.addVisionMeasurement(
@@ -169,42 +167,132 @@ public class Vision extends SubsystemBase {
     int numTags = 0;
     double avgDistance = 0;
 
+    //Generate the average distance to all seen tags
     for (var tgt : targets){
-
       var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
-
       if(tagPose.isEmpty()) continue;
       numTags++;
       avgDistance += tagPose.get().toPose2d().minus(estimatedPose.estimatedPose.toPose2d()).getTranslation().getNorm();
-
     }
-
+    //If no tags were useful for positions, avoid divide by zero; We shouldn't be checking stdevs if no targets exist
     if(numTags == 0) return estStdDeviation;
     avgDistance /= numTags;
 
+    //If estimated pose is far away from tags, it's invalid
     if(numTags > 1 && avgDistance > 5){
-
       estStdDeviation = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-
-    } else {
-
+    } else { // multiple tags, and estimated pose is within viable ranges
       estStdDeviation = VecBuilder.fill(0.5, 0.5, Double.MAX_VALUE);
-
     }
 
+    //If we see exactly one tag and it's saying we're far away, ignore it
     if(numTags == 1 && avgDistance > 4){
-
       estStdDeviation = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-    
-    } else {
-     
+    } else { //see multiple tags and/or they're close.
+      //This is doing *all* the heavy lifting here, but the best case is still a stdev of 0.5m (dist=0)
+      // Worst case on last year's field is 0.9
+      //This year, it'd be ~0.6. This is not exactly *doing much* to actually change the stdev. 
       estStdDeviation = estStdDeviation.times(1 + (avgDistance * avgDistance / 20));
-
     }
     estStdDeviation = estStdDeviation.times(2);
     return estStdDeviation;
-
   }
+
+
+  public Matrix<N3, N1> getStandardDeviationNearest(EstimatedRobotPose estimatedPose){
+    //Get one that's easy to work with
+    var stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE);
+
+    var targets = estimatedPose.targetsUsed;
+    if(targets.isEmpty()) return stddev.times(10);
+
+    double distanceToEstimatedPose = 10; //m
+    double distanceToCurrentPose = 10; //m
+    var estimate = estimatedPose.estimatedPose.toPose2d();
+    var bot = swerve.getPose().getTranslation();
+
+    //See how far away we're being told to move
+    distanceToCurrentPose = Math.min(bot.getDistance(estimate.getTranslation()), distanceToCurrentPose);
+
+    //Check how far away the tag is from where the tags say we *should* be.
+    for (var tgt : targets){
+      var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
+      if(tagPose.isEmpty()) continue;
+
+      var tag = tagPose.get().toPose2d().getTranslation();
+      distanceToEstimatedPose = Math.min(tag.getDistance(estimate.getTranslation()), distanceToEstimatedPose) ;
+    }
+
+    var scalar = 1.0;
+
+    //if we're seeing tags near the estimated pose, decrease stdev ; That means we're close to it. 
+    distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
+    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 0.1, 4);
+
+    // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
+    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 0.1, 10);
+
+    //if we're moving fast, increase stdev; Speed introduces potential errors
+    var speedsobject = swerve.getChassisSpeeds();
+    var speed = Math.hypot(speedsobject.vxMetersPerSecond,speedsobject.vyMetersPerSecond);
+    var omega = speedsobject.omegaRadiansPerSecond;
+    scalar *= Lerp.lerp(speed, 0, 5, 1, 3);
+    //Fast rotations are particularly bad; Negate this harshly
+    scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
+
+    //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
+    scalar = MathUtil.clamp(scalar,0.2, 20);
+    return stddev.times(scalar);
+  }
+
+  
+
+  public Matrix<N3, N1> getStdevTake3(EstimatedRobotPose estimatedPose){
+    //Get one that's easy to work with
+    var stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE);
+
+    var targets = estimatedPose.targetsUsed;
+    if(targets.isEmpty()) return stddev.times(10);
+
+    double distanceToEstimatedPose = 10; //m
+    double distanceToCurrentPose = 10; //m
+    var estimate = estimatedPose.estimatedPose.toPose2d();
+    var bot = swerve.getPose().getTranslation();
+
+    //See how far away we're being told to move
+    distanceToCurrentPose = Math.min(bot.getDistance(estimate.getTranslation()), distanceToCurrentPose);
+
+    //Check how far away the tag is from where the tags say we *should* be.
+    for (var tgt : targets){
+      var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
+      if(tagPose.isEmpty()) continue;
+
+      var tag = tagPose.get().toPose2d().getTranslation();
+      distanceToEstimatedPose = Math.min(tag.getDistance(estimate.getTranslation()), distanceToEstimatedPose) ;
+    }
+
+    var scalar = 1.0;
+
+    //if we're seeing tags near the estimated pose, decrease stdev ; That means we're close to it. 
+    distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
+    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 0.1, 4);
+
+    // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
+    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 0.1, 10);
+
+    //if we're moving fast, increase stdev; Speed introduces potential errors
+    var speedsobject = swerve.getChassisSpeeds();
+    var speed = Math.hypot(speedsobject.vxMetersPerSecond,speedsobject.vyMetersPerSecond);
+    var omega = speedsobject.omegaRadiansPerSecond;
+    scalar *= Lerp.lerp(speed, 0, 5, 1, 3);
+    //Fast rotations are particularly bad; Negate this harshly
+    scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
+
+    //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
+    scalar = MathUtil.clamp(scalar,0.005, 20);
+    return stddev.times(scalar);
+  }
+
 
   public double getRotationDouble(){
     var value = getRotationToObject().orElse(new Rotation2d()).rotateBy(swerve.getHeading()).getRotations();
