@@ -141,19 +141,19 @@ public class Vision extends SubsystemBase {
     for(PhotonPipelineResult result : latesResults){
       Optional<EstimatedRobotPose> estimatedPose = photonPoseEstimator.update(result);
       // SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
-      if(estimatedPose.isPresent()){  
-        
-        Matrix<N3, N1> stddev;
-        stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(5);
-
-        // stddev = getStandardDeviationNearest(estimatedPose.get());
-
+      if(estimatedPose.isPresent()){
+        //Get some data to help diagnose issues
         double neartestTag=distanceToNearestTag(estimatedPose.get());
-        // if(neartestTag<0.2) stddev = stddev.times(2);
         SmartDashboard.putNumber("camera/"+camera.getName()+"/nearestTagDist", neartestTag);
         visionField2d.getObject(camera.getName()).setPose(estimatedPose.get().estimatedPose.toPose2d());
 
-        // swerve.swerveDrive.addVisionMeasurement(robotPose, timestamp, visionMeasurementStdDevs);
+
+        //Manage std deviations for this result
+        Matrix<N3, N1> stddev;
+        // stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(5);
+        stddev = getStandardDeviationNearest(estimatedPose.get());
+
+        
         swerve.swerveDrive.addVisionMeasurement(
           estimatedPose.get().estimatedPose.toPose2d(),
           result.getTimestampSeconds(),
@@ -180,145 +180,51 @@ public class Vision extends SubsystemBase {
 
     return Math.min(bot.getDistance(estimate.getTranslation()), distanceToEstimatedPose);
   }
-
-
-  public Matrix<N3, N1> getStdDeviation(EstimatedRobotPose estimatedPose){
-
-    var estStdDeviation = VecBuilder.fill(5, 5, Double.MAX_VALUE);
-    var targets = estimatedPose.targetsUsed;
-    int numTags = 0;
-    double avgDistance = 0;
-
-    //Generate the average distance to all seen tags
-    for (var tgt : targets){
-      var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
-      if(tagPose.isEmpty()) continue;
-      numTags++;
-      avgDistance += tagPose.get().toPose2d().minus(estimatedPose.estimatedPose.toPose2d()).getTranslation().getNorm();
-    }
-    //If no tags were useful for positions, avoid divide by zero; We shouldn't be checking stdevs if no targets exist
-    if(numTags == 0) return estStdDeviation;
-    avgDistance /= numTags;
-
-    //If estimated pose is far away from tags, it's invalid
-    if(numTags > 1 && avgDistance > 5){
-      estStdDeviation = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-    } else { // multiple tags, and estimated pose is within viable ranges
-      estStdDeviation = VecBuilder.fill(0.5, 0.5, Double.MAX_VALUE);
-    }
-
-    //If we see exactly one tag and it's saying we're far away, ignore it
-    if(numTags == 1 && avgDistance > 4){
-      estStdDeviation = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-    } else { //see multiple tags and/or they're close.
-      //This is doing *all* the heavy lifting here, but the best case is still a stdev of 0.5m (dist=0)
-      // Worst case on last year's field is 0.9
-      //This year, it'd be ~0.6. This is not exactly *doing much* to actually change the stdev. 
-      estStdDeviation = estStdDeviation.times(1 + (avgDistance * avgDistance / 20));
-    }
-    estStdDeviation = estStdDeviation.times(2);
-    return estStdDeviation;
-  }
-
+  
 
   public Matrix<N3, N1> getStandardDeviationNearest(EstimatedRobotPose estimatedPose){
     //Get one that's easy to work with
     var stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE);
 
     var targets = estimatedPose.targetsUsed;
-    if(targets.isEmpty()) return stddev.times(10);
 
-    double distanceToEstimatedPose = 10; //m
+    // Avoid using tags with high ambiguity; These generate jitter and bad poses
+    for (var tgt : targets){
+      if(tgt.poseAmbiguity > 0.2) return VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+    }
+
+    //Why are we even here then?
+    if(targets.isEmpty()) return VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+
+    double poseToTagDistance = 10; //m
     double distanceToCurrentPose = 10; //m
     var estimate = estimatedPose.estimatedPose.toPose2d();
     var bot = swerve.getPose().getTranslation();
 
     //See how far away we're being told to move
-    distanceToCurrentPose = Math.min(bot.getDistance(estimate.getTranslation()), distanceToCurrentPose);
-
+    distanceToCurrentPose = Math.min(bot.getDistance(estimate.getTranslation()), distanceToCurrentPose);    
+    
     //Check how far away the tag is from where the tags say we *should* be.
     for (var tgt : targets){
       var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
       if(tagPose.isEmpty()) continue;
 
       var tag = tagPose.get().toPose2d().getTranslation();
-      distanceToEstimatedPose = Math.min(tag.getDistance(estimate.getTranslation()), distanceToEstimatedPose) ;
+      poseToTagDistance = Math.min(tag.getDistance(estimate.getTranslation()), poseToTagDistance) ;
     }
 
+    //our base confidence
     var scalar = 1.0;
 
-    //if we're seeing tags near the estimated pose, decrease stdev ; That means we're close to it. 
-    distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
-    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 1, 4);
+    var devTagDistance = 1;
+    if( poseToTagDistance > 2) devTagDistance*=4;
+    if( poseToTagDistance <0.3) devTagDistance*=4;
 
-    // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
-    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 1, 10);
-
-    //if we're moving fast, increase stdev; Speed introduces potential errors
-    var speedsobject = swerve.getChassisSpeeds();
-    var speed = Math.hypot(speedsobject.vxMetersPerSecond,speedsobject.vyMetersPerSecond);
-    var omega = speedsobject.omegaRadiansPerSecond;
-    scalar *= Lerp.lerp(speed, 0, 5, 1, 3);
-    //Fast rotations are particularly bad; Negate this harshly
-    scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
-
-    //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
-    scalar = MathUtil.clamp(scalar,2, 40);
-
-    SmartDashboard.putNumber("vision/stdev",scalar);
-    return stddev.times(scalar);
+    return stddev.times(devTagDistance);
+    //If we do more conditions, we should consider doing RMS calculations
+    // return stddev.times(Math.sqrt(devTagDistance*devTagDistance + devOtherParameter*devOtherParameter));
   }
-
   
-
-  public Matrix<N3, N1> getStdevTake3(EstimatedRobotPose estimatedPose){
-    //Get one that's easy to work with
-    var stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE);
-
-    var targets = estimatedPose.targetsUsed;
-    if(targets.isEmpty()) return stddev.times(10);
-
-    double distanceToEstimatedPose = 10; //m
-    double distanceToCurrentPose = 10; //m
-    var estimate = estimatedPose.estimatedPose.toPose2d();
-    var bot = swerve.getPose().getTranslation();
-
-    //See how far away we're being told to move
-    distanceToCurrentPose = Math.min(bot.getDistance(estimate.getTranslation()), distanceToCurrentPose);
-
-    //Check how far away the tag is from where the tags say we *should* be.
-    for (var tgt : targets){
-      var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
-      if(tagPose.isEmpty()) continue;
-
-      var tag = tagPose.get().toPose2d().getTranslation();
-      distanceToEstimatedPose = Math.min(tag.getDistance(estimate.getTranslation()), distanceToEstimatedPose) ;
-    }
-
-    var scalar = 1.0;
-
-    //if we're seeing tags near the estimated pose, decrease stdev ; That means we're close to it. 
-    distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
-    scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 0.1, 4);
-
-
-    // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
-    scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 0.1, 10);
-
-    //if we're moving fast, increase stdev; Speed introduces potential errors
-    var speedsobject = swerve.getChassisSpeeds();
-    var speed = Math.hypot(speedsobject.vxMetersPerSecond,speedsobject.vyMetersPerSecond);
-    var omega = speedsobject.omegaRadiansPerSecond;
-    scalar *= Lerp.lerp(speed, 0, 5, 1, 3);
-    //Fast rotations are particularly bad; Negate this harshly
-    scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
-
-    //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
-    scalar = MathUtil.clamp(scalar,1, 30);
-    return stddev.times(scalar);
-  }
-
-
   public double getRotationDouble(){
     var value = getRotationToObject().orElse(new Rotation2d()).rotateBy(swerve.getHeading()).getRotations();
     return value;
