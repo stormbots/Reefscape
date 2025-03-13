@@ -150,19 +150,21 @@ public class Vision extends SubsystemBase {
         else{
           latency = 0;
         }
-        Matrix<N3, N1> stddev = getStdDeviation(estimatedPose.get());
+        Matrix<N3, N1> stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(10);
 
-        // SmartDashboard.putNumber("Std deviation", stddev.get(0, 0));
-        //update pose
-
-        swerve.swerveDrive.addVisionMeasurement(estimatedPose.get().estimatedPose.toPose2d(), result.getTimestampSeconds());
+        // swerve.swerveDrive.addVisionMeasurement(robotPose, timestamp, visionMeasurementStdDevs);
+        swerve.swerveDrive.addVisionMeasurement(
+          estimatedPose.get().estimatedPose.toPose2d(),
+          result.getTimestampSeconds(),
+          stddev
+        );
       }
     }
   }
 
   public Matrix<N3, N1> getStdDeviation(EstimatedRobotPose estimatedPose){
 
-    var estStdDeviation = VecBuilder.fill(0.8, 0.8, Double.MAX_VALUE);
+    var estStdDeviation = VecBuilder.fill(5, 5, Double.MAX_VALUE);
     var targets = estimatedPose.targetsUsed;
     int numTags = 0;
     double avgDistance = 0;
@@ -199,7 +201,7 @@ public class Vision extends SubsystemBase {
       estStdDeviation = estStdDeviation.times(1 + (avgDistance * avgDistance / 20));
 
     }
-
+    estStdDeviation = estStdDeviation.times(2);
     return estStdDeviation;
 
   }

@@ -83,7 +83,7 @@ public class Scorer extends SubsystemBase {
     return Commands.sequence(
       run(()->setScorerSpeed(-800)).onlyWhile(isCoralInScorer),
       new InstantCommand(()->motor.getEncoder().setPosition(0)),
-      run(()->motor.getClosedLoopController().setReference(3, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+      run(()->motor.getClosedLoopController().setReference(5, ControlType.kPosition, ClosedLoopSlot.kSlot1))
     );
   }
 

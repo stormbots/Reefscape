@@ -332,15 +332,26 @@ public class Swerve extends SubsystemBase {
     final double transltionP = 3.0*1.2;
     final double thetaP = 2.0*4*1.2 ;
 
-    // Transform2d delta = pose.minus(swerveDrive.getPose());
-
-    // swerveDrive.setChassisSpeeds(ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(
-    //   -delta.getX()*transltionP, 
-    //   -delta.getY()*transltionP, 
-    //   -delta.getRotation().getRadians()*thetaP
-    //   ), swerveDrive.getOdometryHeading()
-    // ));
     double clamp = 2.0;
+
+    Pose2d delta = pose.relativeTo(swerveDrive.getPose());
+
+    swerveDrive.setChassisSpeeds(new ChassisSpeeds(
+      MathUtil.clamp(delta.getX()*transltionP,-clamp, clamp),
+      MathUtil.clamp(delta.getY()*transltionP,-clamp,clamp),
+      delta.getRotation().getRadians()*thetaP
+    ));
+
+    SmartDashboard.putNumber("swerve/pidTargetPoseX", pose.getX());
+    SmartDashboard.putNumber("swerve/pidTargetPoseY", pose.getY());
+
+  }
+
+  private void pidToPoseHuman(Pose2d pose){
+    final double transltionP = 3.0*1.2*1.5;
+    final double thetaP = 2.0*4*1.2 ;
+
+    double clamp = 0.5;
 
     Pose2d delta = pose.relativeTo(swerveDrive.getPose());
 
@@ -357,6 +368,10 @@ public class Swerve extends SubsystemBase {
 
   public Command pidToPoseCommand(Pose2d poseSupplier){
     return run(()->pidToPose(poseSupplier));
+  }
+
+  public Command pidToPoseHumanCommand(Pose2d poseSupplier){
+    return run(()->pidToPoseHuman(poseSupplier));
   }
 
   private Pose2d flipPoseIfAppropriate(Pose2d pose){
@@ -392,6 +407,14 @@ public class Swerve extends SubsystemBase {
 
   public Command pidToCoralRight(){
     return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+  }
+
+  public Command pidToCoralLeftHuman(){
+    return new DeferredCommand(()->pidToPoseHumanCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+  }
+
+  public Command pidToCoralRightHuman(){
+    return new DeferredCommand(()->pidToPoseHumanCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
 
   public Command pidToCoralSource(){
