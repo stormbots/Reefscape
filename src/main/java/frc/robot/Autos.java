@@ -119,6 +119,7 @@ public class Autos {
 
         //Just show the status of our current build on the dashboard
         var ready = selectedAutoFuture.isDone() && requireRebuild==false;
+        var gyroReady = swerveSubsystem.isGyroConnected();
         SmartDashboard.putBoolean("AutoSelector/ready",ready);
 
         //If we haven't changed auto or alliance, nothing to do
@@ -179,7 +180,10 @@ public class Autos {
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         scorer.runCoralScorer(2500).withTimeout(1),
         elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
-      );//TODO deadline a stop command
+      )
+      .alongWith(swerveSubsystem.stopCommand().withTimeout(4))
+      ;
+      //TODO deadline a stop command
     }
   
     ///////////////////////////////////////////////////
@@ -195,15 +199,8 @@ public class Autos {
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
-      //new InstantCommand(()->swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()))),
-     // getUnfoldRobot().withTimeout(7),
-      swerveSubsystem.followPath(path),
-      swerveSubsystem.pidToCoralLeft().withTimeout(1),
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
-      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      new WaitCommand(0.5),
-      scorer.runCoralScorer(2500).withTimeout(1),
-      elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
+      swerveSubsystem.pidToCoralLeft().withTimeout(5),
+      scoreAtL4()
     );
   }
 
@@ -213,7 +210,9 @@ public class Autos {
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
-      swerveSubsystem.pathToCoralLeft(),
+      new ParallelCommandGroup(
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      swerveSubsystem.pathToCoralLeft()),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       scoreAtL4()    
       );
@@ -226,12 +225,14 @@ public class Autos {
 
     return Commands.sequence(
        // getUnfoldRobot().withTimeout(7),
-        swerveSubsystem.pathToCoralRight(),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+      
+        new ParallelCommandGroup(
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-        scorer.scoreCoral(),
-        elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
-    );
+        swerveSubsystem.pathToCoralLeft()),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        scoreAtL4()    
+        );
+    
   }
 
   //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works on both sides
@@ -239,13 +240,19 @@ public class Autos {
     return Commands.sequence(
       leftL4CoralAuto(),
       loadFromStation(),
+      new ParallelCommandGroup(
       swerveSubsystem.pathToCoralLeft(),
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
       //score coral
-      swerveSubsystem.stopCommand().withTimeout(2),
+      swerveSubsystem.stopCommand().withTimeout(0.5),
       scoreAtL4(),
       loadFromStation(),
-      swerveSubsystem.pathToCoralRight(),
-      swerveSubsystem.stopCommand().withTimeout(2),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralRight(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      swerveSubsystem.stopCommand().withTimeout(0.5),
       scoreAtL4()
     );
   }
@@ -253,14 +260,19 @@ public class Autos {
   public Command rightMultiCoralAuto(){
     return Commands.sequence(
       rightL4CoralAuto(),
-      new WaitCommand(2),
+
       loadFromStation(),
-      swerveSubsystem.pathToCoralLeft(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralLeft(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
       //score coral
-      new WaitCommand(2),
       scoreAtL4(),
       loadFromStation(),
-      swerveSubsystem.pathToCoralRight(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralRight(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
       scoreAtL4()
     );
   }

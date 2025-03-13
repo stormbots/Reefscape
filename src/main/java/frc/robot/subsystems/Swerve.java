@@ -21,6 +21,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.FlippingUtil;
+import com.studica.frc.AHRS;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -423,6 +424,16 @@ public class Swerve extends SubsystemBase {
 
     //Go to target Path and follow it
     return AutoBuilder.pathfindThenFollowPath(targetPath, constraints);
+  }
+
+  public boolean isGyroConnected(){
+    var navx = (AHRS)swerveDrive.getGyro().getIMU();
+    if(navx.isConnected() && navx.isCalibrating()){
+      return true;
+    }
+
+    
+    return false;
   }
 
   public Pose2d getPose(){
