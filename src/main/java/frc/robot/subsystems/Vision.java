@@ -31,6 +31,8 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -44,16 +46,18 @@ public class Vision extends SubsystemBase {
   Optional<PhotonCamera> rightCamera;
   Optional<PhotonCamera> backCamera;
 
-  Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
+  Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(0).in(Meters), Inch.of(0).in(Meters), Inch.of(0).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
   Transform3d rightRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), -Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, -Math.toRadians(40.0+180.0)));
   Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
   PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
   PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
   
+  Field2d visionField2d = new Field2d();
    
   /** Creates a new Vision. */
   public Vision(Swerve swerve) {
     this.swerve = swerve;
+    SmartDashboard.putData("visionfield", visionField2d);
 
     //move camera constructors here
     
@@ -85,6 +89,7 @@ public class Vision extends SubsystemBase {
 
   @Override
   public void periodic() {
+    // swerve.getPose()
     // This method will be called once per scheduler run
     SmartDashboard.putBoolean("vision/leftCamera", leftCamera.isPresent());
     SmartDashboard.putBoolean("vision/rightCamera", rightCamera.isPresent());
@@ -137,18 +142,16 @@ public class Vision extends SubsystemBase {
       Optional<EstimatedRobotPose> estimatedPose = photonPoseEstimator.update(result);
       // SmartDashboard.putBoolean("ispresent", estimatedPose.isPresent());
       if(estimatedPose.isPresent()){  
-        double latency;
-
-        if(result.hasTargets()){
-          latency = result.getTimestampSeconds() / 1.0e3;
-        }
-        else{
-          latency = 0;
-        }
         
         Matrix<N3, N1> stddev;
-        // stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(10);
-        stddev = getStandardDeviationNearest(estimatedPose.get());
+        stddev = VecBuilder.fill(1, 1, Double.MAX_VALUE).times(5);
+
+        // stddev = getStandardDeviationNearest(estimatedPose.get());
+
+        double neartestTag=distanceToNearestTag(estimatedPose.get());
+        // if(neartestTag<0.2) stddev = stddev.times(2);
+        SmartDashboard.putNumber("camera/"+camera.getName()+"/nearestTagDist", neartestTag);
+        visionField2d.getObject(camera.getName()).setPose(estimatedPose.get().estimatedPose.toPose2d());
 
         // swerve.swerveDrive.addVisionMeasurement(robotPose, timestamp, visionMeasurementStdDevs);
         swerve.swerveDrive.addVisionMeasurement(
@@ -159,6 +162,25 @@ public class Vision extends SubsystemBase {
       }
     }
   }
+
+  public double distanceToNearestTag(EstimatedRobotPose estimatedPose){
+    var targets = estimatedPose.targetsUsed;
+    double distanceToEstimatedPose = 10; //m
+    var estimate = estimatedPose.estimatedPose.toPose2d();
+
+    for (var tgt : targets){
+      var tagPose = aprilTagFieldLayout.getTagPose(tgt.getFiducialId());
+      if(tagPose.isEmpty()) continue;
+
+      var tag = tagPose.get().toPose2d().getTranslation();
+      distanceToEstimatedPose = Math.min(tag.getDistance(estimate.getTranslation()), distanceToEstimatedPose) ;
+    }
+
+    var bot = swerve.getPose().getTranslation();
+
+    return Math.min(bot.getDistance(estimate.getTranslation()), distanceToEstimatedPose);
+  }
+
 
   public Matrix<N3, N1> getStdDeviation(EstimatedRobotPose estimatedPose){
 
@@ -279,6 +301,7 @@ public class Vision extends SubsystemBase {
     distanceToEstimatedPose = MathUtil.clamp(distanceToEstimatedPose,0, 5);
     scalar *= Lerp.lerp(distanceToEstimatedPose, 0.1, 4, 0.1, 4);
 
+
     // if we're being told to move a long distance, increase stdev; That means something went wrong at some point
     scalar *= Lerp.lerp(distanceToCurrentPose, 0, 10, 0.1, 10);
 
@@ -291,7 +314,7 @@ public class Vision extends SubsystemBase {
     scalar *= Lerp.lerp(omega, 0, Math.PI, 1, 10);
 
     //Sanity check to make sure our reported errors are where we'd kind of expect; Between a couple inches and "on the field"
-    scalar = MathUtil.clamp(scalar,0.005, 20);
+    scalar = MathUtil.clamp(scalar,1, 30);
     return stddev.times(scalar);
   }
 

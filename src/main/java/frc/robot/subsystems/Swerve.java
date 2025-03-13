@@ -306,7 +306,6 @@ public class Swerve extends SubsystemBase {
     return swerveDrive.getGyro().getRotation3d().toRotation2d();
   }
 
-
   public Command goToPose(Pose2d targetPose){
 
     return run(()->{
