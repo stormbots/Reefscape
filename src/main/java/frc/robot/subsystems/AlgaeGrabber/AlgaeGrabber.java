@@ -335,7 +335,7 @@ public class AlgaeGrabber extends SubsystemBase {
   public Command newScoreProcessor(){
     var rpm=4000;
     return run(()->{
-      setArmAngle(-90);
+      setArmAngle(-100);
       setIntakeRPM(rpm);
       setShooterRPM(rpm);
     }).withName("ScoreProcessor");

@@ -138,11 +138,11 @@ public class Elevator extends SubsystemBase {
     }));
     new Trigger(DriverStation::isDisabled).onTrue(runOnce(()->rotationMotor.stopMotor()));
 
-    setDefaultCommand(holdPosition());
-    // setDefaultCommand(run(()->{
-    //   elevatorMotor.setVoltage(elevatorFF.calculate(0));
-    //   rotationMotor.setVoltage(rotatorFF.calculate(getAngle().in(Degree), 0));
-    // }));
+    // setDefaultCommand(holdPosition());
+    setDefaultCommand(run(()->{
+      elevatorMotor.setVoltage(elevatorFF.calculate(0));
+      rotationMotor.setVoltage(rotatorFF.calculate(getAngle().in(Degree), 0));
+    }));
 
   }
 
