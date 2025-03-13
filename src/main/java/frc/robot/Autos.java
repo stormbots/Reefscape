@@ -76,6 +76,8 @@ public class Autos {
 
         autoChooser.addOption("Multicoral Right Auto", this::rightMultiCoralAuto);
         autoChooser.addOption("Multicoral Left Auto", this::leftMultiCoralAuto);
+
+        autoChooser.addOption("Drive Forward Score", this::driveForwardScore);
         
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //test autos here
@@ -190,6 +192,14 @@ public class Autos {
     /// PUT AUTOS HERE ////////////////////////////////
     ///////////////////////////////////////////////////
 
+  public Command driveForwardScore(){
+    return Commands.sequence(
+      swerveSubsystem.driveCommandRobotRelative(()->-0.2,()-> 0.0, ()->0.0).withTimeout(2.25),
+      scoreAtL4()
+    );
+  }
+
+  
   public Command centerL4CoralAuto(){
     // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
     // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
