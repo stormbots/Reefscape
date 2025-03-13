@@ -139,6 +139,10 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
 
+    sofiabox.button(12).whileTrue(elevator.moveToPoseSafe(elevator.kShooterIntake).alongWith(algaeGrabber.newIntakeFromElevator()));
+
+    sofiabox.button(15).whileTrue(scorer.loadCoral());
+
 
   }
 

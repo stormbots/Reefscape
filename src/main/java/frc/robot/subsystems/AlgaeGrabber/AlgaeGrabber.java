@@ -225,7 +225,10 @@ public class AlgaeGrabber extends SubsystemBase {
   public Command newIntakeFromElevator(){
     //TODO: Needs implementation
     return new SequentialCommandGroup(
-    );
+      run(()->{
+        setArmAngle(90);
+        setShooterRPM(-3500);}).until(isBreakbeamTripped)
+    ).finallyDo(()->intakeMotor.getEncoder().setPosition(0));
   }
 
   public Command stow(){ //TODO set to default
