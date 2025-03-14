@@ -42,16 +42,25 @@ public class Vision extends SubsystemBase {
   AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
 
   NetworkTableInstance table = NetworkTableInstance.getDefault();
-  Optional<PhotonCamera> leftCamera;
-  Optional<PhotonCamera> rightCamera;
-  Optional<PhotonCamera> backCamera;
+  // Optional<PhotonCamera> leftCamera;
+  // Optional<PhotonCamera> rightCamera;
+  // Optional<PhotonCamera> backCamera;
+  Optional<PhotonCamera> centerCamera;
 
-  Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
-  Transform3d rightRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), -Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, -Math.toRadians(40.0+180.0)));
-  Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
-  PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
-  PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
-  
+  Transform3d centerTagCamera = new Transform3d(new Translation3d(
+    Inch.of(-4.625).in(Meters),
+    Inch.of(0).in(Meters), 
+    Inch.of(17.875).in(Meters)),
+    new Rotation3d(0.0, 0.0, Math.toRadians(180.0))
+  );
+  // Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
+  // Transform3d rightRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), -Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, -Math.toRadians(40.0+180.0)));
+  // Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
+  // PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
+  // PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
+  PhotonPoseEstimator centerPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, 
+  PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, centerTagCamera);
+
   Field2d visionField2d = new Field2d();
    
   /** Creates a new Vision. */
@@ -62,27 +71,35 @@ public class Vision extends SubsystemBase {
     //move camera constructors here
     
     try{
-      leftCamera = Optional.of(new PhotonCamera("Back_Left"));
+      centerCamera = Optional.of(new PhotonCamera("Arducam_OV9782_Shooter_Vision"));
       // leftCamera = Optional.empty();
     }catch(Error e){
       System.err.print(e);
-      leftCamera = Optional.empty();
+      centerCamera = Optional.empty();
     }
 
-    try{
-      rightCamera = Optional.of(new PhotonCamera("Back_Right"));
-      // rightCamera = Optional.empty();
-    }catch(Error e){
-      System.err.print(e);
-      rightCamera = Optional.empty();
-    }
+    // try{
+    //   leftCamera = Optional.of(new PhotonCamera("Back_Left"));
+    //   // leftCamera = Optional.empty();
+    // }catch(Error e){
+    //   System.err.print(e);
+    //   leftCamera = Optional.empty();
+    // }
 
-    try{
-      backCamera = Optional.of(new PhotonCamera("Back"));
-    }catch(Error e){
-      System.err.print(e);
-      backCamera = Optional.empty();
-    }
+    // try{
+    //   rightCamera = Optional.of(new PhotonCamera("Back_Right"));
+    //   // rightCamera = Optional.empty();
+    // }catch(Error e){
+    //   System.err.print(e);
+    //   rightCamera = Optional.empty();
+    // }
+
+    // try{
+    //   backCamera = Optional.of(new PhotonCamera("Back"));
+    // }catch(Error e){
+    //   System.err.print(e);
+    //   backCamera = Optional.empty();
+    // }
 
 
   }
@@ -91,9 +108,10 @@ public class Vision extends SubsystemBase {
   public void periodic() {
     // swerve.getPose()
     // This method will be called once per scheduler run
-    SmartDashboard.putBoolean("vision/leftCamera", leftCamera.isPresent());
-    SmartDashboard.putBoolean("vision/rightCamera", rightCamera.isPresent());
-    SmartDashboard.putBoolean("vision/backCamera", backCamera.isPresent());
+    // SmartDashboard.putBoolean("vision/leftCamera", leftCamera.isPresent());
+    // SmartDashboard.putBoolean("vision/rightCamera", rightCamera.isPresent());
+    // SmartDashboard.putBoolean("vision/backCamera", backCamera.isPresent());
+    SmartDashboard.putBoolean("vision/centerCamera", centerCamera.isPresent());
 
     // if(leftCamera.isPresent()){
     //   PhotonPipelineResult results = leftCamera.get().getLatestResult();
@@ -110,11 +128,14 @@ public class Vision extends SubsystemBase {
 
   public void updateOdometry(){
     //if camera is present
-    if(leftCamera.isPresent()){
-      updateCameraSideOdometry(leftPoseEstimator, leftCamera.get());
-    }
-    if(rightCamera.isPresent()){
-      updateCameraSideOdometry(rightPoseEstimator, rightCamera.get());
+    // if(leftCamera.isPresent()){
+    //   updateCameraSideOdometry(leftPoseEstimator, leftCamera.get());
+    // }
+    // if(rightCamera.isPresent()){
+    //   updateCameraSideOdometry(rightPoseEstimator, rightCamera.get());
+    // }
+    if(centerCamera.isPresent()){
+      updateCameraSideOdometry(centerPoseEstimator, centerCamera.get());
     }
   }
   // public void getDistanceFromCamera(){
@@ -156,8 +177,8 @@ public class Vision extends SubsystemBase {
         
         swerve.swerveDrive.addVisionMeasurement(
           estimatedPose.get().estimatedPose.toPose2d(),
-          result.getTimestampSeconds(),
-          stddev
+          result.getTimestampSeconds()//,
+          // stddev
         );
       }
     }
@@ -231,14 +252,14 @@ public class Vision extends SubsystemBase {
   }
 
   public Optional<Rotation2d> getRotationToObject(){
-    if(backCamera.isPresent()){
-    PhotonPipelineResult results = backCamera.get().getLatestResult();
+    // if(backCamera.isPresent()){
+    // PhotonPipelineResult results = backCamera.get().getLatestResult();
 
-    if (results.hasTargets()){
-      PhotonTrackedTarget target = results.getBestTarget();
-      return Optional.of(new Rotation2d(Degrees.of(target.getYaw())));
-    }
-    }
+    // if (results.hasTargets()){
+    //   PhotonTrackedTarget target = results.getBestTarget();
+    //   return Optional.of(new Rotation2d(Degrees.of(target.getYaw())));
+    // }
+    // }
     return Optional.empty();
     
   }
