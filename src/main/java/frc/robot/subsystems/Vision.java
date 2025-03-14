@@ -46,7 +46,7 @@ public class Vision extends SubsystemBase {
   Optional<PhotonCamera> rightCamera;
   Optional<PhotonCamera> backCamera;
 
-  Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(0).in(Meters), Inch.of(0).in(Meters), Inch.of(0).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
+  Transform3d leftRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, Math.toRadians(40.0+180.0)));
   Transform3d rightRobotToCam = new Transform3d(new Translation3d(-Inch.of(13.75).in(Meters), -Inch.of(11).in(Meters), Inch.of(13.5).in(Meters)), new Rotation3d(0.0, 0.0, -Math.toRadians(40.0+180.0)));
   Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
   PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
