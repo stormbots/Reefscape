@@ -78,7 +78,7 @@ public class Autos {
         autoChooser.addOption("Multicoral Left Auto", this::leftMultiCoralAuto);
 
         autoChooser.addOption("Drive Forward Score", this::driveForwardScore);
-        autoChooser.addOption("Sliding Drive Foward Score", this::driverForwardLeftScore);
+        autoChooser.addOption("Sliding Drive Foward Score", this::deadReckoningRightBranch);
         
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //test autos here
@@ -200,11 +200,11 @@ public class Autos {
     );
   }
 
-  public Command driverForwardLeftScore(){
+  public Command deadReckoningRightBranch(){
     return Commands.sequence(
       swerveSubsystem.driveCommandRobotRelative(()->-0.2,()-> 0.0, ()->0.0).withTimeout(2.25),
       elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.05, ()->0.0).until(scorer.isBranchInRange),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0).until(scorer.isBranchInRange),
       scoreAtL4()
     );
   }

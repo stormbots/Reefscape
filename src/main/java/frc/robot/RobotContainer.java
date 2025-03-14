@@ -79,8 +79,9 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
         ()->-driver.getRightX()+vision.getRotationDouble()*1
         ));
 
-    driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralLeftHuman());
-    driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
+    //swaps tag relative to robot relative
+    driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
+    driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralLeftHuman());
 
   }
 
