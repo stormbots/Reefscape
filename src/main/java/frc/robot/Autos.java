@@ -78,7 +78,7 @@ public class Autos {
         autoChooser.addOption("Multicoral Left Auto", this::leftMultiCoralAuto);
 
         autoChooser.addOption("Drive Forward Score", this::driveForwardScore);
-        autoChooser.addOption("Sliding Drive Foward Score", this::deadReckoningRightBranch);
+        autoChooser.addOption("Dead  Reckoning Center", this::deadReckoningRightBranch);
         
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //test autos here
@@ -225,7 +225,7 @@ public class Autos {
     // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
 
     var path = "basicCenterAuto";
-    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
@@ -236,7 +236,7 @@ public class Autos {
 
   public Command leftL4CoralAuto(){
    var path = "basicLeftAuto";
-    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    //swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
@@ -254,7 +254,7 @@ public class Autos {
 
   public Command rightL4CoralAuto(){
     var path = "basicRightAuto";
-    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
@@ -318,7 +318,7 @@ public class Autos {
   public Command basicCenterAutoTest(){
     
     var path = "basicCenterAuto";
-    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     //sequence that only moves, no elevator or climber stuff

@@ -53,8 +53,8 @@ public class Elevator extends SubsystemBase {
   private final double toleranceHeight = 1;
   private final double toleranceHeightUnfolding = 0.5;
   private final double toleranceAngle = 5;
-  private final double kArmMaxVelocity = 180.0;
-  private final double kArmMaxAcceleration = 270.0;
+  private final double kArmMaxVelocity = 330.0;
+  private final double kArmMaxAcceleration = 300.0;
   private final double kElevatorMaxVelocity = 12; //TODO: need actual values
   private final double kElevatorMaxAcceleration = 24;
   private final TrapezoidProfile armTrapezoidProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(kArmMaxVelocity, kArmMaxAcceleration));
@@ -101,13 +101,13 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kStowedUp =       new ElevatorPose(0, -40);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, -40);
   public final ElevatorPose kL1 =             new ElevatorPose(24, 90);
-  public final ElevatorPose kL2 =             new ElevatorPose(2.5, 206); //215?
+  public final ElevatorPose kL2 =             new ElevatorPose(3.5, 206); //215?
   public final ElevatorPose kL3 =             new ElevatorPose(2, 145.5);
   public final ElevatorPose kL4 =             new ElevatorPose(25, 133);
   public final ElevatorPose kL2Algae =        new ElevatorPose(0.6, 171.5);
   public final ElevatorPose kL2AlgaeFar =     new ElevatorPose(25.0, 152);
   public final ElevatorPose kL3Algae =        new ElevatorPose(6, 132);
-  public final ElevatorPose kShooterIntake = new ElevatorPose(6, 90);
+  public final ElevatorPose kShooterIntake = new ElevatorPose(11, 218);
 
 
   //DEPRECATED ground Intake dosent exsist ):

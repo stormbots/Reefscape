@@ -270,8 +270,8 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   public Command newShootAlgae(){
-    double angle = -20;//-25;
-    double shooterrpm = 5200;
+    double angle = -15;//-25;
+    double shooterrpm = 4700;
     return new SequentialCommandGroup(
       testMoveArmWithTrap(()->angle).until(isArmTrapComplete),
       // clearShooterForShooting(),
