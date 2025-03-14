@@ -179,14 +179,22 @@ public class Autos {
     }
 
     public Command scoreAtL4(){
-      return Commands.sequence(
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-        scorer.runCoralScorer(2500).withTimeout(1),
-        elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
-      )
-      .alongWith(swerveSubsystem.stopCommand().withTimeout(4))
-      ;
+      // return Commands.sequence(
+      //   elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      //   scorer.runCoralScorer(2500).withTimeout(1),
+      //   elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
+      // )
+      // .alongWith(swerveSubsystem.stopCommand().withTimeout(4))
+      // ;
       //TODO deadline a stop command
+
+      return new ParallelDeadlineGroup(
+        Commands.sequence(
+          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+          scorer.runCoralScorer(2500).withTimeout(1),
+          elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
+        ), swerveSubsystem.stopCommand()
+        );
     }
   
     ///////////////////////////////////////////////////
