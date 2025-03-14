@@ -17,11 +17,8 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-import com.stormbots.Lerp;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -31,10 +28,11 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
+import frc.robot.subsystems.Photonvision.VisionSim;
 
 public class Vision extends SubsystemBase {
 
@@ -47,7 +45,7 @@ public class Vision extends SubsystemBase {
   // Optional<PhotonCamera> backCamera;
   Optional<PhotonCamera> centerCamera;
 
-  Transform3d centerTagCamera = new Transform3d(new Translation3d(
+  Transform3d centerCameraTransform = new Transform3d(new Translation3d(
     Inch.of(-4.625).in(Meters),
     Inch.of(0).in(Meters), 
     Inch.of(17.875).in(Meters)),
@@ -58,11 +56,16 @@ public class Vision extends SubsystemBase {
   // Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
   // PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
   // PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
-  PhotonPoseEstimator centerPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, 
-  PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, centerTagCamera);
+  PhotonPoseEstimator centerPoseEstimator = new PhotonPoseEstimator(
+    aprilTagFieldLayout, 
+    PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    centerCameraTransform
+  );
 
   Field2d visionField2d = new Field2d();
-   
+
+  Optional<VisionSim> sim = Optional.empty();
+
   /** Creates a new Vision. */
   public Vision(Swerve swerve) {
     this.swerve = swerve;
@@ -101,7 +104,8 @@ public class Vision extends SubsystemBase {
     //   backCamera = Optional.empty();
     // }
 
-
+    if(Robot.isSimulation()){ sim = Optional.of(new VisionSim(swerve,centerCamera.get(),centerCameraTransform));}
+   
   }
 
   @Override
@@ -124,7 +128,12 @@ public class Vision extends SubsystemBase {
     //SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());
   
   }
-
+  
+  @Override
+  public void simulationPeriodic() {
+    if (sim.isPresent()) sim.get().periodic();
+  }
+  
 
   public void updateOdometry(){
     //if camera is present
