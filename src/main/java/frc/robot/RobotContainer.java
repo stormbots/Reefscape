@@ -79,8 +79,9 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
         ()->-driver.getRightX()+vision.getRotationDouble()*1
         ));
 
-    driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralLeftHuman());
-    driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
+    //swaps tag relative to robot relative
+    driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
+    driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralLeftHuman());
 
   }
 
@@ -139,6 +140,10 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
 
+    sofiabox.button(12).whileTrue(elevator.moveToPoseSafe(elevator.kShooterIntake).alongWith(algaeGrabber.newIntakeFromElevator()));
+
+    sofiabox.button(15).whileTrue(scorer.loadCoral());
+
 
   }
 
@@ -147,7 +152,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
    * Because autos go in Autos now.
    */
   public Command getProgrammingTestSequence() {
-    return new InstantCommand();
+    return climber.prepareToClimb().withTimeout(3).andThen(climber.climb());
+    // return new InstantCommand();
     // return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
 
   }

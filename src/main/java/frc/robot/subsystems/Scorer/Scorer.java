@@ -6,6 +6,7 @@
 package frc.robot.subsystems.Scorer;
 
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Millimeter;
 
 import java.util.Optional;
@@ -42,6 +43,9 @@ public class Scorer extends SubsystemBase {
     .configureShortRange()
     .setThreshhold(kNoCoralDistance)
     ;
+  LaserCanWrapper branchDetector = new LaserCanWrapper(21)
+  .configureShortRange()
+  .setThreshhold(Inches.of(12.0));
 
   public Scorer() {
     if(Robot.isSimulation()) sim = Optional.of(new ScorerSimulation(motor));
@@ -59,6 +63,7 @@ public class Scorer extends SubsystemBase {
   }
 
   public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
+  public Trigger isBranchInRange = branchDetector.isBreakBeamTripped;
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return motor.getOutputCurrent() > 20;
@@ -79,12 +84,17 @@ public class Scorer extends SubsystemBase {
     // return run(()->coralOutMotor.setVoltage(6))
   }
 
+
   public Command realignCoral(){
     return Commands.sequence(
       run(()->setScorerSpeed(-800)).onlyWhile(isCoralInScorer),
       new InstantCommand(()->motor.getEncoder().setPosition(0)),
       run(()->motor.getClosedLoopController().setReference(5, ControlType.kPosition, ClosedLoopSlot.kSlot1))
     );
+  }
+
+  public void stop(){
+    motor.set(0);
   }
 
   public Command defaultCommand(){
@@ -99,8 +109,6 @@ public class Scorer extends SubsystemBase {
   /// ////////////////////////////////////////////////////////////////////
   public Command scoreCoral(){
     return new SequentialCommandGroup(
-      //TODO: Test and make it work properly
-
       //Always run the intake for long enough to do it
       runCoralScorer(2500).withTimeout(0.5)
       );
@@ -117,9 +125,9 @@ public class Scorer extends SubsystemBase {
   public Command loadCoral(){
     return new SequentialCommandGroup(
       //TODO: Put the right things here. 
-      runCoralScorer(2500).until(isCoralInScorer)
-      // realignCoral() //Doesn't end, and doesn't provide a clean way to end! This may require consideration for autos
-    );
+      runCoralScorer(2500).until(isCoralInScorer),
+      realignCoral()
+    ).finallyDo(this::stop);
   }
 
   @Override

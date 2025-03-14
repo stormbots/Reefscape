@@ -17,7 +17,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
   SparkFlex motor = new SparkFlex(9, MotorType.kBrushless);
-  // ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+  ClimberIOInputs inputs = new ClimberIOInputs();
 
   public ClimberIOReal() {
   }

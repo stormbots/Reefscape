@@ -4,20 +4,16 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Degree;
-import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
-import com.fasterxml.jackson.databind.deser.SettableBeanProperty.Delegating;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
@@ -26,33 +22,29 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.FlippingUtil;
 import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
-import frc.robot.Robot;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 
@@ -98,6 +90,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
 
     swerveDrive.setMotorIdleMode(true); //just to be safe
+
     configurePathplanner();
     // PathfindingCommand.warmupCommand();
 
@@ -116,6 +109,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.updateOdometry();
     debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
+    SmartDashboard.putNumber("wheelencoder", swerveDrive.getModules()[0].getPosition().distanceMeters);
     
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
     SmartDashboard.putData("odometryField", odometryField);
@@ -179,8 +173,8 @@ public class Swerve extends SubsystemBase {
       this::getChassisSpeeds,
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(1, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(1, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(0.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
       shouldFlipPath, 
@@ -341,8 +335,9 @@ public class Swerve extends SubsystemBase {
       delta.getRotation().getRadians()*thetaP
     ));
 
-    SmartDashboard.putNumber("swerve/pidTargetPoseX", pose.getX());
-    SmartDashboard.putNumber("swerve/pidTargetPoseY", pose.getY());
+    debugField2d.getObject("pidtarget").setPose(pose);
+    SmartDashboard.putNumber("swerve/pid/deltax", pose.getX());
+    SmartDashboard.putNumber("swerve/pid/deltay", pose.getY());
 
   }
 
@@ -366,7 +361,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command pidToPoseCommand(Pose2d poseSupplier){
-    return run(()->pidToPose(poseSupplier));
+    return run(()->pidToPose(poseSupplier)).finallyDo(()->stop());
   }
 
   public Command pidToPoseHumanCommand(Pose2d poseSupplier){
@@ -375,30 +370,36 @@ public class Swerve extends SubsystemBase {
 
   private Pose2d flipPoseIfAppropriate(Pose2d pose){
     if(shouldFlipPoseBasedOnAlliance()){
-      return new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
-      // return FlippingUtil.flipFieldPose(pose); //We should just use this
+      //return new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
+      return FlippingUtil.flipFieldPose(pose); //We should just use this
     }
     return pose;
   }
 
-  // private void pidToPoseOdometryManaged(Pose2d pose){
-  //   var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-  //   if(alliance == Alliance.Red){
-  //     //Flips across y=x, not across vertical acis
-  //     pose = new Pose2d(17.55-pose.getX(),8.05-pose.getY(), pose.getRotation().rotateBy(new Rotation2d(Math.toRadians(180))));
-  //   }
+  public boolean isNearEnoughToPID(Pose2d target){
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    var result = distance <= Inches.of(30).in(Meters);
+    SmartDashboard.putBoolean("swerve/isNearEnough",result);
+    return result;
+  }
+  public boolean isNearEnoughToWork(Pose2d target){
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    return distance <= Inches.of(1.5).in(Meters);
+  }
 
-  //   pidToPose(pose);
-  // }
 
   private Command privatePathToPose(Pose2d pose){
-    return AutoBuilder.pathfindToPose(pose, constraintsSlow);
+    return Commands.sequence(
+      pidToPoseCommand(pose).until(()->isNearEnoughToPID(pose)).withTimeout(4.5),
+      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(4),
+      new InstantCommand(this::stop,this)
+    );
   }
 
-  public Command followPath(PathPlannerPath path)
-  {
-    return AutoBuilder.followPath(path);
-  }
+  // public Command followPath(PathPlannerPath path)
+  // {
+  //   return AutoBuilder.followPath(path);
+  // }
 
   public Command pidToCoralLeft(){
     return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
@@ -432,10 +433,6 @@ public class Swerve extends SubsystemBase {
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
 
-  public Command bruh(){
-    return new DeferredCommand(()->pidToPoseCommand(new Pose2d(2,7,new Rotation2d())), Set.of(this));
-  }
-
   public Command pathToReefAlgae(){
     Set<Subsystem> set = Set.of(this);
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getReefAlgae(getPose())),set);
@@ -449,6 +446,16 @@ public class Swerve extends SubsystemBase {
 
     //Go to target Path and follow it
     return AutoBuilder.pathfindThenFollowPath(targetPath, constraints);
+  }
+
+  public boolean isGyroConnected(){
+    var navx = (AHRS)swerveDrive.getGyro().getIMU();
+    if(navx.isConnected() && navx.isCalibrating()){
+      return true;
+    }
+
+    
+    return false;
   }
 
   public Pose2d getPose(){
@@ -484,8 +491,11 @@ public class Swerve extends SubsystemBase {
     return runOnce(swerveDrive::zeroGyro).ignoringDisable(true);
   }
 
-  public Command stop(){
-    return new InstantCommand(()->swerveDrive.setChassisSpeeds(new ChassisSpeeds()));
+  public Command stopCommand(){
+    return run(this::stop);
+  }
+  private void stop(){
+    swerveDrive.setChassisSpeeds(new ChassisSpeeds());
   }
 
   /** Spam path data to the field for validation */
@@ -524,8 +534,7 @@ public class Swerve extends SubsystemBase {
 
       plotPathOnField(path, debugField2d);
 
-      return AutoBuilder.followPath(path)
-      .andThen(stop());
+      return AutoBuilder.followPath(path).finallyDo(this::stop);
     } catch (Exception e) {
       // TODO: handle exception
       for(int i=0; i<1000; i++){
