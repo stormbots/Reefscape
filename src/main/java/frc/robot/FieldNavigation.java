@@ -107,4 +107,31 @@ public class FieldNavigation {
         var nearest = currentPose.nearest(tagsReef);
         return nearest.transformBy(reefAlgae);
     }
+
+    public enum Branch {
+        A,
+        B,
+        C;
+    }
+
+    private static Pose2d getBranchRed(Branch target){
+        switch (target) {
+            case A: return AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape).getTagPose(6).get().toPose2d();//FIXME
+        }
+        return new Pose2d();
+    }
+
+    private static Pose2d getBranchBlue(Branch target){
+        return new Pose2d();
+    }
+
+    public static Pose2d getBranch(Branch target){
+        if(DriverStation.getAlliance().orElse(Alliance.Blue)==Alliance.Blue){
+            return getBranchBlue(target);
+        }
+        else{
+            return getBranchRed(target);
+        }
+    }
+
 }

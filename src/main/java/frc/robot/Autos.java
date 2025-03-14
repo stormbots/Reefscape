@@ -281,15 +281,18 @@ public class Autos {
       swerveSubsystem.pathToCoralLeft(),
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      //score coral
-      swerveSubsystem.stopCommand().withTimeout(0.5),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.12, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(2),
+      //score coral 
+      swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
       loadFromStation(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralRight(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      swerveSubsystem.stopCommand().withTimeout(0.5),
+      swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4()
     );
   }
@@ -303,6 +306,9 @@ public class Autos {
         swerveSubsystem.pathToCoralLeft(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.12, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(2),
       //score coral
       scoreAtL4(),
       loadFromStation(),
@@ -311,6 +317,29 @@ public class Autos {
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
       scoreAtL4()
+    );
+  }
+
+  public Command LeftHolyGrail(){
+    return Commands.sequence(
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralLeft(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      scoreAtL4(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralLeft(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      scoreAtL4(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralRight(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      scoreAtL4()
+      
     );
   }
 

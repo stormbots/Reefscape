@@ -272,7 +272,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public Command newShootAlgae(){
     double angle = -15;//-25;
-    double shooterrpm = 4700;
+    double shooterrpm = 4200;
     return new SequentialCommandGroup(
       testMoveArmWithTrap(()->angle).until(isArmTrapComplete),
       // clearShooterForShooting(),
@@ -299,7 +299,8 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   private void poweredStop(SparkFlex motor){
-    motor.getClosedLoopController().setReference(motor.getEncoder().getPosition(), ControlType.kPosition);
+    motor.getEncoder().setPosition(0);
+    motor.getClosedLoopController().setReference(0, ControlType.kPosition);
   }
 
 
@@ -328,11 +329,11 @@ public class AlgaeGrabber extends SubsystemBase {
   private Command newClearShooter() {
     // intakeMotor.getEncoder().setPosition(0);
     return run(()->{
-      intakeMotor.setVoltage(-0.4);
-      shooterMotor.setVoltage(-0.4);
-    }).until(()->intakeMotor.getEncoder().getPosition() <= -0.5) //TODO MAke Consrant
+      intakeMotor.setVoltage(-0.4*1.5);
+      shooterMotor.setVoltage(-0.4*1.5);
+    }).until(()->intakeMotor.getEncoder().getPosition() <= -0.55) //TODO MAke Consrant
     .andThen(
-      new  InstantCommand(()->intakeMotor.getClosedLoopController().setReference(-0.5, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+      new  InstantCommand(()->intakeMotor.getClosedLoopController().setReference(-0.55, ControlType.kPosition, ClosedLoopSlot.kSlot1))
     );
   }
 
