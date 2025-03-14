@@ -203,8 +203,10 @@ public class Autos {
   public Command deadReckoningRightBranch(){
     return Commands.sequence(
       swerveSubsystem.driveCommandRobotRelative(()->-0.2,()-> 0.0, ()->0.0).withTimeout(2.25),
-      elevator.moveToPoseSafe(elevator.kL3).until(()->elevator.isAtPosition(elevator.kL3)),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0).until(scorer.isBranchInRange),
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0)
+      .until(scorer.isBranchInRange)
+      .withTimeout(5),
       scoreAtL4()
     );
   }
@@ -232,7 +234,11 @@ public class Autos {
     return Commands.sequence(
       new ParallelCommandGroup(
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      swerveSubsystem.pathToCoralLeft()),
+      swerveSubsystem.pathToCoralRight()),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0)
+      .until(scorer.isBranchInRange)
+      .withTimeout(5),
+
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       scoreAtL4()    
       );
@@ -248,7 +254,10 @@ public class Autos {
       
         new ParallelCommandGroup(
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-        swerveSubsystem.pathToCoralLeft()),
+        swerveSubsystem.pathToCoralRight()),
+        swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(5),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         scoreAtL4()    
         );
