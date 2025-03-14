@@ -6,6 +6,7 @@
 package frc.robot.subsystems.Scorer;
 
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Millimeter;
 
 import java.util.Optional;
@@ -42,6 +43,9 @@ public class Scorer extends SubsystemBase {
     .configureShortRange()
     .setThreshhold(kNoCoralDistance)
     ;
+  LaserCanWrapper branchDetector = new LaserCanWrapper(21)
+  .configureShortRange()
+  .setThreshhold(Inches.of(12.0));
 
   public Scorer() {
     if(Robot.isSimulation()) sim = Optional.of(new ScorerSimulation(motor));
@@ -59,6 +63,7 @@ public class Scorer extends SubsystemBase {
   }
 
   public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
+  public Trigger isBranchInRange = branchDetector.isBreakBeamTripped;
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return motor.getOutputCurrent() > 20;
@@ -78,6 +83,7 @@ public class Scorer extends SubsystemBase {
     return run(()->setScorerSpeed(speed));
     // return run(()->coralOutMotor.setVoltage(6))
   }
+
 
   public Command realignCoral(){
     return Commands.sequence(
