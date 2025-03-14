@@ -15,9 +15,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Swerve;
 
-public class VisionSim {
+public class VisionSim implements Sendable{
 
     Swerve swerve;
 
@@ -26,35 +29,27 @@ public class VisionSim {
     TargetModel targetModel = TargetModel.kAprilTag36h11;
 
     /** The PhotonCamera used in the real robot code*/
-    PhotonCamera cameraBackLeft;
+    PhotonCamera camera;
     /**The simulation of this camera. Its values used in real robot code will be updated.*/
-    PhotonCameraSim cameraBackLeftSim;
+    PhotonCameraSim cameraSim;
 
-    public VisionSim(Swerve swerve, PhotonCamera backLeftCamera){
+    public VisionSim(Swerve swerve, PhotonCamera camera,Transform3d cameraTransform ){
         this.swerve = swerve;
         AprilTagFieldLayout tagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
         visionSim.addAprilTags(tagLayout);
 
-
         //Set up the back left camera
-        this.cameraBackLeft = backLeftCamera;
-        cameraBackLeftSim = new PhotonCameraSim(cameraBackLeft, propertiesAprilTagCamera());
-        // Our camera is mounted 0.1 meters forward and 0.5 meters up from the robot pose,
-        // (Robot pose is considered the center of rotation at the floor level, or Z = 0)
-        // Translation3d robotToBackLeftTrl = new Translation3d(-14, -13.5, 13.5);
-        Translation3d robotToBackLeftTrl = new Translation3d(0, 0, 13.5);
-        // and pitched 15 degrees up.
-        // Rotation3d robotToBackLeftRot = new Rotation3d(0, 0, Degrees.of(180+40).in(Radians));
-        Rotation3d robotToBackLeftRot = new Rotation3d(0, 0, Degrees.of(0).in(Radians));
-        Transform3d robotToBackLeft = new Transform3d(robotToBackLeftTrl, robotToBackLeftRot);
-        // Add this camera to the vision system simulation with the given robot-to-camera transform.
-        visionSim.addCamera(cameraBackLeftSim, robotToBackLeft);
+        this.camera = camera;
+        cameraSim = new PhotonCameraSim(camera, propertiesAprilTagCamera());
+        visionSim.addCamera(cameraSim, cameraTransform);
 
-        cameraBackLeftSim.enableRawStream(false);
+        cameraSim.enableRawStream(true);
         //Enable the really fancy debug stream; computationally expensive!!
-        cameraBackLeftSim.enableDrawWireframe(true);
-        cameraBackLeftSim.setWireframeResolution(1);
+        cameraSim.enableDrawWireframe(true);
+        wireframe=0.5;
+        cameraSim.setWireframeResolution(wireframe);
 
+        SmartDashboard.putData("vision/sim",this);
     }
 
     public void periodic(){
@@ -67,15 +62,25 @@ public class VisionSim {
         SimCameraProperties cameraProp = new SimCameraProperties();
 
         // A 640 x 480 camera with a 100 degree diagonal FOV.
-        cameraProp.setCalibration(640, 480, Rotation2d.fromDegrees(100));
-        // // Approximate detection noise with average and standard deviation error in pixels.
-        // cameraProp.setCalibError(0.25, 0.08);
-        // // Set the camera image capture framerate (Note: this is limited by robot loop rate).
-        // cameraProp.setFPS(20);
+        cameraProp.setCalibration(1280, 720, Rotation2d.fromDegrees(100));
+        cameraProp.setFPS(20);
         // // The average and standard deviation in milliseconds of image data latency.
-        // cameraProp.setAvgLatencyMs(35);
-        // cameraProp.setLatencyStdDevMs(5);
+        cameraProp.setAvgLatencyMs(35);
+        cameraProp.setLatencyStdDevMs(5);
         return cameraProp;
+    }
+
+
+    double wireframe=1;
+    @Override
+    public void initSendable(SendableBuilder builder) {
+        // builder.addBooleanProperty("Raw Stream",()->true,cameraSim::enableRawStream);
+        // builder.addBooleanProperty("Processed Stream",()->true,cameraSim::enableProcessedStream);
+        // builder.addBooleanProperty("Wireframes",()->true,cameraSim::enableDrawWireframe);
+        builder.addDoubleProperty("Wireframe Resolution",
+            ()->wireframe,
+            (v)->{wireframe=v;cameraSim.setWireframeResolution(wireframe);}
+        );
     }
 
 }

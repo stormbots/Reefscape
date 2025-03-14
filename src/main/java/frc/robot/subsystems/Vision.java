@@ -45,7 +45,7 @@ public class Vision extends SubsystemBase {
   // Optional<PhotonCamera> backCamera;
   Optional<PhotonCamera> centerCamera;
 
-  Transform3d centerTagCamera = new Transform3d(new Translation3d(
+  Transform3d centerCameraTransform = new Transform3d(new Translation3d(
     Inch.of(-4.625).in(Meters),
     Inch.of(0).in(Meters), 
     Inch.of(17.875).in(Meters)),
@@ -56,8 +56,11 @@ public class Vision extends SubsystemBase {
   // Transform3d backRobotToCam = new Transform3d(new Translation3d(), new Rotation3d());
   // PhotonPoseEstimator leftPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftRobotToCam);
   // PhotonPoseEstimator rightPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightRobotToCam);
-  PhotonPoseEstimator centerPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, 
-  PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, centerTagCamera);
+  PhotonPoseEstimator centerPoseEstimator = new PhotonPoseEstimator(
+    aprilTagFieldLayout, 
+    PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    centerCameraTransform
+  );
 
   Field2d visionField2d = new Field2d();
 
@@ -101,7 +104,7 @@ public class Vision extends SubsystemBase {
     //   backCamera = Optional.empty();
     // }
 
-    if(Robot.isSimulation()){ sim = Optional.of(new VisionSim(swerve,leftCamera.get()));}
+    if(Robot.isSimulation()){ sim = Optional.of(new VisionSim(swerve,centerCamera.get(),centerCameraTransform));}
    
   }
 
