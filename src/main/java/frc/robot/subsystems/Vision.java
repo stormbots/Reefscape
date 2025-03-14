@@ -118,7 +118,7 @@ public class Vision extends SubsystemBase {
     //   SmartDashboard.putBoolean("vision/seesTarget", results.hasTargets());
     // }
 
-    // updateOdometry();
+    updateOdometry();
     //getDistanceFromCamera();
 
     //SmartDashboard.putNumber("rotation of object", getRotationToObject().orElse(new Rotation2d(-Math.PI)).getDegrees());

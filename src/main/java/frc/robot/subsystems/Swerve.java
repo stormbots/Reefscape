@@ -437,6 +437,10 @@ public class Swerve extends SubsystemBase {
     Set<Subsystem> set = Set.of(this);
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getReefAlgae(getPose())),set);
   }
+
+  public Command pathToSpecificCoral(){
+    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralFinalAuto(getPose())), Set.of(this));
+  }
   
 
 

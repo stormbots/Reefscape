@@ -79,6 +79,8 @@ public class Autos {
 
         autoChooser.addOption("Drive Forward Score", this::driveForwardScore);
         autoChooser.addOption("Sliding Drive Foward Score", this::deadReckoningRightBranch);
+
+        autoChooser.addOption("Left Holy Grail", this::LeftHolyGrail);
         
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //test autos here
@@ -204,9 +206,9 @@ public class Autos {
     return Commands.sequence(
       swerveSubsystem.driveCommandRobotRelative(()->-0.2,()-> 0.0, ()->0.0).withTimeout(2.25),
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->0.15, ()->0.0)
       .until(scorer.isBranchInRange)
-      .withTimeout(5),
+      .withTimeout(3),
       scoreAtL4()
     );
   }
@@ -235,9 +237,9 @@ public class Autos {
       new ParallelCommandGroup(
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
       swerveSubsystem.pathToCoralRight()),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->0.15, ()->0.0)
       .until(scorer.isBranchInRange)
-      .withTimeout(5),
+      .withTimeout(3),
 
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       scoreAtL4()    
@@ -255,9 +257,9 @@ public class Autos {
         new ParallelCommandGroup(
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         swerveSubsystem.pathToCoralRight()),
-        swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.15, ()->0.0)
+        swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->0.15, ()->0.0)
         .until(scorer.isBranchInRange)
-        .withTimeout(5),
+        .withTimeout(3),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         scoreAtL4()    
         );
@@ -300,6 +302,18 @@ public class Autos {
       loadFromStation(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralRight(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      scoreAtL4()
+    );
+  }
+
+  public Command LeftHolyGrail(){
+    return Commands.sequence(
+      leftMultiCoralAuto(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToSpecificCoral(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
       scoreAtL4()
