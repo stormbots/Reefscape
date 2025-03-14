@@ -9,6 +9,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Swerve;
@@ -72,12 +74,18 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
       ()->-driver.getRightX()/4.0
     ));
 
-    driver.a().whileTrue(
-      swerveSubsystem.driveCommandAllianceManaged(
-        ()->-driver.getLeftY(), 
-        ()->-driver.getLeftX(),
-        ()->-driver.getRightX()+vision.getRotationDouble()*1
-        ));
+    driver.a().toggleOnTrue(swerveSubsystem.driveCommandAllianceManaged(
+      ()->-driver.getLeftY()/4.0, 
+      ()->-driver.getLeftX()/4.0,
+      ()->-driver.getRightX()/4.0
+    ));
+
+    // driver.a().whileTrue(
+    //   swerveSubsystem.driveCommandAllianceManaged(
+    //     ()->-driver.getLeftY(), 
+    //     ()->-driver.getLeftX(),
+    //     ()->-driver.getRightX()+vision.getRotationDouble()*1
+    //     ));
 
     //swaps tag relative to robot relative
     driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
@@ -140,9 +148,30 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
 
-    sofiabox.button(12).whileTrue(elevator.moveToPoseSafe(elevator.kShooterIntake).alongWith(algaeGrabber.newIntakeFromElevator()));
+    //deadline (move to positions, )
 
-    sofiabox.button(15).whileTrue(scorer.loadCoral());
+
+    // sofiabox.button(15).whileTrue(
+    //   new ParallelCommandGroup(
+    //     elevator.moveToPoseSafe(elevator.kShooterIntake),
+    //     algaeGrabber.newIntakeFromElevator(),
+    //     scorer.holdAlgae()
+    //   ).until(elevator.isAtTargetPosition.and(algaeGrabber.isAtTargetAngle))
+    //   .andThen(new ParallelDeadlineGroup(
+    //     algaeGrabber.newIntakeFromElevator(),
+    //     scorer.dropAlgae(),
+    //     elevator.holdPosition()
+    //     )
+    //   //algaegrabber hold intake
+    //   //scoreer stop/drop
+    //   //elevator hold position
+
+    //   ));
+      
+    //     ;
+  
+
+    // sofiabox.button(15).whileTrue(scorer.loadCoral());
 
 
   }

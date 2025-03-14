@@ -226,8 +226,9 @@ public class AlgaeGrabber extends SubsystemBase {
     //TODO: Needs implementation
     return new SequentialCommandGroup(
       run(()->{
-        setArmAngle(90);
-        setShooterRPM(-3500);}).until(isBreakbeamTripped)
+        setArmAngle(-30);
+        setShooterRPM(-2000);}).until(isBreakbeamTripped),
+      run(()->setShooterRPM(-2000)).withTimeout(0.2)
     ).finallyDo(()->intakeMotor.getEncoder().setPosition(0));
   }
 

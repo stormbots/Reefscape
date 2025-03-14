@@ -107,7 +107,7 @@ public class Elevator extends SubsystemBase {
   public final ElevatorPose kL2Algae =        new ElevatorPose(0.6, 171.5);
   public final ElevatorPose kL2AlgaeFar =     new ElevatorPose(25.0, 152);
   public final ElevatorPose kL3Algae =        new ElevatorPose(6, 132);
-  public final ElevatorPose kShooterIntake = new ElevatorPose(11, 218);
+  public final ElevatorPose kShooterIntake = new ElevatorPose(10.5, 215);
 
 
   //DEPRECATED ground Intake dosent exsist ):

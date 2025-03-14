@@ -378,7 +378,7 @@ public class Swerve extends SubsystemBase {
 
   public boolean isNearEnoughToPID(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
-    var result = distance <= Inches.of(30).in(Meters);
+    var result = distance <= Inches.of(35).in(Meters);
     SmartDashboard.putBoolean("swerve/isNearEnough",result);
     return result;
   }
@@ -391,7 +391,7 @@ public class Swerve extends SubsystemBase {
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
       pidToPoseCommand(pose).until(()->isNearEnoughToPID(pose)).withTimeout(4.5),
-      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(4),
+      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }

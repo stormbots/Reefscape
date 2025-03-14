@@ -123,6 +123,13 @@ public class Scorer extends SubsystemBase {
       );
   }
 
+  public Command dropAlgae(){
+    return new SequentialCommandGroup(
+      runCoralScorer(500)
+    );
+   
+  }
+
   public Command loadCoral(){
     return new SequentialCommandGroup(
       //TODO: Put the right things here. 
