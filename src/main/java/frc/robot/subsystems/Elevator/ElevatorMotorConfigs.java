@@ -44,7 +44,7 @@ public class ElevatorMotorConfigs {
   public static SparkBaseConfig getRotationConfig(){
     SparkBaseConfig rotationConfig = new SparkMaxConfig()
       .smartCurrentLimit(50)
-      .idleMode(IdleMode.kCoast)
+      .idleMode(IdleMode.kBrake)
       .inverted(true)
       ;
 
