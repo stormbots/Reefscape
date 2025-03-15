@@ -394,23 +394,37 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putBoolean("swerve/isNearEnough",result);
     return result;
   }
-  public boolean isNearEnoughToWork(Pose2d target){
+
+  public boolean isNearEnoughToScore(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
     return distance <= Inches.of(1).in(Meters);
   }
 
+  public boolean isNear(Pose2d target,double distance){
+    var delta = target.getTranslation().getDistance(getPose().getTranslation());
+    return delta <= Inches.of(distance).in(Meters);
+  }
 
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
       pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
-      pidToPoseHumanCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(1.5),
+      pidToPoseHumanCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
+
+  private Command privatePathToOffset(Pose2d pose){
+    // return pidToPoseCommand(pose).until(()->isNear(pose, 12.0)).withTimeout(4.5);
+    return pidToPoseCommand(pose)
+      .until(()->isNear(pose, 12.0))
+      .withTimeout(4.5)
+    ;
+  }
+
   private Command privatePathToPoseHuman(Pose2d pose){
     return Commands.sequence(
       pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
-      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(1.5),
+      pidToPoseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
@@ -449,6 +463,14 @@ public class Swerve extends SubsystemBase {
 
   public Command pathToCoralSource(){
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
+  }
+
+  public Command pathToOffsetLeft(){
+    return new DeferredCommand(()->privatePathToOffset(FieldNavigation.getOffsetCoralLeft(getPose())), Set.of(this));
+  }
+
+  public Command pathToOffsetRight(){
+    return new DeferredCommand(()->privatePathToOffset(FieldNavigation.getOffsetCoralRight(getPose())), Set.of(this));
   }
 
   public Command pathToReefAlgae(){

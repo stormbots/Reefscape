@@ -116,7 +116,7 @@ public class Elevator extends SubsystemBase {
   SparkBaseConfig elevatorHighPowerConfig = new SparkMaxConfig().smartCurrentLimit(40);
 
   ArmFeedforward rotatorFF = new ArmFeedforward(0.0, 0.25, 0.0, 0.0);
-  ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, (.45 -.071)/2, 0.0);
+  ElevatorFeedforward elevatorFF = new ElevatorFeedforward((.45 -(-.071))/2, ((.45 -.071)/2)*0.8, 0.0);
   public Elevator() {
 
     var startingheight = getCarriageHeight().in(Inches);

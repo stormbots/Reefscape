@@ -90,6 +90,7 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     //swaps tag relative to robot relative
     driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
     driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralLeftHuman());
+    (driver.povRight().and(driver.povLeft())).whileTrue(swerveSubsystem.pathToReefAlgae());
 
   }
 
@@ -105,12 +106,14 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
       climber.prepareToClimb(),
       elevator.moveToPoseUnchecked(elevator.kClimbing),
       algaeGrabber.stop(),
-      scorer.scoreCoral()
+      scorer.runCoralScorer(-2500).withTimeout(0.5)
     ));
 
     fightstick.axisGreaterThan(1, 0)
       .or(sofiabox.button(3))
-      .whileTrue(climber.climb());
+      .whileTrue(climber.climb())
+      .whileTrue(algaeGrabber.climb())
+      ;
 
     //operator.x().whileTrue(elevator.moveToPoseSafe(elevator.kL1));;
     fightstick.back().or(sofiabox.button(7))

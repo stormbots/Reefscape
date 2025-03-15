@@ -26,12 +26,15 @@ public class FieldNavigation {
 
     static double botCenterToScorerOffset = Inches.of(2.0).in(Meters);
     static double botCenterToRearX = Inches.of((30/2.0)+4+0.25+0.5+0.5).in(Meters);
+    static double pidApproachOffset = Inches.of(20.25+12).in(Meters);
     static double coralY = Inches.of(15/2.0).in(Meters);
     //These are right relative from the tag's pose facing out  from the reef
     static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(botCenterToRearX, Inches.of(7.0).in(Meters), new Rotation2d(Degrees.of(0))));
     static Transform2d coralRight = new Transform2d(new Pose2d(), new Pose2d(botCenterToRearX, Inches.of(-4).in(Meters), new Rotation2d(Degrees.of(0))));
     static Transform2d reefAlgae = new Transform2d(new Pose2d(), new Pose2d(botCenterToRearX, 0, new Rotation2d(Degrees.of(0))));
     static Transform2d coralSource = new Transform2d(new Pose2d(), new Pose2d(botCenterToRearX, 0, new Rotation2d(Degrees.of(180))));
+    static Transform2d coralApproachOffsetLeft = new Transform2d(new Pose2d(), new Pose2d(pidApproachOffset, Inches.of(7.0).in(Meters), new Rotation2d(Degrees.of(0))));
+    static Transform2d coralApproachOffsetRight = new Transform2d(new Pose2d(), new Pose2d(pidApproachOffset, Inches.of(-4).in(Meters), new Rotation2d(Degrees.of(0))));
 
 
 
@@ -90,10 +93,19 @@ public class FieldNavigation {
         return nearest.transformBy(coralLeft);
     }
 
+    public static Pose2d getOffsetCoralLeft(Pose2d currentPose){
+        var nearest = currentPose.nearest(tagsReef);
+        return nearest.transformBy(coralApproachOffsetLeft);
+    }
+
     //SEE ABOVE
     public static Pose2d getCoralRight(Pose2d currentPose){
         var nearest = currentPose.nearest(tagsReef);
         return nearest.transformBy(coralRight);
+    }
+    public static Pose2d getOffsetCoralRight(Pose2d currentPose){
+        var nearest = currentPose.nearest(tagsReef);
+        return nearest.transformBy(coralApproachOffsetRight);
     }
 
     public static Pose2d getCoralSource(Pose2d currentPose){

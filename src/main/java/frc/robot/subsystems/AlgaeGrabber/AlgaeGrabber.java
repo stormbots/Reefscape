@@ -270,6 +270,12 @@ public class AlgaeGrabber extends SubsystemBase {
       ).withName("StowAlgae");
   }
 
+  public Command climb(){
+    return run(()->{
+      setArmAngle(-85);
+    });
+  }
+
 
   public Command newShootAlgae(){
     double angle = -15;//-25;

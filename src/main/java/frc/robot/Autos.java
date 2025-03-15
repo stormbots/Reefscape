@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import java.io.Serial;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -84,8 +85,9 @@ public class Autos {
         
         autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
         //test autos here
-        autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
-        autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
+        //autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
+        //autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
+        autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralOptimized);
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
         // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
         // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
@@ -196,7 +198,26 @@ public class Autos {
           scorer.runCoralScorer(2500).withTimeout(1),
           elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle).withTimeout(0.25)
         ), swerveSubsystem.stopCommand()
-        );
+        );}
+                   
+    public Command sidleLeftToRight(){
+      return Commands.sequence(
+        swerveSubsystem.driveCommandRobotRelative(()->-0.005, ()->reckoningSpeed, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(0.2),
+        swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(2)
+      );
+    }
+    public Command sidleRightToLeft(){
+      return Commands.sequence( 
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005, ()->-reckoningSpeed, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(0.2),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
+      .until(scorer.isBranchInRange)
+      .withTimeout(2));
     }
   
     ///////////////////////////////////////////////////
@@ -272,6 +293,8 @@ public class Autos {
         );
     
   }
+
+  
 
   //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works on both sides
   public Command leftMultiCoralAuto(){
@@ -378,6 +401,43 @@ public class Autos {
     );
 
   }
-  
+
+  public Command leftL4CoralAutoOptimized(){
+    var path = "basicLeftAuto";
+    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    // Timer.delay(5);
+    return Commands.sequence( new ParallelCommandGroup(
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+        swerveSubsystem.pathToOffsetRight()
+        // new InstantCommand()
+      ),
+      swerveSubsystem.pathToCoralRight(),
+      sidleRightToLeft(),
+      scoreAtL4());
+  }
+
+  public Command leftMultiCoralOptimized(){
+    return Commands.sequence(
+      leftL4CoralAutoOptimized(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToOffsetLeft(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      swerveSubsystem.pathToCoralLeft(),
+      sidleLeftToRight(),
+      //score coral 
+      swerveSubsystem.stopCommand().withTimeout(0.1),
+      scoreAtL4(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToOffsetRight(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      swerveSubsystem.pathToCoralRight(),
+      swerveSubsystem.stopCommand().withTimeout(0.1),
+      scoreAtL4()
+    );
+  }
 
 }

@@ -104,7 +104,7 @@ public class Vision extends SubsystemBase {
     //   backCamera = Optional.empty();
     // }
 
-    if(Robot.isSimulation()){ sim = Optional.of(new VisionSim(swerve,centerCamera.get(),centerCameraTransform));}
+    // if(Robot.isSimulation()){ sim = Optional.of(new VisionSim(swerve,centerCamera.get(),centerCameraTransform));}
    
   }
 
