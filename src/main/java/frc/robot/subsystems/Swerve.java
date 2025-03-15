@@ -46,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
 import swervelib.SwerveDrive;
+import swervelib.imu.NavXSwerve;
 import swervelib.parser.SwerveParser;
 
 public class Swerve extends SubsystemBase {
@@ -117,6 +118,10 @@ public class Swerve extends SubsystemBase {
     Logger.recordOutput("swerve/pose", swerveDrive.getPose());
     SmartDashboard.putNumber("swerve/x", swerveDrive.getPose().getX());
     SmartDashboard.putNumber("swerve/y", swerveDrive.getPose().getY());
+    
+    SmartDashboard.putBoolean("Navx Connected", isGyroConnected());
+    SmartDashboard.putBoolean("Navx Callibrating", isGyroCallibrating());
+
 
   }
 
@@ -450,11 +455,16 @@ public class Swerve extends SubsystemBase {
 
   public boolean isGyroConnected(){
     var navx = (AHRS)swerveDrive.getGyro().getIMU();
-    if(navx.isConnected() && navx.isCalibrating()){
+    if(navx.isConnected()){
       return true;
     }
-
-    
+    return false;
+  }
+  public boolean isGyroCallibrating(){
+    var navx = (AHRS)swerveDrive.getGyro().getIMU();
+    if(navx.isCalibrating()){
+      return true;
+    }
     return false;
   }
 

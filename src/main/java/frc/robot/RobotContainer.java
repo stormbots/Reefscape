@@ -104,7 +104,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     .whileTrue(new ParallelCommandGroup(
       climber.prepareToClimb(),
       elevator.moveToPoseUnchecked(elevator.kClimbing),
-      algaeGrabber.stop()
+      algaeGrabber.stop(),
+      scorer.scoreCoral()
     ));
 
     fightstick.axisGreaterThan(1, 0)
@@ -148,6 +149,10 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
 
+    //cant do, gearing.
+    // sofiabox.button(12)
+    // .whileTrue(algaeGrabber.)
+
     //deadline (move to positions, )
 
 
@@ -181,9 +186,16 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
    * Because autos go in Autos now.
    */
   public Command getProgrammingTestSequence() {
-    return climber.prepareToClimb().withTimeout(3).andThen(climber.climb());
-    // return new InstantCommand();
-    // return elevator.moveToPoseSafe(elevator.kL4).alongWith(scorer.runCoralScorer(2500));
+    return Commands.sequence(
+      new ParallelCommandGroup(
+      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->0.13, ()->0.0)
+        .until(scorer.isBranchInRange)
+        .withTimeout(2),
+
+      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+      autos.scoreAtL4()    
+    ));
 
   }
   

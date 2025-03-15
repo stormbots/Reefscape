@@ -26,6 +26,7 @@ import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Scorer.Scorer;
+import swervelib.imu.NavXSwerve;
 
 /** Add your docs here. */
 public class Autos {
@@ -49,6 +50,7 @@ public class Autos {
     Scorer scorer;
     Climber climber;
     AlgaeGrabber algae;
+    Double reckoningSpeed = 0.12;
     // Vision vision;
 
     public Autos(
@@ -212,7 +214,7 @@ public class Autos {
     return Commands.sequence(
       swerveSubsystem.driveCommandRobotRelative(()->-0.2,()-> 0.0, ()->0.0).withTimeout(2.25),
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->0.12, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
       .until(scorer.isBranchInRange)
       .withTimeout(2),
       scoreAtL4()
@@ -238,12 +240,11 @@ public class Autos {
    var path = "basicLeftAuto";
     //swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
-
     return Commands.sequence(
       new ParallelCommandGroup(
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
       swerveSubsystem.pathToCoralRight()),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->0.12, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(2),
 
@@ -263,7 +264,7 @@ public class Autos {
         new ParallelCommandGroup(
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         swerveSubsystem.pathToCoralLeft()),
-        swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.12, ()->0.0)
+        swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
           .until(scorer.isBranchInRange)
           .withTimeout(2),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
@@ -281,7 +282,7 @@ public class Autos {
       swerveSubsystem.pathToCoralLeft(),
       elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.12, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(2),
       //score coral 
@@ -306,7 +307,7 @@ public class Autos {
         swerveSubsystem.pathToCoralLeft(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-0.12, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(2),
       //score coral

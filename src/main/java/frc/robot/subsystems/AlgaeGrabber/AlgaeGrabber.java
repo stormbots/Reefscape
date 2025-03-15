@@ -252,7 +252,7 @@ public class AlgaeGrabber extends SubsystemBase {
     var withoutAlgae = new SequentialCommandGroup(
       run(()->{
         poweredStop(shooterMotor);
-        setIntakeRPM(ROLLERINTAKERPM);
+        // setIntakeRPM(ROLLERINTAKERPM);
         setArmAngle(stowangleEmpty);
       }).withTimeout(2),
       run(()->{
@@ -269,6 +269,7 @@ public class AlgaeGrabber extends SubsystemBase {
       isBreakbeamTripped
       ).withName("StowAlgae");
   }
+
 
   public Command newShootAlgae(){
     double angle = -15;//-25;
@@ -295,7 +296,10 @@ public class AlgaeGrabber extends SubsystemBase {
   };
 
   public Command algaeUnstuck(){
-    return new RunCommand(()->setArmAngle(100.0) ,this);
+    return run(()->{
+      setArmAngle(100.0);
+      intakeMotor.set(0);
+    });
   }
 
   private void poweredStop(SparkFlex motor){

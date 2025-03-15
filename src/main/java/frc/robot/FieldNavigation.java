@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 public class FieldNavigation {
 
     static double botCenterToScorerOffset = Inches.of(2.0).in(Meters);
-    static double botCenterToRearX = Inches.of((30/2.0)+4.0).in(Meters);
+    static double botCenterToRearX = Inches.of((30/2.0)+4+0.25+0.5).in(Meters);
     static double coralY = Inches.of(15/2.0).in(Meters);
     //These are right relative from the tag's pose facing out  from the reef
     static Transform2d coralLeft = new Transform2d(new Pose2d(), new Pose2d(botCenterToRearX, Inches.of(7.5).in(Meters), new Rotation2d(Degrees.of(0))));
