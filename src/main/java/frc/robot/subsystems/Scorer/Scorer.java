@@ -64,7 +64,7 @@ public class Scorer extends SubsystemBase {
   }
 
   public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
-  public Trigger isBranchInRange = branchDetector.isBreakBeamTripped;
+  public Trigger isBranchInRange = branchDetector.isBreakBeamTripped.debounce(0.03);
 
   public Trigger isCoralScorerStalled = new Trigger( () -> {
     return motor.getOutputCurrent() > 20;
