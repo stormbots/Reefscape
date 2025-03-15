@@ -396,14 +396,14 @@ public class Swerve extends SubsystemBase {
   }
   public boolean isNearEnoughToWork(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
-    return distance <= Inches.of(1.5).in(Meters);
+    return distance <= Inches.of(1).in(Meters);
   }
 
 
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
-      pidToPoseCommand(pose).until(()->isNearEnoughToPID(pose)).withTimeout(4.5),
-      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(1.5),
+      pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
+      pidToPoseHumanCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
@@ -453,7 +453,7 @@ public class Swerve extends SubsystemBase {
 
   public Command pathToReefAlgae(){
     Set<Subsystem> set = Set.of(this);
-    return new DeferredCommand(()->privatePathToPose(FieldNavigation.getReefAlgae(getPose())),set);
+    return new DeferredCommand(()->privatePathToPoseHuman(FieldNavigation.getReefAlgae(getPose())),set);
   }
   
 

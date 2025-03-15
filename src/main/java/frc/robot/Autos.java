@@ -194,7 +194,7 @@ public class Autos {
         Commands.sequence(
           elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
           scorer.runCoralScorer(2500).withTimeout(1),
-          elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
+          elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle).withTimeout(0.25)
         ), swerveSubsystem.stopCommand()
         );
     }
@@ -279,8 +279,8 @@ public class Autos {
       leftL4CoralAuto(),
       loadFromStation(),
       new ParallelCommandGroup(
-      swerveSubsystem.pathToCoralLeft(),
-      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+        swerveSubsystem.pathToCoralLeft(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
       swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
@@ -304,17 +304,17 @@ public class Autos {
 
       loadFromStation(),
       new ParallelCommandGroup(
-        swerveSubsystem.pathToCoralLeft(),
+        swerveSubsystem.pathToCoralRight(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
+      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
-        .withTimeout(2),
+        .withTimeout(4),
       //score coral
       scoreAtL4(),
       loadFromStation(),
       new ParallelCommandGroup(
-        swerveSubsystem.pathToCoralRight(),
+        swerveSubsystem.pathToCoralLeft(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
       scoreAtL4()
