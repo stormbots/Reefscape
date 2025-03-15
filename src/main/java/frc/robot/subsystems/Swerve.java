@@ -348,7 +348,8 @@ public class Swerve extends SubsystemBase {
 
   private void pidToPoseHuman(Pose2d pose){
     final double transltionP = 3.0*1.2*1.5;
-    final double thetaP = 2.0*4*1.2 ;
+    final double thetaP = 2.0*4*1.2;
+    
 
     double clamp = 0.75;
 
@@ -387,6 +388,12 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putBoolean("swerve/isNearEnough",result);
     return result;
   }
+  public boolean isNearEnoughToPIDHuman(Pose2d target){
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    var result = distance <= Inches.of(48).in(Meters);
+    SmartDashboard.putBoolean("swerve/isNearEnough",result);
+    return result;
+  }
   public boolean isNearEnoughToWork(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
     return distance <= Inches.of(1.5).in(Meters);
@@ -400,7 +407,13 @@ public class Swerve extends SubsystemBase {
       new InstantCommand(this::stop,this)
     );
   }
-
+  private Command privatePathToPoseHuman(Pose2d pose){
+    return Commands.sequence(
+      pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
+      pidToPoseCommand(pose).until(()->isNearEnoughToWork(pose)).withTimeout(1.5),
+      new InstantCommand(this::stop,this)
+    );
+  }
   // public Command followPath(PathPlannerPath path)
   // {
   //   return AutoBuilder.followPath(path);
@@ -415,11 +428,11 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command pidToCoralLeftHuman(){
-    return new DeferredCommand(()->pidToPoseHumanCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPoseHuman(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
 
   public Command pidToCoralRightHuman(){
-    return new DeferredCommand(()->pidToPoseHumanCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPoseHuman(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
 
   public Command pidToCoralSource(){
