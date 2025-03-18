@@ -4,22 +4,21 @@
 
 package frc.robot.subsystems.Leds;
 
-import java.util.function.BooleanSupplier;
-
 import com.stormbots.BlinkenPattern;
 
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj.LEDPattern.GradientType;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 
 public class Leds extends SubsystemBase {
@@ -28,17 +27,25 @@ public class Leds extends SubsystemBase {
   Servo blinkin1 = new Servo(1);
   Servo blinkin2 = new Servo(2);
 
+  AddressableLEDSim sim = new AddressableLEDSim(ledStrip);
 
   /** Creates a new LEDs. */
   public Leds() {
     ledStrip = new AddressableLED(9);
-    ledBuffer = new AddressableLEDBuffer(16);
+    ledBuffer = new AddressableLEDBuffer(30);
     ledStrip.setLength(ledBuffer.getLength());
     ledStrip.setData(ledBuffer);
     ledStrip.start();
 
-    blinkin1.setBoundsMicroseconds(2125, 1501, 1500, 1499, 1000);   
-    blinkin2.setBoundsMicroseconds(2125, 1501, 1500, 1499, 1000);   
+    blinkin1.setBoundsMicroseconds(2125, 1501, 1500, 1499, 1000);
+    blinkin2.setBoundsMicroseconds(2125, 1501, 1500, 1499, 1000);
+
+    //Run during the match
+    setDefaultCommand(showTeamColor());
+    //Run if we're connected to the bot
+    new Trigger(DriverStation::isDisabled)
+      .and(DriverStation::isDSAttached)
+      .whileTrue(stormy());
   }
 
   @Override
@@ -83,14 +90,14 @@ public class Leds extends SubsystemBase {
   }
 
   public Command showTeamColor() {
-    return new RunCommand(()->{
+    return run(()->{
       var color = DriverStation.getAlliance().orElse(Alliance.Blue);
 
       double timer = Timer.getMatchTime();
 
       //Endgame timer
       if (DriverStation.isTeleop() && timer>0 && timer<20) {
-        this.setColor(Color.kPurple);
+        this.setColor(Color.kSkyBlue);
         blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidSkyBlue.us());
         blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidSkyBlue.us());
         return;
@@ -106,8 +113,7 @@ public class Leds extends SubsystemBase {
         blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidBlue.us());
         blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidBlue.us());
       }
-    },this)
-    .ignoringDisable(true)
+    })
     .finallyDo(this::setBlinkinTo5VStrip)
     ;
   }
@@ -120,7 +126,7 @@ public class Leds extends SubsystemBase {
     this.blinkin2.setPulseTimeMicroseconds(2125);
   }
 
-  public Command branchInRange() {
+  public Command branch() {
     return run( ()->{
       setColor(Color.kPurple);
       blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidViolet.us());
@@ -128,7 +134,7 @@ public class Leds extends SubsystemBase {
     });
   }
 
-  public Command coralLoaded() {
+  public Command coral() {
     return run( ()->{
       setColor(Color.kWhite);
       blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidWhite.us());
@@ -136,12 +142,31 @@ public class Leds extends SubsystemBase {
     });
   }
 
-  public Command algaeLoaded() {
+  public Command algae() {
     return run( ()->{
       setColor(Color.kTurquoise);
       blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidLawnGreen.us());
       blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidLawnGreen.us());
     });
+  }
+
+  public Command pink() {
+    return run(
+      ()->{this.setColor(Color.kHotPink);
+      this.blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidHotPink.us());
+      this.blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidHotPink.us());
+    });
+  }
+
+  public Command stormy() {
+    return run( ()->{
+      LEDPattern.gradient(GradientType.kContinuous, 
+        Color.kWhite,Color.kBlue,Color.kBlue,Color.kBlue,Color.kBlue,Color.kBlue
+      )
+      .offsetBy((int)(Timer.getFPGATimestamp()*5))
+      .applyTo(ledBuffer)
+      ;
+    }).ignoringDisable(true);
   }
 
 
