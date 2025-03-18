@@ -205,6 +205,7 @@ public class Autos {
         swerveSubsystem.driveCommandRobotRelative(()->-0.005, ()->reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(0.2),
+        swerveSubsystem.stopCommand().withTimeout(0.1),
         swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(2)
@@ -215,6 +216,7 @@ public class Autos {
       swerveSubsystem.driveCommandRobotRelative(()->-0.005, ()->-reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(0.2),
+      swerveSubsystem.stopCommand().withTimeout(0.1),
       swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
       .until(scorer.isBranchInRange)
       .withTimeout(2));
@@ -305,9 +307,7 @@ public class Autos {
         swerveSubsystem.pathToCoralLeft(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
-        .until(scorer.isBranchInRange)
-        .withTimeout(2),
+      sidleLeftToRight(),
       //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),

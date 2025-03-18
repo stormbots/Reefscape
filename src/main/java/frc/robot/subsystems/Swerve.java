@@ -424,7 +424,7 @@ public class Swerve extends SubsystemBase {
   private Command privatePathToPoseHuman(Pose2d pose){
     return Commands.sequence(
       pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
-      pidToPoseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      pidToPoseHumanCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
