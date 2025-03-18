@@ -191,12 +191,17 @@ public class Autos {
       // .alongWith(swerveSubsystem.stopCommand().withTimeout(4))
       // ;
       //TODO deadline a stop command
-
+      //Added isCoralinScorer, unlike comp
       return new ParallelDeadlineGroup(
         Commands.sequence(
-          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-          scorer.runCoralScorer(2500).withTimeout(1),
-          elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle).withTimeout(0.25)
+          elevator.moveToPoseSafe(elevator.kL4)
+            .until(()->elevator.isAtPosition(elevator.kL4)),
+          scorer.runCoralScorer(2500)
+            .until(scorer.isCoralInScorer)
+            .withTimeout(1),
+          elevator.moveToAngleTrap(()->90)
+            .until(elevator.isAtTargetAngle)
+            .withTimeout(0.25)
         ), swerveSubsystem.stopCommand()
         );}
                    

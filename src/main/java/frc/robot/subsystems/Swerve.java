@@ -178,7 +178,7 @@ public class Swerve extends SubsystemBase {
       this::getChassisSpeeds,
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(0.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(1.0, 0.0, 0.0), // Translation PID constants
                     new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
@@ -326,7 +326,7 @@ public class Swerve extends SubsystemBase {
   }
 
   //does not reset based off field
-  private void pidToPose(Pose2d pose){
+  private void pidToPoseFast(Pose2d pose){
     final double transltionP = 3.0*1.2;
     final double thetaP = 2.0*4*1.2 ;
 
@@ -346,7 +346,7 @@ public class Swerve extends SubsystemBase {
 
   }
 
-  private void pidToPoseHuman(Pose2d pose){
+  private void pidToPosePrecise(Pose2d pose){
     final double transltionP = 3.0*1.2*1.5;
     final double thetaP = 2.0*4*1.2;
     
@@ -366,12 +366,12 @@ public class Swerve extends SubsystemBase {
 
   }
 
-  public Command pidToPoseCommand(Pose2d poseSupplier){
-    return run(()->pidToPose(poseSupplier)).finallyDo(()->stop());
+  public Command pidToPoseFastCommand(Pose2d poseSupplier){
+    return run(()->pidToPoseFast(poseSupplier)).finallyDo(()->stop());
   }
 
-  public Command pidToPoseHumanCommand(Pose2d poseSupplier){
-    return run(()->pidToPoseHuman(poseSupplier));
+  public Command pidToPosePreciseCommand(Pose2d poseSupplier){
+    return run(()->pidToPosePrecise(poseSupplier));
   }
 
   private Pose2d flipPoseIfAppropriate(Pose2d pose){
@@ -388,7 +388,7 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putBoolean("swerve/isNearEnough",result);
     return result;
   }
-  public boolean isNearEnoughToPIDHuman(Pose2d target){
+  public boolean isNearEnoughToPIDPrecise(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
     var result = distance <= Inches.of(48).in(Meters);
     SmartDashboard.putBoolean("swerve/isNearEnough",result);
@@ -404,18 +404,20 @@ public class Swerve extends SubsystemBase {
     var delta = target.getTranslation().getDistance(getPose().getTranslation());
     return delta <= Inches.of(distance).in(Meters);
   }
-
+  //Now uses pathfind, not compatible with previous
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
-      pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
-      pidToPoseHumanCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      AutoBuilder.pathfindToPose(pose, constraintsFast)
+      //.until(()->isNearEnoughToPID(pose))
+      .withTimeout(5),
+      //pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
 
   private Command privatePathToOffset(Pose2d pose){
     // return pidToPoseCommand(pose).until(()->isNear(pose, 12.0)).withTimeout(4.5);
-    return pidToPoseCommand(pose)
+    return pidToPoseFastCommand(pose)
       .until(()->isNear(pose, 12.0))
       .withTimeout(4.5)
     ;
@@ -423,8 +425,8 @@ public class Swerve extends SubsystemBase {
 
   private Command privatePathToPoseHuman(Pose2d pose){
     return Commands.sequence(
-      pidToPoseCommand(pose).until(()->isNearEnoughToPIDHuman(pose)).withTimeout(4.5),
-      pidToPoseHumanCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      pidToPoseFastCommand(pose).until(()->isNearEnoughToPIDPrecise(pose)).withTimeout(4.5),
+      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
@@ -434,11 +436,11 @@ public class Swerve extends SubsystemBase {
   // }
 
   public Command pidToCoralLeft(){
-    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+    return new DeferredCommand(()->pidToPoseFastCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
 
   public Command pidToCoralRight(){
-    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+    return new DeferredCommand(()->pidToPoseFastCommand(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
 
   public Command pidToCoralLeftHuman(){
@@ -450,7 +452,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command pidToCoralSource(){
-    return new DeferredCommand(()->pidToPoseCommand(FieldNavigation.getCoralSource(getPose())), Set.of(this));
+    return new DeferredCommand(()->pidToPoseFastCommand(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
 
   public Command pathToCoralLeft(){
