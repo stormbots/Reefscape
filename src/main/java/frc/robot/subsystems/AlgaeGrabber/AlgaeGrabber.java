@@ -10,7 +10,9 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -33,9 +35,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -66,7 +70,7 @@ public class AlgaeGrabber extends SubsystemBase {
   private ArmFeedforward armFF = new ArmFeedforward(0.3, 0.026, 0);
 
   private final TrapezoidProfile armTrapProfile = new TrapezoidProfile(
-    new TrapezoidProfile.Constraints(180, 270)
+    new TrapezoidProfile.Constraints(400*6*1.5, 270*6*1.5)
   );
 
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
@@ -297,7 +301,7 @@ public class AlgaeGrabber extends SubsystemBase {
 
   public Command algaeUnstuck(){
     return 
-    setArmAngleTrap(()->100.0).until(isArmTrapComplete)
+    setArmAngleTrap(()->20.0).until(isArmTrapComplete)
     .alongWith(new RunCommand(()->{
       intakeMotor.set(0);
     }));
@@ -430,6 +434,33 @@ public class AlgaeGrabber extends SubsystemBase {
     })
     .andThen(Commands.idle(this))
     ;
+  }
+
+  public Command shootAlgaeFromDashboard(){
+    Supplier<Command> builder = ()->{
+      double angle = SmartDashboard.getNumber("algae/shootAngle", -15);
+      double shooterrpm = SmartDashboard.getNumber("algae/shootRPM", 4200);
+      return new SequentialCommandGroup(
+        setArmAngleTrap(()->angle).until(isArmTrapComplete),
+        new WaitCommand(0.1),
+        clearShooter(),
+        //run prepare operation so we're at the right angle
+        run(() ->{
+          //Leaving intake at holding PID from clearShooter
+          setShooterRPM(shooterrpm);
+        }).until(isAtTargetRPM),
+        new WaitCommand(0.1),
+        //Actually shoot things
+        setArmAngleTrap(()->angle).until(isArmTrapComplete).alongWith(
+        new RunCommand(() ->{
+          setIntakeRPM(shooterrpm);
+          setShooterRPM(shooterrpm);
+        }))
+      ).withName("ShootAlgae")
+      ;
+    };
+
+    return new DeferredCommand(builder, Set.of((Subsystem)this));
   }
 
 }
