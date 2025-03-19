@@ -230,19 +230,14 @@ public class AlgaeGrabber extends SubsystemBase {
   };
 
   public Command newIntakeFromElevator(){
-    //TODO: Needs implementation
     return new SequentialCommandGroup(
       setArmAngleTrap(()->30)
-    .alongWith(new RunCommand(()->
-      setShooterRPM(-2000)
-    ))
-    .until(isBreakbeamTripped),
-    run(()->
-      setShooterRPM(-2000))
+        .alongWith(new RunCommand(()->setShooterRPM(-2000)))
+        .until(isBreakbeamTripped),
+      run(()->setShooterRPM(-2000))
       .withTimeout(0.2))
-      .finallyDo(()->
-        intakeMotor.getEncoder()
-        .setPosition(0));
+      .finallyDo(()->intakeMotor.getEncoder().setPosition(0))
+      ;
     //   run(()->{
     //     setArmAngleTrap(()->-30).until(isArmTrapComplete);
     //     setShooterRPM(-2000);}).until(isBreakbeamTripped),
@@ -260,13 +255,12 @@ public class AlgaeGrabber extends SubsystemBase {
     var stowangleEmpty = -100.0;//AlgaeGrabberConfigs.kLowerSoftLimit;
     var stowangleAlgae = -70.0;
 
-    var withAlgae = setArmAngleTrap(()->stowangleAlgae).alongWith(
-    run(()->{
+    var withAlgae = setArmAngleTrap(()->stowangleAlgae)
+    .alongWith(new RunCommand(()->{
       poweredStop(shooterMotor);
       setIntakeRPM(0);
       intakeMotor.getEncoder().setPosition(0);
-    })
-    )
+    }))
     .onlyWhile(isBreakbeamTripped);
     // run(()->{
     //   poweredStop(shooterMotor);;
@@ -277,13 +271,11 @@ public class AlgaeGrabber extends SubsystemBase {
 
     var withoutAlgae = new SequentialCommandGroup(
       setArmAngleTrap(()->stowangleEmpty)
-      .alongWith(
-        run(()-> 
-        poweredStop(shooterMotor))
-      ).withTimeout(2),
+        .alongWith( new RunCommand(()-> poweredStop(shooterMotor)) )
+        .withTimeout(2),
 
       setArmAngleTrap(()->stowangleEmpty)
-      .alongWith(run(()->{
+      .alongWith(new RunCommand(()->{
         shooterMotor.stopMotor();
         intakeMotor.stopMotor();
       })
@@ -307,10 +299,9 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
   public Command climb(){
-    return run(()->{
-      setArmAngleTrap(()->-85).until(isArmTrapComplete);
-    });
-  }
+      return setArmAngleTrap(()->-85).until(isArmTrapComplete);
+    };
+  
 
 
   public Command newShootAlgae(){
@@ -328,20 +319,21 @@ public class AlgaeGrabber extends SubsystemBase {
       }).until(isAtTargetRPM),
       new WaitCommand(0.1),
       //Actually shoot things
-      run(() ->{
-        setArmAngleTrap(()->angle).until(isArmTrapComplete);
+      setArmAngleTrap(()->angle).until(isArmTrapComplete).alongWith(
+      new RunCommand(() ->{
         setIntakeRPM(shooterrpm);
         setShooterRPM(shooterrpm);
-      })
+      }))
     ).withName("ShootAlgae")
     ;
   };
 
   public Command algaeUnstuck(){
-    return run(()->{
-      setArmAngleTrap(()->100.0).until(isArmTrapComplete);
+    return setArmAngleTrap(()->100.0)
+    .until(isArmTrapComplete)
+    .alongWith(new RunCommand(()->{
       intakeMotor.set(0);
-    });
+    }));
   }
 
   private void poweredStop(SparkFlex motor){
@@ -349,47 +341,31 @@ public class AlgaeGrabber extends SubsystemBase {
     motor.getClosedLoopController().setReference(0, ControlType.kPosition);
   }
 
-
-  private Command clearShooterForShooting(){
-    //assume have algae
-    //run intake motors back for set time
-    //check current/speed on shooter?
-    //grapple? Probably not viable or consistent
-    //run back X rotations
-
-    var intakeClearance = -0.3;
-    var shooterClearance = -0.23;
-    //Brian solution was this: 
-    return new SequentialCommandGroup(
-        new RunCommand(()->{
-          intakeMotor.getClosedLoopController().setReference(intakeClearance, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-          shooterMotor.getClosedLoopController().setReference(shooterClearance, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-        },this)
-        .until(()->MathUtil.isNear(intakeClearance, intakeMotor.getEncoder().getPosition(), 0.1))
-        .withTimeout(0.5)
-      );
-    //TODO: We can't have it rely on a long timer. 
-    //Validate that a process like this works reliably
-  }
-
   private Command newClearShooter() {
     // intakeMotor.getEncoder().setPosition(0);
+    double stopPoint = -0.55;
     return run(()->{
       intakeMotor.setVoltage(-0.4*1.5);
       shooterMotor.setVoltage(-0.4*1.5);
-    }).until(()->intakeMotor.getEncoder().getPosition() <= -0.55) //TODO MAke Consrant
-    .andThen(
-      new  InstantCommand(()->intakeMotor.getClosedLoopController().setReference(-0.55, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+    }).until(()->intakeMotor.getEncoder().getPosition() <= stopPoint) //TODO MAke Consrant
+    .andThen(new  InstantCommand(()->
+      intakeMotor.getClosedLoopController()
+      .setReference(
+        stopPoint, 
+        ControlType.kPosition, 
+        ClosedLoopSlot.kSlot1
+        ))
     );
   }
 
   public Command newScoreProcessor(){
     var rpm=4000;
-    return run(()->{
-      setArmAngleTrap(()->-100).until(isArmTrapComplete);
+    return setArmAngleTrap(()->-100)
+    .until(isArmTrapComplete)
+    .andThen(new RunCommand(()->{
       setIntakeRPM(rpm);
       setShooterRPM(rpm);
-    }).withName("ScoreProcessor");
+    }).withName("ScoreProcessor"));
   };
 
 
