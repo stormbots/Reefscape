@@ -18,6 +18,7 @@ import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.Leds.Leds;
 import frc.robot.subsystems.Scorer.Scorer;
 
 /**
@@ -35,7 +36,7 @@ public class RobotContainer {
   public final Scorer  scorer = new Scorer();
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
   private final Vision vision = new Vision(swerveSubsystem);
-
+  private final Leds leds = new Leds();
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);

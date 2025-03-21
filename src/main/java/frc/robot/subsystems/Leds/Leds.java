@@ -17,7 +17,10 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 
@@ -32,7 +35,7 @@ public class Leds extends SubsystemBase {
   /** Creates a new LEDs. */
   public Leds() {
     ledStrip = new AddressableLED(9);
-    ledBuffer = new AddressableLEDBuffer(30);
+    ledBuffer = new AddressableLEDBuffer(8);
     ledStrip.setLength(ledBuffer.getLength());
     ledStrip.setData(ledBuffer);
     ledStrip.start();
@@ -42,16 +45,11 @@ public class Leds extends SubsystemBase {
 
     //Run during the match
     setDefaultCommand(showTeamColor());
-    //Run if we're connected to the bot
-    new Trigger(DriverStation::isDisabled)
-      .and(DriverStation::isDSAttached)
-      .whileTrue(stormy());
   }
 
   @Override
   public void periodic() {
     ledStrip.setData(ledBuffer);
-    // This method will be called once per scheduler run
   }
     
   public int matchBrightnessScaling(int disabledBrightness, int enabledBrightness) {
@@ -169,5 +167,17 @@ public class Leds extends SubsystemBase {
     }).ignoringDisable(true);
   }
 
+
+  /** Schedules a command to run. Intended to run decorated versions of the 
+   * LED pattern without interrupting command sequences
+   */
+  public Command schedulePattern(Command ledCommand){
+    //Only run LED patterns. >:(
+    if(!ledCommand.hasRequirement(this)) return new InstantCommand();
+    // Schedule it and run it until something else takes over
+    return new InstantCommand(()->ledCommand.ignoringDisable(true)
+    .ignoringDisable(true)
+    .schedule());
+  }
 
 }
