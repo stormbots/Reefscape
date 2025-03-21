@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
@@ -44,15 +45,19 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
   CommandXboxController sofiabox = new CommandXboxController(2);
   CommandXboxController testController = new CommandXboxController(3);
 
-  Trigger isReadyToShootAlgae = swerveSubsystem.withinShootingRange.and(algaeGrabber.isAlgaeInBreakbeam)
-  .whileTrue(leds.algae());
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureDriverBindings();
     configureOperatorBindings();
 
+    Trigger isReadyToShootAlgae = swerveSubsystem.isWithinShootingRange
+    .and(algaeGrabber.isAlgaeInBreakbeam)
+    .whileTrue(leds.algae())
+    .whileTrue(new StartEndCommand(
+      ()->SmartDashboard.putBoolean("barge/Shot OK",true),
+      ()->SmartDashboard.putBoolean("barge/Shot OK",false)
+    ));
 
     swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommandAllianceManaged(
       ()->-driver.getLeftY(),

@@ -51,9 +51,7 @@ import swervelib.parser.SwerveParser;
 
 public class Swerve extends SubsystemBase {
 
-  public Field2d debugField2d = new Field2d();
   public Field2d odometryField = new Field2d();
-  private FieldNavigation fieldNav = new FieldNavigation();
 
   
   double maximumSpeed = 5.033;
@@ -66,11 +64,7 @@ public class Swerve extends SubsystemBase {
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
 
-    SmartDashboard.putData("SwerveDebugField",debugField2d);
-
-
-    
-
+    SmartDashboard.putData("odometryField", odometryField);
     
     //Need to turn this back on when running path, commented out for now because its angry
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
@@ -108,21 +102,22 @@ public class Swerve extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     swerveDrive.updateOdometry();
-    debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
-    odometryField.getObject("Barge").setPose(new Pose2d(0.0, 0.0, new Rotation2d(0.0)));
-    SmartDashboard.putNumber("wheelencoder", swerveDrive.getModules()[0].getPosition().distanceMeters);
+
+    SmartDashboard.putNumber("serve/wheelencoder", swerveDrive.getModules()[0].getPosition().distanceMeters);
     
-    SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
-    SmartDashboard.putData("odometryField", odometryField);
-    Logger.recordOutput("SwerveModuleStates", swerveDrive.getStates());
+    SmartDashboard.putNumber("swerve/heading", swerveDrive.getOdometryHeading().getDegrees());
+    Logger.recordOutput("swerve/SwerveModuleStates", swerveDrive.getStates());
     Logger.recordOutput("swerve/pose", swerveDrive.getPose());
     SmartDashboard.putNumber("swerve/x", swerveDrive.getPose().getX());
     SmartDashboard.putNumber("swerve/y", swerveDrive.getPose().getY());
     
-    SmartDashboard.putBoolean("Navx Connected", isGyroConnected());
-    SmartDashboard.putBoolean("Navx Callibrating", isGyroCallibrating());
+    SmartDashboard.putBoolean("Navx/Connected", isGyroConnected());
+    SmartDashboard.putBoolean("Navx/Callibrating", isGyroCallibrating());
 
+    SmartDashboard.putBoolean("barge/BargeOKRed", isWithinShootingRangeRed.getAsBoolean());
+    SmartDashboard.putBoolean("barge/BargeOKBlue", isWithinShootingRangeBlue.getAsBoolean());
+    SmartDashboard.putBoolean("barge/BargeOKField", isWithinShootingRange.getAsBoolean());
 
   }
 
@@ -341,7 +336,7 @@ public class Swerve extends SubsystemBase {
       delta.getRotation().getRadians()*thetaP
     ));
 
-    debugField2d.getObject("pidtarget").setPose(pose);
+    odometryField.getObject("pidtarget").setPose(pose);
     SmartDashboard.putNumber("swerve/pid/deltax", pose.getX());
     SmartDashboard.putNumber("swerve/pid/deltay", pose.getY());
 
@@ -383,13 +378,13 @@ public class Swerve extends SubsystemBase {
     return pose;
   }
 
-  Trigger shootingRangeRed = new Trigger(()-> {
-    return isNearEnoughShoot(5.64);
+  Trigger isWithinShootingRangeRed = new Trigger(()-> {
+    return isNearEnoughShoot(11.713);
   });
-  Trigger shootingRangeBlue = new Trigger(()-> {
-    return isNearEnoughShoot(2.41);
+  Trigger isWithinShootingRangeBlue = new Trigger(()-> {
+    return isNearEnoughShoot(5.835);
   });
-  public Trigger withinShootingRange = shootingRangeRed.or(shootingRangeBlue);
+  public Trigger isWithinShootingRange = isWithinShootingRangeRed.or(isWithinShootingRangeBlue);
 
   public boolean isNearEnoughShoot(double x){
     var target = new Pose2d(x, swerveDrive.getPose().getY(), new Rotation2d(0.0));
@@ -582,7 +577,7 @@ public class Swerve extends SubsystemBase {
       var pose = poseOptional.get();
       pose = flipPoseIfAppropriate(pose);
 
-      plotPathOnField(path, debugField2d);
+      plotPathOnField(path, odometryField);
 
       resetOdometry(pose);
 
@@ -594,7 +589,7 @@ public class Swerve extends SubsystemBase {
     try {
       var path = PathPlannerPath.fromPathFile(name);
 
-      plotPathOnField(path, debugField2d);
+      plotPathOnField(path, odometryField);
 
       return AutoBuilder.followPath(path).finallyDo(this::stop);
     } catch (Exception e) {
