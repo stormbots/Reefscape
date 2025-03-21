@@ -423,7 +423,7 @@ public class Swerve extends SubsystemBase {
     ;
   }
 
-  private Command privatePathToPoseHuman(Pose2d pose){
+  private Command privatePathToPosePrecise(Pose2d pose){
     return Commands.sequence(
       pidToPoseFastCommand(pose).until(()->isNearEnoughToPIDPrecise(pose)).withTimeout(4.5),
       pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
@@ -444,11 +444,11 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command pidToCoralLeftHuman(){
-    return new DeferredCommand(()->privatePathToPoseHuman(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPosePrecise(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
 
   public Command pidToCoralRightHuman(){
-    return new DeferredCommand(()->privatePathToPoseHuman(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPosePrecise(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
 
   public Command pidToCoralSource(){
@@ -477,7 +477,7 @@ public class Swerve extends SubsystemBase {
 
   public Command pathToReefAlgae(){
     Set<Subsystem> set = Set.of(this);
-    return new DeferredCommand(()->privatePathToPoseHuman(FieldNavigation.getReefAlgae(getPose())),set);
+    return new DeferredCommand(()->privatePathToPosePrecise(FieldNavigation.getReefAlgae(getPose())),set);
   }
   
 

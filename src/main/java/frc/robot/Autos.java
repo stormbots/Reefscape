@@ -4,12 +4,9 @@
 
 package frc.robot;
 
-import java.io.Serial;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -20,14 +17,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Elevator.Elevator;
 import frc.robot.subsystems.Scorer.Scorer;
-import swervelib.imu.NavXSwerve;
 
 /** Add your docs here. */
 public class Autos {
@@ -87,7 +82,7 @@ public class Autos {
         //test autos here
         //autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
         //autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
-        autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralOptimized);
+        // autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralOptimized);
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
         // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
         // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
@@ -197,7 +192,7 @@ public class Autos {
           elevator.moveToPoseSafe(elevator.kL4)
             .until(()->elevator.isAtPosition(elevator.kL4)),
           scorer.runCoralScorer(2500)
-            .until(scorer.isCoralInScorer)
+            .until(scorer.isCoralInScorer.negate())
             .withTimeout(1),
           elevator.moveToAngleTrap(()->90)
             .until(elevator.isAtTargetAngle)
@@ -270,8 +265,9 @@ public class Autos {
     Timer.delay(5); //let vision set the precise location before building the path
     return Commands.sequence(
       new ParallelCommandGroup(
-      elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      swerveSubsystem.pathToCoralRight()),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+        swerveSubsystem.pathToCoralRight()
+      ),
       swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(2),
@@ -372,6 +368,16 @@ public class Autos {
     );
   }
 
+  public Command CenterCoralAlgae(){
+    return Commands.sequence(
+      centerL4CoralAuto(),
+      swerveSubsystem.driveCommandRobotRelative(()->0.2, ()->0.0, ()->0.0).withTimeout(0.5),
+      elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
+      swerveSubsystem.pathToReefAlgae(),
+      scorer.holdAlgae()
+    );
+  }
+
 
   public Command basicCenterAutoTest(){
     
@@ -419,30 +425,4 @@ public class Autos {
       swerveSubsystem.pathToCoralRight(),
       sidleRightToLeft(),
       scoreAtL4());
-  }
-
-  public Command leftMultiCoralOptimized(){
-    return Commands.sequence(
-      leftL4CoralAutoOptimized(),
-      loadFromStation(),
-      new ParallelCommandGroup(
-        swerveSubsystem.pathToOffsetLeft(),
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
-      ),
-      swerveSubsystem.pathToCoralLeft(),
-      sidleLeftToRight(),
-      //score coral 
-      swerveSubsystem.stopCommand().withTimeout(0.1),
-      scoreAtL4(),
-      loadFromStation(),
-      new ParallelCommandGroup(
-        swerveSubsystem.pathToOffsetRight(),
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
-      ),
-      swerveSubsystem.pathToCoralRight(),
-      swerveSubsystem.stopCommand().withTimeout(0.1),
-      scoreAtL4()
-    );
-  }
-
-}
+  }}
