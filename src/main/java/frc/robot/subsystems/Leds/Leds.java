@@ -27,8 +27,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 public class Leds extends SubsystemBase {
   public AddressableLED ledStrip;
   public AddressableLEDBuffer ledBuffer;
-  Servo blinkin1 = new Servo(1);
-  Servo blinkin2 = new Servo(2);
+  Servo blinkin1 = new Servo(7);
+  Servo blinkin2 = new Servo(8);
 
   AddressableLEDSim sim = new AddressableLEDSim(ledStrip);
 
@@ -45,6 +45,7 @@ public class Leds extends SubsystemBase {
 
     //Run during the match
     setDefaultCommand(showTeamColor());
+    schedulePattern(stormy().withTimeout(1));
   }
 
   @Override

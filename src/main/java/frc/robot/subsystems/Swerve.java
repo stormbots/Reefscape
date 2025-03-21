@@ -110,6 +110,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.updateOdometry();
     debugField2d.setRobotPose(swerveDrive.getPose());
     odometryField.setRobotPose(swerveDrive.getPose());
+    odometryField.getObject("Barge").setPose(new Pose2d(0.0, 0.0, new Rotation2d(0.0)));
     SmartDashboard.putNumber("wheelencoder", swerveDrive.getModules()[0].getPosition().distanceMeters);
     
     SmartDashboard.putNumber("heading", swerveDrive.getOdometryHeading().getDegrees());
@@ -380,6 +381,22 @@ public class Swerve extends SubsystemBase {
       return FlippingUtil.flipFieldPose(pose); //We should just use this
     }
     return pose;
+  }
+
+  Trigger shootingRangeRed = new Trigger(()-> {
+    return isNearEnoughShoot(5.64);
+  });
+  Trigger shootingRangeBlue = new Trigger(()-> {
+    return isNearEnoughShoot(2.41);
+  });
+  public Trigger withinShootingRange = shootingRangeRed.or(shootingRangeBlue);
+
+  public boolean isNearEnoughShoot(double x){
+    var target = new Pose2d(x, swerveDrive.getPose().getY(), new Rotation2d(0.0));
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    var result = distance <= Inches.of(10).in(Meters);
+    SmartDashboard.putBoolean("swerve/isNearEnoughToShoot",result);
+    return result;
   }
 
   public boolean isNearEnoughToPID(Pose2d target){
