@@ -203,7 +203,7 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
 
-  public Trigger isBreakbeamTripped = laserCan.isBreakBeamTripped.debounce((0.03));
+  public Trigger isAlgaeInBreakbeam = laserCan.isBreakBeamTripped.debounce((0.03));
   
   Trigger intakeStalled = new Trigger(()->intakeMotor.getOutputCurrent() > 50)
     .and(()->intakeMotor.getEncoder().getVelocity()<250)    
@@ -216,7 +216,7 @@ public class AlgaeGrabber extends SubsystemBase {
         setIntakeRPM(3500);
         poweredStop(shooterMotor);
       }))
-      .until(isBreakbeamTripped)
+      .until(isAlgaeInBreakbeam)
       .finallyDo(()->intakeMotor.getEncoder().setPosition(0))
       .withName("IntakeAlgae")
     ;
@@ -226,7 +226,7 @@ public class AlgaeGrabber extends SubsystemBase {
     return new SequentialCommandGroup(
       setArmAngleTrap(()->30)
         .alongWith(new RunCommand(()->setShooterRPM(-2000)))
-        .until(isBreakbeamTripped),
+        .until(isAlgaeInBreakbeam),
       run(()->setShooterRPM(-2000))
       .withTimeout(0.2))
       .finallyDo(()->intakeMotor.getEncoder().setPosition(0))
@@ -249,7 +249,7 @@ public class AlgaeGrabber extends SubsystemBase {
       setIntakeRPM(0);
       intakeMotor.getEncoder().setPosition(0);
     }))
-    .onlyWhile(isBreakbeamTripped);
+    .onlyWhile(isAlgaeInBreakbeam);
 
     var withoutAlgae = new SequentialCommandGroup(
       setArmAngleTrap(()->stowangleEmpty)
@@ -261,12 +261,12 @@ public class AlgaeGrabber extends SubsystemBase {
         shooterMotor.stopMotor();
         intakeMotor.stopMotor();
       })
-    ).until(isBreakbeamTripped));
+    ).until(isAlgaeInBreakbeam));
 
     return new ConditionalCommand(
       withAlgae,
       withoutAlgae,
-      isBreakbeamTripped
+      isAlgaeInBreakbeam
       ).withName("StowAlgae");
   }
 
@@ -399,7 +399,7 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/arm angle abs", getAbsoluteAngleDegrees());
     // SmartDashboard.putNumber("algae/intake roller pos", intakeMotor.getEncoder().getPosition());
     // SmartDashboard.putNumber("algae/shooter roller pos", shooterMotor.getEncoder().getPosition());
-    SmartDashboard.putBoolean("algae/lasercan/isBlocked", isBreakbeamTripped.getAsBoolean());
+    SmartDashboard.putBoolean("algae/lasercan/isBlocked", isAlgaeInBreakbeam.getAsBoolean());
     SmartDashboard.putNumber("algae/lasercan/distance", laserCan.getDistanceOptional().orElse(Inches.of(-999.0)).in(Inches));
     SmartDashboard.putNumber("algae/arm output",armMotor.getOutputCurrent());
     SmartDashboard.putNumber("algae/arm applied output",armMotor.getAppliedOutput());
@@ -422,7 +422,7 @@ public class AlgaeGrabber extends SubsystemBase {
     this::getAngle,
     ()->RPM.of(getIntakeRPM()),
     ()->RPM.of(getShooterRPM()),
-    isBreakbeamTripped,
+    isAlgaeInBreakbeam,
     sim::getAngle
   );
 
