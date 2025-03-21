@@ -96,11 +96,12 @@ public class Elevator extends SubsystemBase {
 
 
   public final ElevatorPose kStationPickup =  new ElevatorPose(4.2, -35);
+  public final ElevatorPose kStationPractice =  new ElevatorPose(5.2, -35);
   public final ElevatorPose kDefense =        new ElevatorPose(0.0, -60);
   public final ElevatorPose kStowed =         new ElevatorPose(0, -40);
   public final ElevatorPose kStowedUp =       new ElevatorPose(0, -40);
   public final ElevatorPose kClimbing =       new ElevatorPose(0, -40);
-  public final ElevatorPose kL1 =             new ElevatorPose(24, 90);
+  public final ElevatorPose kL1 =             new ElevatorPose(0, 206);
   public final ElevatorPose kL2 =             new ElevatorPose(3.5, 206); //215?
   public final ElevatorPose kL3 =             new ElevatorPose(2, 145.5);
   public final ElevatorPose kL4 =             new ElevatorPose(25, 133);
@@ -376,7 +377,9 @@ public class Elevator extends SubsystemBase {
 
   public Command moveToStationPickup(){
     return new SequentialCommandGroup(
-      moveToPoseUnchecked(kStationPickup).until(isAtTargetPosition)
+      // moveToPoseUnchecked(kStationPickup).until(isAtTargetPosition)
+      moveToPoseUnchecked(kStationPractice).until(isAtTargetPosition)
+
     );
   }
 

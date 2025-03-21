@@ -44,7 +44,7 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
   CommandXboxController sofiabox = new CommandXboxController(2);
   CommandXboxController testController = new CommandXboxController(3);
 
-  Trigger isReadyToShootAlgae = swerveSubsystem.withinShootingRange.and(algaeGrabber.isBreakBeamTripped)
+  Trigger isReadyToShootAlgae = swerveSubsystem.withinShootingRange.and(algaeGrabber.isBreakbeamTripped)
   .whileTrue(leds.algae());
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -138,17 +138,17 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
 
 
     fightstick.rightStick().or(sofiabox.button(8))
-    .whileTrue(algaeGrabber.newShootAlgae())
+    .whileTrue(algaeGrabber.shootAlgae())
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowed));
 
 
     fightstick.leftBumper().or(sofiabox.button(2))
-    .whileTrue(algaeGrabber.newIntakeFromGround())
+    .whileTrue(algaeGrabber.intakeFromGround())
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
     ;
 
     fightstick.leftStick().or(sofiabox.button(14))
-    .whileTrue(algaeGrabber.newScoreProcessor());
+    .whileTrue(algaeGrabber.scoreProcessor());
 
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
