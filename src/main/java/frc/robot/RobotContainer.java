@@ -44,7 +44,7 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
   CommandXboxController sofiabox = new CommandXboxController(2);
   CommandXboxController testController = new CommandXboxController(3);
 
-  Trigger isReadyToShootAlgae = swerveSubsystem.withinShootingRange.and(algaeGrabber.hasAlgae)
+  Trigger isReadyToShootAlgae = swerveSubsystem.withinShootingRange.and(algaeGrabber.isBreakBeamTripped)
   .whileTrue(leds.algae());
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
