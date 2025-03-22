@@ -10,7 +10,9 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -33,9 +35,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -63,12 +67,10 @@ public class AlgaeGrabber extends SubsystemBase {
   private double shooterRPMSetpoint = 0;
   private double intakeRPMSetpoint = 0;
 
-  //TODO: Find real angles
-  private ArmFeedforward armFF = new ArmFeedforward(0.3, 0.026, 0); //old kg 0.25
-
+  private ArmFeedforward armFF = new ArmFeedforward(0.3, 0.026, 0);
 
   private final TrapezoidProfile armTrapProfile = new TrapezoidProfile(
-    new TrapezoidProfile.Constraints(180, 270)
+    new TrapezoidProfile.Constraints(400*6*1.5, 270*6*1.5)
   );
 
   private TrapezoidProfile.State armGoal = new TrapezoidProfile.State();
@@ -175,7 +177,7 @@ public class AlgaeGrabber extends SubsystemBase {
   /// Define some commands
   /// ///////////////////////////////
  
-  public Command testMoveArmWithTrap(DoubleSupplier position){
+  public Command setArmAngleTrap(DoubleSupplier position){
     return startRun(
       ()->{
         //Seed the initial state/setpoint with the current state
@@ -201,90 +203,86 @@ public class AlgaeGrabber extends SubsystemBase {
   }
 
 
-  Trigger isBreakbeamTripped = laserCan.isBreakBeamTripped.debounce((0.03));
+  public Trigger isAlgaeInBreakbeam = laserCan.isBreakBeamTripped.debounce((0.03));
   
   Trigger intakeStalled = new Trigger(()->intakeMotor.getOutputCurrent() > 50)
     .and(()->intakeMotor.getEncoder().getVelocity()<250)    
     .debounce(0.1);
 
 
-  public Command newIntakeFromGround(){
-    return new SequentialCommandGroup(
-      run(() ->{
-        setArmAngle(-35);
+  public Command intakeFromGround(){
+    return setArmAngleTrap(()->-35)
+      .alongWith(new RunCommand(()->{
         setIntakeRPM(3500);
-        poweredStop(shooterMotor);;
-      }).until(isBreakbeamTripped)
-      //todo: Do we need to have a settling operation to ensure the encoder reset is reliable?
-    )
-    .finallyDo(()->intakeMotor.getEncoder().setPosition(0))
-    .withName("IntakeAlgae")
+        poweredStop(shooterMotor);
+      }))
+      .until(isAlgaeInBreakbeam)
+      .finallyDo(()->intakeMotor.getEncoder().setPosition(0))
+      .withName("IntakeAlgae")
     ;
   };
 
-  public Command newIntakeFromElevator(){
-    //TODO: Needs implementation
+  public Command intakeFromElevator(){
     return new SequentialCommandGroup(
-      run(()->{
-        setArmAngle(-30);
-        setShooterRPM(-2000);}).until(isBreakbeamTripped),
-      run(()->setShooterRPM(-2000)).withTimeout(0.2)
-    ).finallyDo(()->intakeMotor.getEncoder().setPosition(0));
+      setArmAngleTrap(()->30)
+        .alongWith(new RunCommand(()->setShooterRPM(-2000)))
+        .until(isAlgaeInBreakbeam),
+      run(()->setShooterRPM(-2000))
+      .withTimeout(0.2))
+      .finallyDo(()->intakeMotor.getEncoder().setPosition(0))
+      ;
   }
 
-  public Command stow(){ //TODO set to default
+  public Command stow(){
     //if havealgae
       //then turn ofmotors, go to hold  angle
     //if no algae
       // angle down
       //run motors to loadfrom stuck inside  bot
     //go to resting angle, motors off or hold position
-    var stowangleEmpty = -100;//AlgaeGrabberConfigs.kLowerSoftLimit;
-    var stowangleAlgae = -70;
+    var stowangleEmpty = -100.0;//AlgaeGrabberConfigs.kLowerSoftLimit;
+    var stowangleAlgae = -70.0;
 
-    var withAlgae = run(()->{
-      poweredStop(shooterMotor);;
-      setArmAngle(stowangleAlgae);
+    var withAlgae = setArmAngleTrap(()->stowangleAlgae)
+    .alongWith(new RunCommand(()->{
+      poweredStop(shooterMotor);
       setIntakeRPM(0);
       intakeMotor.getEncoder().setPosition(0);
-    }).onlyWhile(isBreakbeamTripped);
+    }))
+    .onlyWhile(isAlgaeInBreakbeam);
 
     var withoutAlgae = new SequentialCommandGroup(
-      run(()->{
-        poweredStop(shooterMotor);
-        // setIntakeRPM(ROLLERINTAKERPM);
-        setArmAngle(stowangleEmpty);
-      }).withTimeout(2),
-      run(()->{
-        intakeMotor.stopMotor();
+      setArmAngleTrap(()->stowangleEmpty)
+        .alongWith( new RunCommand(()-> poweredStop(shooterMotor)) )
+        .withTimeout(2),
+
+      setArmAngleTrap(()->stowangleEmpty)
+      .alongWith(new RunCommand(()->{
         shooterMotor.stopMotor();
-        setArmAngle(stowangleEmpty);
+        intakeMotor.stopMotor();
       })
-    ).until(isBreakbeamTripped)
-    ;
+    ).until(isAlgaeInBreakbeam));
 
     return new ConditionalCommand(
       withAlgae,
       withoutAlgae,
-      isBreakbeamTripped
+      isAlgaeInBreakbeam
       ).withName("StowAlgae");
   }
 
   public Command climb(){
-    return run(()->{
-      setArmAngle(-85);
-    });
-  }
+      return setArmAngleTrap(()->-85).until(isArmTrapComplete);
+    };
+  
 
 
-  public Command newShootAlgae(){
+  public Command shootAlgae(){
     double angle = -15;//-25;
     double shooterrpm = 4200;
     return new SequentialCommandGroup(
-      testMoveArmWithTrap(()->angle).until(isArmTrapComplete),
-      // clearShooterForShooting(),
+      setArmAngleTrap(()->angle).until(isArmTrapComplete),
       new WaitCommand(0.1),
-      newClearShooter(),
+      clearShooter(),
       //run prepare operation so we're at the right angle
       run(() ->{
         //Leaving intake at holding PID from clearShooter
@@ -292,20 +290,21 @@ public class AlgaeGrabber extends SubsystemBase {
       }).until(isAtTargetRPM),
       new WaitCommand(0.1),
       //Actually shoot things
-      run(() ->{
-        setArmAngle(angle);
+      setArmAngleTrap(()->angle).until(isArmTrapComplete).alongWith(
+      new RunCommand(() ->{
         setIntakeRPM(shooterrpm);
         setShooterRPM(shooterrpm);
-      })
+      }))
     ).withName("ShootAlgae")
     ;
   };
 
   public Command algaeUnstuck(){
-    return run(()->{
-      setArmAngle(100.0);
+    return 
+    setArmAngleTrap(()->20.0).until(isArmTrapComplete)
+    .alongWith(new RunCommand(()->{
       intakeMotor.set(0);
-    });
+    }));
   }
 
   private void poweredStop(SparkFlex motor){
@@ -313,47 +312,30 @@ public class AlgaeGrabber extends SubsystemBase {
     motor.getClosedLoopController().setReference(0, ControlType.kPosition);
   }
 
-
-  private Command clearShooterForShooting(){
-    //assume have algae
-    //run intake motors back for set time
-    //check current/speed on shooter?
-    //grapple? Probably not viable or consistent
-    //run back X rotations
-
-    var intakeClearance = -0.3;
-    var shooterClearance = -0.23;
-    //Brian solution was this: 
-    return new SequentialCommandGroup(
-        new RunCommand(()->{
-          intakeMotor.getClosedLoopController().setReference(intakeClearance, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-          shooterMotor.getClosedLoopController().setReference(shooterClearance, ControlType.kPosition, ClosedLoopSlot.kSlot1);
-        },this)
-        .until(()->MathUtil.isNear(intakeClearance, intakeMotor.getEncoder().getPosition(), 0.1))
-        .withTimeout(0.5)
-      );
-    //TODO: We can't have it rely on a long timer. 
-    //Validate that a process like this works reliably
-  }
-
-  private Command newClearShooter() {
-    // intakeMotor.getEncoder().setPosition(0);
+  private Command clearShooter() {
+    double stopPoint = -0.55;
     return run(()->{
       intakeMotor.setVoltage(-0.4*1.5);
       shooterMotor.setVoltage(-0.4*1.5);
-    }).until(()->intakeMotor.getEncoder().getPosition() <= -0.55) //TODO MAke Consrant
-    .andThen(
-      new  InstantCommand(()->intakeMotor.getClosedLoopController().setReference(-0.55, ControlType.kPosition, ClosedLoopSlot.kSlot1))
+    }).until(()->intakeMotor.getEncoder().getPosition() <= stopPoint)
+    .andThen(new  InstantCommand(()->
+      intakeMotor.getClosedLoopController()
+      .setReference(
+        stopPoint, 
+        ControlType.kPosition, 
+        ClosedLoopSlot.kSlot1
+        ))
     );
   }
 
-  public Command newScoreProcessor(){
+  public Command scoreProcessor(){
     var rpm=4000;
-    return run(()->{
-      setArmAngle(-100);
+    return setArmAngleTrap(()->-100)
+    .until(isArmTrapComplete)
+    .andThen(new RunCommand(()->{
       setIntakeRPM(rpm);
       setShooterRPM(rpm);
-    }).withName("ScoreProcessor");
+    }).withName("ScoreProcessor"));
   };
 
 
@@ -417,7 +399,7 @@ public class AlgaeGrabber extends SubsystemBase {
     SmartDashboard.putNumber("algae/arm angle abs", getAbsoluteAngleDegrees());
     // SmartDashboard.putNumber("algae/intake roller pos", intakeMotor.getEncoder().getPosition());
     // SmartDashboard.putNumber("algae/shooter roller pos", shooterMotor.getEncoder().getPosition());
-    SmartDashboard.putBoolean("algae/lasercan/isBlocked", isBreakbeamTripped.getAsBoolean());
+    SmartDashboard.putBoolean("algae/lasercan/isBlocked", isAlgaeInBreakbeam.getAsBoolean());
     SmartDashboard.putNumber("algae/lasercan/distance", laserCan.getDistanceOptional().orElse(Inches.of(-999.0)).in(Inches));
     SmartDashboard.putNumber("algae/arm output",armMotor.getOutputCurrent());
     SmartDashboard.putNumber("algae/arm applied output",armMotor.getAppliedOutput());
@@ -440,7 +422,7 @@ public class AlgaeGrabber extends SubsystemBase {
     this::getAngle,
     ()->RPM.of(getIntakeRPM()),
     ()->RPM.of(getShooterRPM()),
-    isBreakbeamTripped,
+    isAlgaeInBreakbeam,
     sim::getAngle
   );
 
@@ -452,6 +434,33 @@ public class AlgaeGrabber extends SubsystemBase {
     })
     .andThen(Commands.idle(this))
     ;
+  }
+
+  public Command shootAlgaeFromDashboard(){
+    Supplier<Command> builder = ()->{
+      double angle = SmartDashboard.getNumber("algae/shootAngle", -15);
+      double shooterrpm = SmartDashboard.getNumber("algae/shootRPM", 4200);
+      return new SequentialCommandGroup(
+        setArmAngleTrap(()->angle).until(isArmTrapComplete),
+        new WaitCommand(0.1),
+        clearShooter(),
+        //run prepare operation so we're at the right angle
+        run(() ->{
+          //Leaving intake at holding PID from clearShooter
+          setShooterRPM(shooterrpm);
+        }).until(isAtTargetRPM),
+        new WaitCommand(0.1),
+        //Actually shoot things
+        setArmAngleTrap(()->angle).until(isArmTrapComplete).alongWith(
+        new RunCommand(() ->{
+          setIntakeRPM(shooterrpm);
+          setShooterRPM(shooterrpm);
+        }))
+      ).withName("ShootAlgae")
+      ;
+    };
+
+    return new DeferredCommand(builder, Set.of((Subsystem)this));
   }
 
 }

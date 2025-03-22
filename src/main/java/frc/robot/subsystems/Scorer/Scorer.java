@@ -6,6 +6,7 @@
 package frc.robot.subsystems.Scorer;
 
 
+import static edu.wpi.first.units.Units.Inch;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Millimeter;
 
@@ -66,9 +67,11 @@ public class Scorer extends SubsystemBase {
   public Trigger isCoralInScorer = laserCan.isBreakBeamTripped;
   public Trigger isBranchInRange = branchDetector.isBreakBeamTripped.debounce(0.03);
 
-  public Trigger isCoralScorerStalled = new Trigger( () -> {
-    return motor.getOutputCurrent() > 20;
-  }).debounce(0.1);
+  //TODO: Test
+  public Trigger isAlgaeInScorer = new Trigger(()->
+    branchDetector.getDistanceOptional().orElse(Inches.of(99)).in(Inch) <= 2.0
+  );
+
   
 
   private void setScorerSpeed(double speed) {
@@ -100,6 +103,13 @@ public class Scorer extends SubsystemBase {
 
   public Command defaultCommand(){
     return new ConditionalCommand(
+      holdAlgae(), 
+      conditionalRealignCoral(), 
+      isAlgaeInScorer);
+  }
+
+  private Command conditionalRealignCoral(){
+    return new ConditionalCommand(
       realignCoral(), 
       run(()->motor.stopMotor()), 
       isCoralInScorer);
@@ -113,6 +123,12 @@ public class Scorer extends SubsystemBase {
       //Always run the intake for long enough to do it
       runCoralScorer(2500).withTimeout(0.5)
       );
+  }
+
+  public Command scoreCoralL1(){
+    return new SequentialCommandGroup(
+    runCoralScorer(1250).withTimeout(0.5)
+    );
   }
 
 

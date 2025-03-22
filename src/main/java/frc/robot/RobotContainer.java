@@ -4,20 +4,19 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.Leds.Leds;
 import frc.robot.subsystems.Scorer.Scorer;
 
 /**
@@ -35,7 +34,7 @@ public class RobotContainer {
   public final Scorer  scorer = new Scorer();
   private final AlgaeGrabber algaeGrabber = new AlgaeGrabber();
   private final Vision vision = new Vision(swerveSubsystem);
-
+  private final Leds leds = new Leds();
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
@@ -46,12 +45,19 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
   CommandXboxController sofiabox = new CommandXboxController(2);
   CommandXboxController testController = new CommandXboxController(3);
 
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureDriverBindings();
     configureOperatorBindings();
+
+    Trigger isReadyToShootAlgae = swerveSubsystem.isWithinShootingRange
+    .and(algaeGrabber.isAlgaeInBreakbeam)
+    .whileTrue(leds.algae())
+    .whileTrue(new StartEndCommand(
+      ()->SmartDashboard.putBoolean("barge/Shot OK",true),
+      ()->SmartDashboard.putBoolean("barge/Shot OK",false)
+    ));
 
     swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommandAllianceManaged(
       ()->-driver.getLeftY(),
@@ -137,17 +143,17 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
 
 
     fightstick.rightStick().or(sofiabox.button(8))
-    .whileTrue(algaeGrabber.newShootAlgae())
+    .whileTrue(algaeGrabber.shootAlgae())
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowed));
 
 
     fightstick.leftBumper().or(sofiabox.button(2))
-    .whileTrue(algaeGrabber.newIntakeFromGround())
+    .whileTrue(algaeGrabber.intakeFromGround())
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
     ;
 
     fightstick.leftStick().or(sofiabox.button(14))
-    .whileTrue(algaeGrabber.newScoreProcessor());
+    .whileTrue(algaeGrabber.scoreProcessor());
 
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
