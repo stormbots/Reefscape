@@ -176,6 +176,19 @@ public class Autos {
       ).until(scorer.isCoralInScorer).withTimeout(5)
       );
     }
+    public Command loadFromStationOptimized(){
+      return Commands.sequence(
+        new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralSourceAuto(),
+        elevator.moveToPoseSafe(elevator.kStationPickup).until(()->elevator.isAtPosition(elevator.kStationPickup))
+      ).until(scorer.isCoralInScorer).withTimeout(5),
+      new ParallelCommandGroup(
+        swerveSubsystem.stopCommand(),
+        scorer.loadCoral(),
+        elevator.moveToPoseSafe(elevator.kStationPickup)
+      ).until(scorer.isCoralInScorer).withTimeout(5)
+      );
+    }
 
     public Command scoreAtL4(){
       // return Commands.sequence(
@@ -276,6 +289,23 @@ public class Autos {
       scoreAtL4()    
       );
   }
+  public Command leftL4CoralAutoOptimized(){
+    var path = "basicLeftAuto";
+     //swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+     Timer.delay(5); //let vision set the precise location before building the path
+     return Commands.sequence(
+       new ParallelCommandGroup(
+         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+         swerveSubsystem.pathToCoralRightAuto()
+       ),
+       swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
+         .until(scorer.isBranchInRange)
+         .withTimeout(2),
+ 
+       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+       scoreAtL4()    
+       );
+   }
 
   public Command rightL4CoralAuto(){
     var path = "basicRightAuto";
@@ -413,16 +443,27 @@ public class Autos {
 
   }
 
-  public Command leftL4CoralAutoOptimized(){
+  public Command leftMultiCoralAutoOptimized(){
     var path = "basicLeftAuto";
     swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     // Timer.delay(5);
-    return Commands.sequence( new ParallelCommandGroup(
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-        swerveSubsystem.pathToOffsetRight()
-        // new InstantCommand()
+    return Commands.sequence(
+      leftL4CoralAutoOptimized(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralLeftAuto(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      swerveSubsystem.pathToCoralRight(),
-      sidleRightToLeft(),
-      scoreAtL4());
+      sidleLeftToRight(),
+      //score coral 
+      swerveSubsystem.stopCommand().withTimeout(0.1),
+      scoreAtL4(),
+      loadFromStation(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralRightAuto(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      swerveSubsystem.stopCommand().withTimeout(0.1),
+      scoreAtL4()
+    );
   }}

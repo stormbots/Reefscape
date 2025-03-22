@@ -407,13 +407,23 @@ public class Swerve extends SubsystemBase {
   //Now uses pathfind, not compatible with previous
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
-      AutoBuilder.pathfindToPose(pose, constraintsFast)
-      //.until(()->isNearEnoughToPID(pose))
+      pidToPoseFastCommand(pose)
+      .until(()->isNearEnoughToPID(pose))
       .withTimeout(5),
       //pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
+  private Command privatePathToPoseAuto(Pose2d pose){
+    return Commands.sequence(
+      AutoBuilder.pathfindToPose(pose, constraintsFast)
+      .until(()->isNearEnoughToPID(pose))
+      .withTimeout(5),
+      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      new InstantCommand(this::stop,this)
+    );
+  }
+  
 
   private Command privatePathToOffset(Pose2d pose){
     // return pidToPoseCommand(pose).until(()->isNear(pose, 12.0)).withTimeout(4.5);
@@ -462,9 +472,19 @@ public class Swerve extends SubsystemBase {
   public Command pathToCoralRight(){
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
+  public Command pathToCoralLeftAuto(){
+    return new DeferredCommand(()->privatePathToPoseAuto(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+  }
+
+  public Command pathToCoralRightAuto(){
+    return new DeferredCommand(()->privatePathToPoseAuto(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+  }
 
   public Command pathToCoralSource(){
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
+  }
+  public Command pathToCoralSourceAuto(){
+    return new DeferredCommand(()->privatePathToPoseAuto(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
 
   public Command pathToOffsetLeft(){
