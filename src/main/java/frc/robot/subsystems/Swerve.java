@@ -410,7 +410,7 @@ public class Swerve extends SubsystemBase {
       pidToPoseFastCommand(pose)
       .until(()->isNearEnoughToPID(pose))
       .withTimeout(5),
-      //pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
       new InstantCommand(this::stop,this)
     );
   }
