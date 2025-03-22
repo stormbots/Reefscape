@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.LEDPattern.GradientType;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
@@ -44,13 +45,13 @@ public class Leds extends SubsystemBase {
     blinkin2.setBoundsMicroseconds(2125, 1501, 1500, 1499, 1000);
 
     //Run during the match
-    setDefaultCommand(showTeamColor());
-    schedulePattern(stormy().withTimeout(1));
+    setDefaultCommand(pink());
+    // schedulePattern(stormy().withTimeout(1));
   }
 
   @Override
   public void periodic() {
-    ledStrip.setData(ledBuffer);
+    // ledStrip.setData(ledBuffer);
   }
     
   public int matchBrightnessScaling(int disabledBrightness, int enabledBrightness) {
@@ -96,19 +97,19 @@ public class Leds extends SubsystemBase {
 
       //Endgame timer
       if (DriverStation.isTeleop() && timer>0 && timer<20) {
-        this.setColor(Color.kSkyBlue);
+        // this.setColor(Color.kSkyBlue);
         blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidSkyBlue.us());
         blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidSkyBlue.us());
         return;
       }
 
       if (color == DriverStation.Alliance.Red) {
-        this.setColor(Color.kRed, this.matchBrightnessScaling(10, 100));
+        // this.setColor(Color.kRed, this.matchBrightnessScaling(10, 100));
         blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidRed.us());
         blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidRed.us());
       }
       if (color == DriverStation.Alliance.Blue) {
-        this.setColor(Color.kBlue, this.matchBrightnessScaling(10, 100));
+        // this.setColor(Color.kBlue, this.matchBrightnessScaling(10, 100));
         blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidBlue.us());
         blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidBlue.us());
       }
@@ -143,7 +144,7 @@ public class Leds extends SubsystemBase {
 
   public Command algae() {
     return run( ()->{
-      setColor(Color.kTurquoise);
+      // setColor(Color.kTurquoise);
       blinkin1.setPulseTimeMicroseconds(BlinkenPattern.solidLawnGreen.us());
       blinkin2.setPulseTimeMicroseconds(BlinkenPattern.solidLawnGreen.us());
     });

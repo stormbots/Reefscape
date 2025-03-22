@@ -38,7 +38,7 @@ public class RobotContainer {
   boolean slowmode = false;
 
   // private final Vision Vision = new Vision(swerveSubsystem, null);
-public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber, algaeGrabber);
+public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber, algaeGrabber, leds);
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController fightstick = new CommandXboxController(1);
@@ -94,9 +94,11 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     //     ));
 
     //swaps tag relative to robot relative
-    driver.leftTrigger().whileTrue(swerveSubsystem.pidToCoralRightHuman());
-    driver.rightTrigger().whileTrue(swerveSubsystem.pidToCoralLeftHuman());
-    (driver.povRight().and(driver.povLeft())).whileTrue(swerveSubsystem.pathToReefAlgae());
+    driver.leftTrigger().whileTrue(swerveSubsystem.pathToCoralRight());
+    driver.rightTrigger().whileTrue(swerveSubsystem.pathToCoralLeft());
+    (driver.povRight().and(driver.povLeft())).whileTrue(swerveSubsystem.pathToReefAlgae(
+
+    ));
 
   }
 

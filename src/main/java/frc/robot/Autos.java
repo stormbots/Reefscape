@@ -22,6 +22,7 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeGrabber.AlgaeGrabber;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.Leds.Leds;
 import frc.robot.subsystems.Scorer.Scorer;
 
 /** Add your docs here. */
@@ -46,6 +47,7 @@ public class Autos {
     Scorer scorer;
     Climber climber;
     AlgaeGrabber algae;
+    Leds leds;
     Double reckoningSpeed = 0.12;
     // Vision vision;
 
@@ -54,13 +56,15 @@ public class Autos {
         Elevator elevator,
         Scorer scorer,
         Climber climber,
-        AlgaeGrabber algae
+        AlgaeGrabber algae,
+        Leds leds
         // Vision vision
     ){
         this.swerveSubsystem = swerve;
         this.elevator = elevator;
         this.scorer = scorer;
         this.climber = climber;
+        this.leds = leds;
         // this.vision = vision;
 
         // Add options to our chooser; This could be done manually if we wanted
@@ -82,7 +86,7 @@ public class Autos {
         //test autos here
         //autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
         //autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
-        // autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralOptimized);
+         autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralAutoOptimized);
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
         // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
         // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
@@ -226,6 +230,7 @@ public class Autos {
     }
     public Command sidleRightToLeft(){
       return Commands.sequence( 
+      leds.schedulePattern(leds.pink().withTimeout(3)),
       swerveSubsystem.driveCommandRobotRelative(()->-0.005, ()->-reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(0.2),
@@ -298,9 +303,7 @@ public class Autos {
          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
          swerveSubsystem.pathToCoralRightAuto()
        ),
-       swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
-         .until(scorer.isBranchInRange)
-         .withTimeout(2),
+       sidleLeftToRight(),
  
        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
        scoreAtL4()    

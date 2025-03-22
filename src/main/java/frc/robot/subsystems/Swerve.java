@@ -15,6 +15,7 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -38,6 +39,7 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -58,7 +60,7 @@ public class Swerve extends SubsystemBase {
 
   SwerveDrive swerveDrive;
 
-  PathConstraints constraintsFast = new PathConstraints(5, 3.5, 5, 3);
+  PathConstraints constraintsFast = new PathConstraints(5, 3, 5, 3);
   PathConstraints constraintsSlow = new PathConstraints(2.5, 1.75, 5, 1.5);
 
   /** Creates a new SwerveSubsystem. */
@@ -87,6 +89,7 @@ public class Swerve extends SubsystemBase {
     swerveDrive.setMotorIdleMode(true); //just to be safe
 
     configurePathplanner();
+    CommandScheduler.getInstance().schedule(PathfindingCommand.warmupCommand());
     // PathfindingCommand.warmupCommand();
 
     new Trigger(DriverStation::isTeleopEnabled).onTrue(new InstantCommand(()->
@@ -175,7 +178,7 @@ public class Swerve extends SubsystemBase {
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
                     new PIDConstants(1.0, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(0.0, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(1.0, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
       shouldFlipPath, 
@@ -287,7 +290,7 @@ public class Swerve extends SubsystemBase {
           desiredRotationDegrees+=360;
         }
       }
-
+      
       double power = commandTurnToPid.calculate(getPose().getRotation().getDegrees(), desiredRotationDegrees);
       swerveDrive.drive(new Translation2d(sign*translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
                                           sign*translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
@@ -429,9 +432,9 @@ public class Swerve extends SubsystemBase {
   private Command privatePathToPoseAuto(Pose2d pose){
     return Commands.sequence(
       AutoBuilder.pathfindToPose(pose, constraintsFast)
-      .until(()->isNearEnoughToPID(pose))
+      .until(()->isNearEnoughToScore(pose))
       .withTimeout(5),
-      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      //pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(2.5),
       new InstantCommand(this::stop,this)
     );
   }
