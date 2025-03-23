@@ -96,6 +96,8 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     //swaps tag relative to robot relative
     driver.leftTrigger().whileTrue(swerveSubsystem.pathToCoralRight());
     driver.rightTrigger().whileTrue(swerveSubsystem.pathToCoralLeft());
+    driver.rightBumper().whileTrue(swerveSubsystem.pathToCoralLeftAuto());
+    driver.leftBumper().whileTrue(swerveSubsystem.pathToCoralRightAuto());
     (driver.povRight().and(driver.povLeft())).whileTrue(swerveSubsystem.pathToReefAlgae(
 
     ));

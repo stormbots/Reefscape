@@ -48,7 +48,7 @@ public class Autos {
     Climber climber;
     AlgaeGrabber algae;
     Leds leds;
-    Double reckoningSpeed = 0.12;
+    Double reckoningSpeed = 0.11;
     // Vision vision;
 
     public Autos(
@@ -286,10 +286,7 @@ public class Autos {
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         swerveSubsystem.pathToCoralRight()
       ),
-      swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
-        .until(scorer.isBranchInRange)
-        .withTimeout(2),
-
+      sidleRightToLeft(),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       scoreAtL4()    
       );
@@ -319,8 +316,9 @@ public class Autos {
        // getUnfoldRobot().withTimeout(7),
       
         new ParallelCommandGroup(
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-        swerveSubsystem.pathToCoralLeft()),
+          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+          swerveSubsystem.pathToCoralLeft()
+        ),
         swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->-reckoningSpeed, ()->0.0)
           .until(scorer.isBranchInRange)
           .withTimeout(2),

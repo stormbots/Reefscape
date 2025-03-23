@@ -434,7 +434,7 @@ public class Swerve extends SubsystemBase {
       AutoBuilder.pathfindToPose(pose, constraintsFast)
       .until(()->isNearEnoughToScore(pose))
       .withTimeout(5),
-      //pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(2.5),
+      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(3.0),
       new InstantCommand(this::stop,this)
     );
   }
