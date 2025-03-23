@@ -288,7 +288,7 @@ public class Autos {
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         swerveSubsystem.pathToCoralRight()
       ),
-      sidleRightToLeft(),
+      // sidleRightToLeft(),
       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       scoreAtL4()    
       );
@@ -302,7 +302,7 @@ public class Autos {
          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
          swerveSubsystem.pathToCoralRightAuto()//.until(scorer.isBranchInRange)
        ),
-       sidleRightToLeft(),
+      //  sidleRightToLeft(),
  
        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
        scoreAtL4()    
@@ -342,7 +342,7 @@ public class Autos {
           elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
           swerveSubsystem.pathToCoralLeftAuto()
         ),
-        sidleRightToLeft(),
+        // sidleRightToLeft(),
         // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         scoreAtL4()    
         );
@@ -359,7 +359,7 @@ public class Autos {
         swerveSubsystem.pathToCoralLeft(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      sidleLeftToRight(),
+      // sidleLeftToRight(),
       //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
@@ -475,7 +475,7 @@ public class Autos {
         swerveSubsystem.pathToCoralLeftAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      sidleLeftToRight(),
+      // sidleLeftToRight(),
       //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
@@ -499,7 +499,7 @@ public class Autos {
         swerveSubsystem.pathToCoralRightAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      sidleRightToLeft(),
+      // sidleRightToLeft(),
       swerveSubsystem.stopCommand().withTimeout(0.1),
       //score coral
       scoreAtL4(),
