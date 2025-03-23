@@ -300,9 +300,9 @@ public class Autos {
      return Commands.sequence(
        new ParallelCommandGroup(
          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-         swerveSubsystem.pathToCoralRightAuto()
+         swerveSubsystem.pathToCoralRightAuto()//.until(scorer.isBranchInRange)
        ),
-       sidleLeftToRight(),
+       sidleRightToLeft(),
  
        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
        scoreAtL4()    
@@ -470,7 +470,7 @@ public class Autos {
     // Timer.delay(5);
     return Commands.sequence(
       leftL4CoralAutoOptimized(),
-      loadFromStationOptimized(),
+      loadFromStation(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralLeftAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
@@ -479,7 +479,7 @@ public class Autos {
       //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
-      loadFromStationOptimized(),
+      loadFromStation(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralRightAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
@@ -494,7 +494,7 @@ public class Autos {
 
     return Commands.sequence(
       rightL4CoralAutoOptimized(),
-      loadFromStationOptimized(),
+      loadFromStation(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralRightAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
@@ -503,7 +503,7 @@ public class Autos {
       swerveSubsystem.stopCommand().withTimeout(0.1),
       //score coral
       scoreAtL4(),
-      loadFromStationOptimized(),
+      loadFromStation(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralLeftAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))

@@ -56,7 +56,7 @@ public class Scorer extends SubsystemBase {
 
     Timer.delay(0.1); //Wait until motors are happy and providing us correct data
 
-    setDefaultCommand(defaultCommand());
+    setDefaultCommand(realignCoral());
   }
 
   public void periodic(){

@@ -48,6 +48,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldNavigation;
+import frc.robot.subsystems.Scorer.Scorer;
 import swervelib.SwerveDrive;
 import swervelib.imu.NavXSwerve;
 import swervelib.parser.SwerveParser;
@@ -350,7 +351,7 @@ public class Swerve extends SubsystemBase {
   }
 
   private void pidToPosePrecise(Pose2d pose){
-    final double transltionP = 3.0*1.2*1.5;
+    final double transltionP = 3.0*1.2*1.5*1.5*1.5;
     final double thetaP = 2.0*4*1.2;
     
 
@@ -444,7 +445,7 @@ public class Swerve extends SubsystemBase {
   private Command privatePathToPoseAuto(Pose2d pose){
     return Commands.sequence(
       new InstantCommand(()->enableKA(true)),
-      AutoBuilder.pathfindToPose(pose.transformBy(new Transform2d(Units.Inches.of(5.0).in(Meters),0.0,new Rotation2d())), constraintsFast)
+      AutoBuilder.pathfindToPose(FieldNavigation.getCoralMid(pose).transformBy(new Transform2d(Units.Inches.of(15.0).in(Meters),0.0,new Rotation2d())), constraintsFast)
       .until(()->isNearEnoughToPIDAuto(pose))
       .withTimeout(5),
       pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(3.0),
