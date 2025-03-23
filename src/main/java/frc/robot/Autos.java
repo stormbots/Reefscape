@@ -87,6 +87,8 @@ public class Autos {
         //autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
         //autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
          autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralAutoOptimized);
+         autoChooser.addOption("L4 Multicoral RIGHT Optimized", this::rightMultiCoralAutoOptimized);
+
         //PUT UNTESTED AUTOS HERE; Drivers should not select these
         // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
         // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
@@ -328,6 +330,24 @@ public class Autos {
     
   }
 
+  public Command rightL4CoralAutoOptimized(){
+    var path = "basicRightAuto";
+   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
+    Timer.delay(5); //let vision set the precise location before building the path
+
+    return Commands.sequence(
+       // getUnfoldRobot().withTimeout(7),
+      
+        new ParallelCommandGroup(
+          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
+          swerveSubsystem.pathToCoralLeftAuto()
+        ),
+        sidleRightToLeft(),
+        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
+        scoreAtL4()    
+        );
+    
+  }
   
 
   //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works on both sides
@@ -450,7 +470,7 @@ public class Autos {
     // Timer.delay(5);
     return Commands.sequence(
       leftL4CoralAutoOptimized(),
-      loadFromStation(),
+      loadFromStationOptimized(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralLeftAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
@@ -459,7 +479,7 @@ public class Autos {
       //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
-      loadFromStation(),
+      loadFromStationOptimized(),
       new ParallelCommandGroup(
         swerveSubsystem.pathToCoralRightAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
@@ -467,4 +487,29 @@ public class Autos {
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4()
     );
-  }}
+  }
+  public Command rightMultiCoralAutoOptimized(){
+    var path = "basicRightAuto";
+    swerveSubsystem.setInitialPoseFromPath(path);
+
+    return Commands.sequence(
+      rightL4CoralAutoOptimized(),
+      loadFromStationOptimized(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralRightAuto(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      sidleRightToLeft(),
+      swerveSubsystem.stopCommand().withTimeout(0.1),
+      //score coral
+      scoreAtL4(),
+      loadFromStationOptimized(),
+      new ParallelCommandGroup(
+        swerveSubsystem.pathToCoralLeftAuto(),
+        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
+      ),
+      swerveSubsystem.stopCommand().withTimeout(0.1),
+      scoreAtL4()
+    );
+  }
+}

@@ -29,6 +29,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -63,7 +64,8 @@ public class Swerve extends SubsystemBase {
   PathConstraints constraintsFast = new PathConstraints(5, 3, 5, 3);
   PathConstraints constraintsSlow = new PathConstraints(2.5, 1.75, 5, 1.5);
 
-  SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.1, 2.4, 0.35);
+  //2.24-1.88
+  SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.1, 2.75, 0.35);
 
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
@@ -179,8 +181,8 @@ public class Swerve extends SubsystemBase {
       this::getChassisSpeeds,
       this::setChassisSpeeds, 
       new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(1.0, 0.0, 0.0), // Translation PID constants
-                    new PIDConstants(1.0, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(1.5, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(0.5, 0.0, 0.0) // Rotation PID constants
       ), 
       robotConfig, 
       shouldFlipPath, 
@@ -405,6 +407,14 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putBoolean("swerve/isNearEnough",result);
     return result;
   }
+
+  public boolean isNearEnoughToPIDAuto(Pose2d target){
+    var distance = target.getTranslation().getDistance(getPose().getTranslation());
+    var result = distance <= Inches.of(5.0).in(Meters);
+    SmartDashboard.putBoolean("swerve/isNearEnough",result);
+    return result;
+  }
+
   public boolean isNearEnoughToPIDPrecise(Pose2d target){
     var distance = target.getTranslation().getDistance(getPose().getTranslation());
     var result = distance <= Inches.of(48).in(Meters);
@@ -427,15 +437,15 @@ public class Swerve extends SubsystemBase {
       pidToPoseFastCommand(pose)
       .until(()->isNearEnoughToPID(pose))
       .withTimeout(5),
-      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(2.5),
+      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(3.0),
       new InstantCommand(this::stop,this)
     );
   }
   private Command privatePathToPoseAuto(Pose2d pose){
     return Commands.sequence(
       new InstantCommand(()->enableKA(true)),
-      AutoBuilder.pathfindToPose(pose, constraintsFast)
-      .until(()->isNearEnoughToScore(pose))
+      AutoBuilder.pathfindToPose(pose.transformBy(new Transform2d(Units.Inches.of(5.0).in(Meters),0.0,new Rotation2d())), constraintsFast)
+      .until(()->isNearEnoughToPIDAuto(pose))
       .withTimeout(5),
       pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(3.0),
       new InstantCommand(this::stop,this)
