@@ -63,6 +63,8 @@ public class Swerve extends SubsystemBase {
   PathConstraints constraintsFast = new PathConstraints(5, 3, 5, 3);
   PathConstraints constraintsSlow = new PathConstraints(2.5, 1.75, 5, 1.5);
 
+  SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.1, 2.4, 0.35);
+
   /** Creates a new SwerveSubsystem. */
   public Swerve() {
 
@@ -81,7 +83,7 @@ public class Swerve extends SubsystemBase {
       throw new RuntimeException(e);
     }  
 
-    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35));
+    enableKA(true);
     // SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
@@ -93,11 +95,11 @@ public class Swerve extends SubsystemBase {
     // PathfindingCommand.warmupCommand();
 
     new Trigger(DriverStation::isTeleopEnabled).onTrue(new InstantCommand(()->
-      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0))
+      enableKA(false)
     ));
 
     new Trigger(DriverStation::isAutonomousEnabled).onTrue(new InstantCommand(()->
-      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(0.1, 2.4, 0.35))
+      enableKA(true)
     ));
   }
 
@@ -425,18 +427,19 @@ public class Swerve extends SubsystemBase {
       pidToPoseFastCommand(pose)
       .until(()->isNearEnoughToPID(pose))
       .withTimeout(5),
-      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(1.5),
+      pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(2.5),
       new InstantCommand(this::stop,this)
     );
   }
   private Command privatePathToPoseAuto(Pose2d pose){
     return Commands.sequence(
+      new InstantCommand(()->enableKA(true)),
       AutoBuilder.pathfindToPose(pose, constraintsFast)
       .until(()->isNearEnoughToScore(pose))
       .withTimeout(5),
       pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(3.0),
       new InstantCommand(this::stop,this)
-    );
+    ).finallyDo(()->enableKA(false));
   }
   
 
@@ -623,6 +626,15 @@ public class Swerve extends SubsystemBase {
         System.out.println(e);
       }
       return new InstantCommand();
+    }
+  }
+
+  public void enableKA(boolean enabled){
+    if(enabled){
+      swerveDrive.replaceSwerveModuleFeedforward(feedforward);
+    }
+    else{
+      swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward(feedforward.getKs(), feedforward.getKv(), 0.0));
     }
   }
 }
