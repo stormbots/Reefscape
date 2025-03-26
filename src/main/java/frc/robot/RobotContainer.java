@@ -162,36 +162,6 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
     fightstick.leftTrigger().or(sofiabox.button(13))
     .whileTrue(algaeGrabber.algaeUnstuck());
 
-    //cant do, gearing.
-    // sofiabox.button(12)
-    // .whileTrue(algaeGrabber.)
-
-    //deadline (move to positions, )
-
-
-    // sofiabox.button(15).whileTrue(
-    //   new ParallelCommandGroup(
-    //     elevator.moveToPoseSafe(elevator.kShooterIntake),
-    //     algaeGrabber.newIntakeFromElevator(),
-    //     scorer.holdAlgae()
-    //   ).until(elevator.isAtTargetPosition.and(algaeGrabber.isAtTargetAngle))
-    //   .andThen(new ParallelDeadlineGroup(
-    //     algaeGrabber.newIntakeFromElevator(),
-    //     scorer.dropAlgae(),
-    //     elevator.holdPosition()
-    //     )
-    //   //algaegrabber hold intake
-    //   //scoreer stop/drop
-    //   //elevator hold position
-
-    //   ));
-      
-    //     ;
-  
-
-    // sofiabox.button(15).whileTrue(scorer.loadCoral());
-
-
   }
 
   /**
@@ -206,7 +176,6 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
         .until(scorer.isBranchInRange)
         .withTimeout(2),
 
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       autos.scoreAtL4()    
     ));
 

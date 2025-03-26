@@ -132,32 +132,6 @@ public class Swerve extends SubsystemBase {
   public void configurePathplanner(){
     RobotConfig robotConfig = null;
 
-    // double kModuleXOffset = Meters.convertFrom(23.5, Inches)/2.0;
-    // double kModuleYOffset = Meters.convertFrom(23.5, Inches)/2.0;
-
-
-    // Translation2d[] moduleOffsets = new Translation2d[]{
-    //   new Translation2d(kModuleXOffset, kModuleYOffset),
-    //   new Translation2d(kModuleXOffset, -kModuleYOffset),
-    //   new Translation2d(-kModuleXOffset, kModuleYOffset),
-    //   new Translation2d(-kModuleXOffset, -kModuleYOffset)
-    // };
-
-    // ModuleConfig moduleConfig = new ModuleConfig(
-    //   Meters.convertFrom(1.5, Inches), 
-    //   5.1, 
-    //   1.3, 
-    //   DCMotor.getNeoVortex(1).withReduction(5.076923076923077), 
-    //   40, 
-    //   1);
-
-    // robotConfig = new RobotConfig(
-    //   Pounds.of(30), 
-    //   KilogramSquareMeters.of(15), 
-    //   moduleConfig, 
-    //   moduleOffsets
-    // );
-
     try {
       robotConfig = RobotConfig.fromGUISettings();
     } catch (Exception e) {
@@ -309,26 +283,6 @@ public class Swerve extends SubsystemBase {
     return swerveDrive.getGyro().getRotation3d().toRotation2d();
   }
 
-  public Command goToPose(Pose2d targetPose){
-
-    return run(()->{
-      //get current pose
-      var pose = getPose();
-      var delta = targetPose.relativeTo(pose);  
-
-      var distancex_m = delta.getMeasureX().in(Units.Meter); // the distance in the x axis
-      var distancey_m = delta.getMeasureY().in(Units.Meter); //distnace in y
-      var rotation_d = delta.getRotation().getDegrees();
-
-      //move -> robot relative
-      swerveDrive.drive(new Translation2d(distancex_m * swerveDrive.getMaximumChassisVelocity(),
-                                          distancey_m * swerveDrive.getMaximumChassisVelocity()),
-                        (rotation_d/360.0) * swerveDrive.getMaximumChassisAngularVelocity(),
-                        false,
-                        false);
-    });
-  }
-
   //does not reset based off field
   private void pidToPoseFast(Pose2d pose){
     final double transltionP = 3.0*1.2;
@@ -435,14 +389,15 @@ public class Swerve extends SubsystemBase {
   //Now uses pathfind, not compatible with previous
   private Command privatePathToPose(Pose2d pose){
     return Commands.sequence(
-      pidToPoseFastCommand(pose)
+      new InstantCommand(()->enableKA(true)),
+      AutoBuilder.pathfindToPose(pose.transformBy(new Transform2d(Units.Inches.of(15.0).in(Meters),0.0,new Rotation2d())), constraintsFast)
       .until(()->isNearEnoughToPID(pose))
       .withTimeout(5),
       pidToPosePreciseCommand(pose).until(()->isNearEnoughToScore(pose)).withTimeout(3.0),
       new InstantCommand(this::stop,this)
     );
   }
-  private Command privatePathToPoseAuto(Pose2d pose){
+  private Command privatePathToPoseCoral(Pose2d pose){
     return Commands.sequence(
       new InstantCommand(()->enableKA(true)),
       AutoBuilder.pathfindToPose(FieldNavigation.getCoralMid(pose).transformBy(new Transform2d(Units.Inches.of(15.0).in(Meters),0.0,new Rotation2d())), constraintsFast)
@@ -452,15 +407,6 @@ public class Swerve extends SubsystemBase {
       new InstantCommand(this::stop,this)
     ).finallyDo(()->enableKA(false));
   }
-  
-
-  private Command privatePathToOffset(Pose2d pose){
-    // return pidToPoseCommand(pose).until(()->isNear(pose, 12.0)).withTimeout(4.5);
-    return pidToPoseFastCommand(pose)
-      .until(()->isNear(pose, 12.0))
-      .withTimeout(4.5)
-    ;
-  }
 
   private Command privatePathToPosePrecise(Pose2d pose){
     return Commands.sequence(
@@ -469,10 +415,6 @@ public class Swerve extends SubsystemBase {
       new InstantCommand(this::stop,this)
     );
   }
-  // public Command followPath(PathPlannerPath path)
-  // {
-  //   return AutoBuilder.followPath(path);
-  // }
 
   public Command pidToCoralLeft(){
     return new DeferredCommand(()->pidToPoseFastCommand(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
@@ -502,26 +444,18 @@ public class Swerve extends SubsystemBase {
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
   public Command pathToCoralLeftAuto(){
-    return new DeferredCommand(()->privatePathToPoseAuto(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPoseCoral(FieldNavigation.getCoralLeft(getPose())), Set.of(this));
   }
 
   public Command pathToCoralRightAuto(){
-    return new DeferredCommand(()->privatePathToPoseAuto(FieldNavigation.getCoralRight(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPoseCoral(FieldNavigation.getCoralRight(getPose())), Set.of(this));
   }
 
   public Command pathToCoralSource(){
     return new DeferredCommand(()->privatePathToPose(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
   public Command pathToCoralSourceAuto(){
-    return new DeferredCommand(()->privatePathToPoseAuto(FieldNavigation.getCoralSource(getPose())), Set.of(this));
-  }
-
-  public Command pathToOffsetLeft(){
-    return new DeferredCommand(()->privatePathToOffset(FieldNavigation.getOffsetCoralLeft(getPose())), Set.of(this));
-  }
-
-  public Command pathToOffsetRight(){
-    return new DeferredCommand(()->privatePathToOffset(FieldNavigation.getOffsetCoralRight(getPose())), Set.of(this));
+    return new DeferredCommand(()->privatePathToPoseCoral(FieldNavigation.getCoralSource(getPose())), Set.of(this));
   }
 
   public Command pathToReefAlgae(){
@@ -529,15 +463,6 @@ public class Swerve extends SubsystemBase {
     return new DeferredCommand(()->privatePathToPosePrecise(FieldNavigation.getReefAlgae(getPose())),set);
   }
   
-
-
-  public Command pathToPath(PathPlannerPath targetPath){
-    //robot constraints for pathPlanner
-    PathConstraints constraints = new PathConstraints(5, 3.5, 5, 3);
-
-    //Go to target Path and follow it
-    return AutoBuilder.pathfindThenFollowPath(targetPath, constraints);
-  }
 
   public boolean isGyroConnected(){
     var navx = (AHRS)swerveDrive.getGyro().getIMU();

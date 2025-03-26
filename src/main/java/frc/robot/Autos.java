@@ -71,7 +71,7 @@ public class Autos {
         SmartDashboard.putData("AutoSelector/chooser",autoChooser);
         autoChooser.setDefaultOption("Select Auto",()->new InstantCommand());
         //INSERT TESTED AUTOS HERE; Drivers wil use these.
-        //New L4 autos
+        //Old L4 autos
         autoChooser.addOption("L4 Basic Left Auto", this::leftL4CoralAuto);
         autoChooser.addOption("L4 Basic Right Auto", this::rightL4CoralAuto);
         autoChooser.addOption("L4 Basic Center Auto", this::centerL4CoralAuto);
@@ -79,20 +79,12 @@ public class Autos {
         autoChooser.addOption("Multicoral Right Auto", this::rightMultiCoralAuto);
         autoChooser.addOption("Multicoral Left Auto", this::leftMultiCoralAuto);
 
-        autoChooser.addOption("Drive Forward Score", this::driveForwardScore);
         autoChooser.addOption("Dead  Reckoning Center", this::deadReckoningRightBranch);
         
-        autoChooser.addOption("v TEST AUTOS v",()->new InstantCommand());
-        //test autos here
-        //autoChooser.addOption("testCenterAuto", this::basicCenterAutoTest);
-        //autoChooser.addOption("testLeftAuto", this::basicLeftAutoTest);
+        //The BEST AUTOS!
          autoChooser.addOption("L4 Multicoral Left Optimized", this::leftMultiCoralAutoOptimized);
          autoChooser.addOption("L4 Multicoral RIGHT Optimized", this::rightMultiCoralAutoOptimized);
 
-        //PUT UNTESTED AUTOS HERE; Drivers should not select these
-        // autoChooser.addOption("1MeterNoTurn", ()->swerve.followPath("1Meter"));
-        // autoChooser.addOption("1MeterTurn", ()->swerve.followPath("1MeterTurn"));
-        // autoChooser.addOption("LongSpline", ()->swerve.followPath("LongSpline"));
 
     }
 
@@ -197,13 +189,6 @@ public class Autos {
     }
 
     public Command scoreAtL4(){
-      // return Commands.sequence(
-      //   elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
-      //   scorer.runCoralScorer(2500).withTimeout(1),
-      //   elevator.moveToAngleTrap(()->90).until(elevator.isAtTargetAngle)
-      // )
-      // .alongWith(swerveSubsystem.stopCommand().withTimeout(4))
-      // ;
       //TODO deadline a stop command
       //Added isCoralinScorer, unlike comp
       return new ParallelDeadlineGroup(
@@ -218,7 +203,8 @@ public class Autos {
             .withTimeout(0.25)
         ), swerveSubsystem.stopCommand()
         );}
-                   
+    //This thing kinda sucks, good to use if autos are missing
+    //Detects based off distance sensor sometimes unreliable
     public Command sidleLeftToRight(){
       return Commands.sequence(
         swerveSubsystem.driveCommandRobotRelative(()->-0.005, ()->reckoningSpeed, ()->0.0)
@@ -230,6 +216,7 @@ public class Autos {
         .withTimeout(2)
       );
     }
+    //Same as above
     public Command sidleRightToLeft(){
       return Commands.sequence( 
       leds.schedulePattern(leds.pink().withTimeout(3)),
@@ -246,12 +233,6 @@ public class Autos {
     /// PUT AUTOS HERE ////////////////////////////////
     ///////////////////////////////////////////////////
 
-  public Command driveForwardScore(){
-    return Commands.sequence(
-      swerveSubsystem.driveCommandRobotRelative(()->-0.2,()-> 0.0, ()->0.0).withTimeout(2.25),
-      scoreAtL4()
-    );
-  }
 
   public Command deadReckoningRightBranch(){
     return Commands.sequence(
@@ -266,45 +247,34 @@ public class Autos {
 
   
   public Command centerL4CoralAuto(){
-    // var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-    // swerveSubsystem.resetOdometryAllianceManaged(new Pose2d(7.15, 4.18, new Rotation2d()));
-
     var path = "basicCenterAuto";
-   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
-      swerveSubsystem.pidToCoralLeft().withTimeout(5),
+      swerveSubsystem.pathToCoralLeft().withTimeout(5),
       scoreAtL4()
     );
   }
 
   public Command leftL4CoralAuto(){
    var path = "basicLeftAuto";
-    //swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
     return Commands.sequence(
       new ParallelCommandGroup(
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
         swerveSubsystem.pathToCoralRight()
       ),
-      // sidleRightToLeft(),
-      // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
       scoreAtL4()    
       );
   }
   public Command leftL4CoralAutoOptimized(){
     var path = "basicLeftAuto";
-     //swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
      Timer.delay(5); //let vision set the precise location before building the path
      return Commands.sequence(
        new ParallelCommandGroup(
          elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
          swerveSubsystem.pathToCoralRightAuto()//.until(scorer.isBranchInRange)
        ),
-      //  sidleRightToLeft(),
- 
-       // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
        scoreAtL4()    
        );
    }
@@ -332,25 +302,18 @@ public class Autos {
 
   public Command rightL4CoralAutoOptimized(){
     var path = "basicRightAuto";
-   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
     Timer.delay(5); //let vision set the precise location before building the path
 
     return Commands.sequence(
-       // getUnfoldRobot().withTimeout(7),
-      
         new ParallelCommandGroup(
           elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4)),
           swerveSubsystem.pathToCoralLeftAuto()
         ),
-        // sidleRightToLeft(),
-        // elevator.scoreAtPoseSafe(elevator.kL4), //probably ok
         scoreAtL4()    
         );
     
   }
-  
 
-  //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works on both sides
   public Command leftMultiCoralAuto(){
     return Commands.sequence(
       leftL4CoralAuto(),
@@ -359,8 +322,6 @@ public class Autos {
         swerveSubsystem.pathToCoralLeft(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      // sidleLeftToRight(),
-      //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
       loadFromStation(),
@@ -372,7 +333,6 @@ public class Autos {
       scoreAtL4()
     );
   }
-  //done with pathfind+pid, might swap to actual pathplanner path if its too jank, works both sides
   public Command rightMultiCoralAuto(){
     return Commands.sequence(
       rightL4CoralAuto(),
@@ -385,7 +345,6 @@ public class Autos {
       swerveSubsystem.driveCommandRobotRelative(()->-0.005,()->reckoningSpeed, ()->0.0)
         .until(scorer.isBranchInRange)
         .withTimeout(4),
-      //score coral
       scoreAtL4(),
       loadFromStation(),
       new ParallelCommandGroup(
@@ -394,80 +353,11 @@ public class Autos {
       ),
       scoreAtL4()
     );
-  }
-
-  public Command LeftHolyGrail(){
-    return Commands.sequence(
-      new ParallelCommandGroup(
-        swerveSubsystem.pathToCoralLeft(),
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
-      ),
-      scoreAtL4(),
-      loadFromStation(),
-      new ParallelCommandGroup(
-        swerveSubsystem.pathToCoralLeft(),
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
-      ),
-      scoreAtL4(),
-      loadFromStation(),
-      new ParallelCommandGroup(
-        swerveSubsystem.pathToCoralRight(),
-        elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
-      ),
-      scoreAtL4()
-      
-    );
-  }
-
-  public Command CenterCoralAlgae(){
-    return Commands.sequence(
-      centerL4CoralAuto(),
-      swerveSubsystem.driveCommandRobotRelative(()->0.2, ()->0.0, ()->0.0).withTimeout(0.5),
-      elevator.moveToPoseSafe(elevator.kL2).until(()->elevator.isAtPosition(elevator.kL2)),
-      swerveSubsystem.pathToReefAlgae(),
-      scorer.holdAlgae()
-    );
-  }
-
-
-  public Command basicCenterAutoTest(){
-    
-    var path = "basicCenterAuto";
-   // swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
-    Timer.delay(5); //let vision set the precise location before building the path
-
-    //sequence that only moves, no elevator or climber stuff
-    return Commands.sequence(
-      swerveSubsystem.followPath(path)
-    );
-  }
-
-
-  public Command basicLeftAutoTest(){
-
-    var path = "basicLeftAuto";
-    swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
-    Timer.delay(5); //let vision set the precise location before building the path
-
-    //sequence that only moves, no elevator or climber stuff
-    return Commands.sequence(
-      swerveSubsystem.followPath(path),
-      new WaitCommand(2),
-      swerveSubsystem.pathToCoralSource(),
-      new WaitCommand(2),
-      swerveSubsystem.pathToCoralRight(),
-      new WaitCommand(2),
-      swerveSubsystem.pathToCoralSource(),
-      new WaitCommand(2),
-      swerveSubsystem.pathToCoralLeft()
-    );
-
   }
 
   public Command leftMultiCoralAutoOptimized(){
     var path = "basicLeftAuto";
     swerveSubsystem.setInitialPoseFromPath(path); //provide a sane default from pathplanner
-    // Timer.delay(5);
     return Commands.sequence(
       leftL4CoralAutoOptimized(),
       loadFromStation(),
@@ -475,8 +365,6 @@ public class Autos {
         swerveSubsystem.pathToCoralLeftAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      // sidleLeftToRight(),
-      //score coral 
       swerveSubsystem.stopCommand().withTimeout(0.1),
       scoreAtL4(),
       loadFromStation(),
@@ -499,9 +387,7 @@ public class Autos {
         swerveSubsystem.pathToCoralRightAuto(),
         elevator.moveToPoseSafe(elevator.kL4).until(()->elevator.isAtPosition(elevator.kL4))
       ),
-      // sidleRightToLeft(),
       swerveSubsystem.stopCommand().withTimeout(0.1),
-      //score coral
       scoreAtL4(),
       loadFromStation(),
       new ParallelCommandGroup(

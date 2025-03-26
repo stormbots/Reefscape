@@ -99,26 +99,15 @@ public class FieldNavigation {
         return nearest.transformBy(coralMid);
     }
 
-    public static Pose2d getOffsetCoralLeft(Pose2d currentPose){
-        var nearest = currentPose.nearest(tagsReef);
-        return nearest.transformBy(coralApproachOffsetLeft);
-    }
-
     //SEE ABOVE
     public static Pose2d getCoralRight(Pose2d currentPose){
         var nearest = currentPose.nearest(tagsReef);
         return nearest.transformBy(coralRight);
     }
-    public static Pose2d getOffsetCoralRight(Pose2d currentPose){
-        var nearest = currentPose.nearest(tagsReef);
-        return nearest.transformBy(coralApproachOffsetRight);
-    }
 
     public static Pose2d getCoralSource(Pose2d currentPose){
         var nearest = currentPose.nearest(tagsSource);
         return nearest.transformBy(coralSource);
-
-        
     }
 
     public static Pose2d getReefAlgae(Pose2d currentPose){
