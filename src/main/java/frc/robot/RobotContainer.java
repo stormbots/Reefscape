@@ -4,9 +4,13 @@
 
 package frc.robot;
 
+import java.util.function.BooleanSupplier;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -44,12 +48,18 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
   CommandXboxController fightstick = new CommandXboxController(1);
   CommandXboxController sofiabox = new CommandXboxController(2);
   CommandXboxController testController = new CommandXboxController(3);
+  CommandXboxController operatorXbox = new CommandXboxController(4);
+
+
+  private boolean coralMode=true;
+
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureDriverBindings();
-    configureOperatorBindings();
+    // configureOperatorBindings();
+    configureXboxOperatorBindings();
 
     Trigger isReadyToShootAlgae = swerveSubsystem.isWithinShootingRange
     .and(algaeGrabber.isAlgaeInBreakbeam)
@@ -104,6 +114,71 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
 
   }
 
+  private void configureXboxOperatorBindings() {
+    //Scoring poses
+    operatorXbox.b().or(operatorXbox.a())
+    .whileTrue(new ConditionalCommand(
+      elevator.moveToPoseSafe(elevator.kL2),
+      elevator.moveToPoseSafe(elevator.kL2Algae),
+      ()->coralMode
+    ));
+
+    operatorXbox.x()
+    .whileTrue(new ConditionalCommand(
+      elevator.moveToPoseSafe(elevator.kL3), 
+      elevator.moveToPoseSafe(elevator.kL3Algae), 
+      ()-> coralMode));
+      
+    operatorXbox.y()
+    .whileTrue(new ConditionalCommand(
+      elevator.moveToPoseSafe(elevator.kL4),  
+      scorer.holdAlgae(), 
+      ()-> coralMode));
+
+    operatorXbox.leftTrigger()
+    .whileTrue(new ConditionalCommand(
+      elevator.moveToStationPickup().alongWith(scorer.loadCoral()), 
+      new ConditionalCommand(
+        scorer.holdAlgae(), 
+        algaeGrabber.intakeFromGround().alongWith(elevator.moveToPoseSafe(elevator.kStowedUp)), 
+        elevator::getIsAlgaeGrabbing)
+      , 
+      ()-> coralMode));
+
+
+    operatorXbox.rightTrigger()
+    .whileTrue(new ConditionalCommand(
+      scorer.scoreCoral(),
+      new ConditionalCommand(
+        scorer.holdAlgae(), 
+        algaeGrabber.shootAlgae(), 
+        elevator::getIsAlgaeGrabbing)
+      ,
+      ()-> coralMode
+      ));
+
+    operatorXbox.rightBumper()
+    .whileTrue((swerveSubsystem.pathToCoralLeftAuto()));
+
+    operatorXbox.leftBumper()
+    .whileTrue(swerveSubsystem.pathToCoralRightAuto());
+
+    operatorXbox.povRight()
+    .onTrue(new InstantCommand(()-> coralMode = !coralMode));
+
+    operatorXbox.povLeft()
+    .whileTrue(elevator.moveToPoseSafe(elevator.kStowed))
+    .whileTrue(algaeGrabber.stop());
+
+
+
+
+    
+
+
+  }
+  
+
   /*********************************
   * OPERATOR BINDINGS
   **********************************/
@@ -152,7 +227,7 @@ public final Autos autos = new Autos(swerveSubsystem, elevator, scorer, climber,
 
 
     fightstick.leftBumper().or(sofiabox.button(2))
-    .whileTrue(algaeGrabber.intakeFromGround())
+    .whileTrue(algaeGrabber.intakeFromGround().finallyDo((e)->algaeGrabber.stop()))
     .whileTrue(elevator.moveToPoseSafe(elevator.kStowedUp))
     ;
 
