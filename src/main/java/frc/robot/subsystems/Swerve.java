@@ -75,7 +75,7 @@ public class Swerve extends SubsystemBase {
     
     //Need to turn this back on when running path, commented out for now because its angry
     // File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"swerve");
-    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"skipper");
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(),"tabiSwerve");
     try
     {
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(maximumSpeed);

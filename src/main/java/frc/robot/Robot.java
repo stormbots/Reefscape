@@ -66,7 +66,7 @@ public class Robot extends LoggedRobot {
         break;
     }
 
-    Logger.start();
+    // Logger.start();
     au.grapplerobotics.CanBridge.runTCP();
 
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
@@ -96,13 +96,13 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void disabledPeriodic() {
-    robotContainer.autos.periodic();
+    // robotContainer.autos.periodic();
   }
 
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    autonomousCommand = robotContainer.autos.getAutonomousCommand();
+    // autonomousCommand = robotContainer.autos.getAutonomousCommand();
 
     // schedule the autonomous command (example)
     if (autonomousCommand != null) {
@@ -134,7 +134,7 @@ public class Robot extends LoggedRobot {
     // Cancels all running commands at the start of test mode.
 
     //Schedule our own
-    robotContainer.getProgrammingTestSequence().schedule();
+    // robotContainer.getProgrammingTestSequence().schedule();
   }
 
   /** This function is called periodically during test mode. */

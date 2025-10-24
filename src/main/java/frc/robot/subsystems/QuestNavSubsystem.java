@@ -4,9 +4,14 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.Meters;
+
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.numbers.N1;
@@ -20,7 +25,7 @@ public class QuestNavSubsystem extends SubsystemBase {
   /** Creates a new QuestNavSubsystem. */
   QuestNav questNav = new QuestNav();
   Field2d questField2d = new Field2d();
-  Swerve swerveDriveSubsystem = new Swerve();
+  Swerve swerve;
   Matrix<N3, N1> QUESTNAV_STD_DEVS =
     VecBuilder.fill(
         0.02, // Trust down to 2cm in X direction
@@ -28,16 +33,17 @@ public class QuestNavSubsystem extends SubsystemBase {
         0.035 // Trust down to 2 degrees rotational
     );
 
-  Transform2d robotToQuest = new Transform2d(0, 0, new Rotation2d(0));
+  Transform2d robotToQuest = new Transform2d(Inches.of(3.0).in(Meters), Inches.of(3.0).in(Meters), new Rotation2d(0));
 
-  public QuestNavSubsystem() {
+  public QuestNavSubsystem(Swerve swerve) {
 
-
+    this.swerve = swerve;
 
   }
 
   @Override
   public void periodic() {
+    // questNav.commandPeriodic();
     if (questNav.isTracking()) {
         // Get the latest pose data frames from the Quest
         PoseFrame[] questFrames = questNav.getAllUnreadPoseFrames();
@@ -45,7 +51,7 @@ public class QuestNavSubsystem extends SubsystemBase {
         // Loop over the pose data frames and send them to the pose estimator
         for (PoseFrame questFrame : questFrames) {
             // Get the pose of the Quest
-            Pose2d questPose = questFrame.questPose();
+            Pose3d questPose = questFrame.questPose();
             // Get timestamp for when the data was sent
             double timestamp = questFrame.dataTimestamp();
 
@@ -55,7 +61,7 @@ public class QuestNavSubsystem extends SubsystemBase {
             // You can put some sort of filtering here if you would like!
 
             // Add the measurement to our estimator
-            swerveDriveSubsystem.swerveDrive.addVisionMeasurement(robotPose, timestamp, QUESTNAV_STD_DEVS);
+            swerve.swerveDrive.addVisionMeasurement(robotPose, timestamp, QUESTNAV_STD_DEVS);
         }
     }
   }
